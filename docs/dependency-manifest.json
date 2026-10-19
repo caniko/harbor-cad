@@ -31,10 +31,15 @@
   },
   "fleetix": {
     "revision": "2230d9ee804a66d94424a91919182e4fcca13ab2",
-    "cargo_nix_source_identity": "aligned",
+    "review_date": "2026-10-19",
+    "cargo_version": "0.6.0",
+    "cargo_source": "registry+https://github.com/rust-lang/crates.io-index",
+    "cargo_checksum": "2673218f8e50930be99abf049e2685f61134dea411b7664c46abb992959e05c2",
+    "cargo_vcs_revision": "74f6eb09d2e010c6b75a8f8aab15b04e715bb10a",
+    "cargo_nix_source_identity": "distinct crate and Nix revisions; embedded GPU contract bytes aligned",
     "contract_sha256": "829a8ff1e89c7df0f4d0b38dee3850a29efda1e43d457a15d8e534e062dafe54",
     "license": "MIT OR Apache-2.0",
-    "evidence": "Rust contract tests, packaged doctor and built Nix source/digest parity check"
+    "evidence": "Rust contract tests, clean packaged doctor and Nix digest parity; exact registry-Fleetix cooling worker CLI/MCP/lifecycle passes at 303bff2; docs/evidence/retained-cooling-worker-20261019.json"
   },
   "harbor": {
     "harbor-rs": "c4ffa5d9b9232eae1f6693dfbcbcdd2548f31592",

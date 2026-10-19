@@ -118,7 +118,7 @@ runtime roots end at zero. See [exact scoped evidence](evidence/numerical-filter
 | §4 controlled CAD, tags, meshes, variants | `adapters/freecad_bridge.py`, `src/storage.rs`, `src/cad_spectral.rs` | source snapshot/import isolation and imported box correspondence qualified at recorded identities; immutable v16 parameter copies/reimports and whole-region spectral triangle preparation qualified in `c8-5`; exact direct-only native triangle reference passes `c8-11`; registered optical worker passes `c8-29` |
 | §4 allocated solver resources, unresolved paths | `src/estimates.rs`, `adapters/openlb_channel.cpp` | channel allocation/Mach/model gates; other formulations and local-gap resolution gates pending |
 | §5 cold start and expansion/contact | recipe contracts and native FEM adapters | synthetic transient prescribed histories/heater energy, free expansion and planar contact pass scoped native/CLI/MCP gates; refined source-bound v11 thermal/contact worker passes `c8-2`; hybrid CUDA FEM and product material validation unqualified |
-| §5 airflow/wetting/snow/freezing | OpenLB recipe drivers and snow thermal adapter | synthetic single-phase flow, planar wetting, prescribed snow insulation/opening geometry and fixed-volume Stefan freezing pass recorded gates; exact retained-distribution cooling package passes analytic/conservation/complete-history gates in `c8-30`, shared-worker lifecycle pending; blocked-opening flow unsupported |
+| §5 airflow/wetting/snow/freezing | OpenLB recipe drivers and snow thermal adapter | synthetic single-phase flow, planar wetting, prescribed snow insulation/opening geometry and fixed-volume Stefan freezing pass recorded gates; exact retained-distribution cooling package passes analytic/conservation/complete-history gates in `c8-30`, shared-worker CLI/MCP/lifecycle passes `c8-34`; blocked-opening flow unsupported |
 | §5 solar/UV, angular inputs and dose | atmospheric/spectral adapters | CPU spectral orientation/occlusion/reflection/unit/temporal gates, libRadtran/registered atmospheric worker `c8-26` and original-CAD direct optics worker `c8-29` pass scoped gates; GPU transport remains unqualified |
 | §5 typed one-way transfers and convection | `src/transfers.rs`, `src/thermal_transfer.rs`, `src/thermal_contact.rs` | typed conservative maps, native C3D8 capacitance projection and v11 thermal→projection→contact worker pass scoped original-field and lifecycle gates; signed retained-wetting extrusion preserves original distributions; velocity-to-convection inference rejected |
 | §5 moisture-risk entry | `src/moisture_results.rs`, thermal source fields | all six native planar thermal surfaces and explicit screening/missing/inapplicable branches pass packaged CLI/MCP moisture-results-1; combined recipe assembly pending |
@@ -490,6 +490,28 @@ strict Clippy/build/format/lint; the existing exact worker campaign is the runti
 regression gate and must pass with newly captured matching packages. No unrelated
 adapter was added to the isolated runtime and no scientific gate was changed.
 
+### Exact retained-cooling worker qualification — 2026-10-19
+
+The newly captured `303bff2` CLI/MCP and cooling-only runtime pass guarded
+`c8-34`: two successful original-source CLI/MCP jobs, twelve recorded refusals,
+and cancellation, owned-service death and source-loss recovery. Before-ack
+distinct-inode retention, restart/idempotency, four exact-time original CSV
+queries and all lossless Float64 VTK views per job, mutation refusals and
+checksummed success/failure exports pass. Every reservation and runtime root
+releases; reconciliation after the OpenCode server restart finds zero canonical
+reservations and all five owned units terminal with empty control groups.
+
+Execution is `recorded`, numerical verification is `reported_pass`, and physical
+validation remains `unqualified`. The largest reported conservation error is
+`7.345540966844738e-13` against unchanged `1e-10`. Fine analytic/spatial/temporal
+evidence remains separately bound to the identical immutable native closure in
+`c8-30`; neither coarse failure is promoted. Campaign peak RAM is 295.7 MiB under
+2 GiB/no-swap controls; successful job peaks are 42.8/51.0 MiB with independent
+CPU/task controls. [Checksummed worker evidence](evidence/retained-cooling-worker-20261019.json)
+records exact source, packages, originals, gates and resources. A redundant
+reference-runtime rebuild was refused by Canix's memory safety gate; the already
+realized reference matches its original checksum, without a fresh-execution claim.
+
 ### Receipt and packaging continuation — 2026-10-08
 
 Commit `413fe00` separates numerical-only atmospheric receipt reconstruction from
@@ -654,7 +676,7 @@ package-build or physics failure.
 | P3 / B2 | exact compatible HIP numerical-filter stack, observations, RAM/VRAM telemetry and format checks | scoped v4 native/CLI/MCP analytical, CPU-HIP, byte/topology, source/lifecycle and aggregate RAM/CPU gates pass at the recorded revision; instruction trace, whole-card VRAM and broader filters pending |
 | P4 / A1 | controlled CAD/regions/Gmsh; thermal, FEM, wetting and flow reference gates | synthetic steady conduction/free expansion at 2/4/8 and CLI/MCP lifecycle pass; imported origin/translated BREP correspondence and static FEM pass native/worker gates; airflow separately scoped; repaired wetting-native-9 passes six solves, twelve rejections and two decreasing-error sequences; wetting-worker-3 passes fresh CLI/MCP/restart/exports/cancel/kill gates |
 | P5 / C | native thermal/contact/moisture/coupling slice | synthetic transient thermal, contact, exact original-field queries, full-surface moisture and conservative thermal→contact coupling pass native/CLI/MCP/export/lifecycle gates; repaired v10 worker passes `c8-1`, v11 `c8-2`, coupled history/moisture `c8-9`; hybrid CUDA FEM and physical product inputs remain unqualified |
-| P6 / D | native local water, prescribed snow and retained-water freezing | planar wetting, prescribed dry snow insulation/opening geometry and independent fixed-volume Stefan references pass scoped native/CLI/MCP gates; signed original wetting extrusion and exact retained-cooling package `c8-30` preserve phase/conservation/refinement; v18 shared-worker lifecycle pending; moving/overshooting source cooling, physical water-air and blocked-opening flow unsupported |
+| P6 / D | native local water, prescribed snow and retained-water freezing | planar wetting, prescribed dry snow insulation/opening geometry and independent fixed-volume Stefan references pass scoped native/CLI/MCP gates; signed original wetting extrusion and exact retained-cooling package `c8-30` preserve phase/conservation/refinement; v18 CLI/MCP/VTK/lifecycle gate passes `c8-34`; moving/overshooting source cooling, physical water-air and blocked-opening flow unsupported |
 | P7 / E | native atmosphere/spectral irradiance/dose slice | isolated CPU spectral and libRadtran original direct/diffuse reference plus registered-source worker pass `c8-26`; original-CAD direct-only opaque Lambertian irradiance/power/dose passes `c8-29`; GPU spectral, general interreflection and physical material lifetime remain unqualified |
 | P8 / F | bounded studies, retention/recovery/resume, measurements and product closure | bounded immutable native studies/lifecycle/resource gate passes `c8-2`, fixed-science equal-accuracy profile comparison `c8-4`; active runtime roots/shared reservations and failure originals are retained; actual logout/reboot, solver checkpoint/resume, broader GPU measurements and final product closure remain separate |
 

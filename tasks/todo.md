@@ -17,7 +17,7 @@ No pushes, host changes, upstream changes or weakened scientific gates.
 - [x] Inspect installed native command surface; record missing campaign/transport.
 - [x] Check current baseline and preserve the newer registry-Fleetix change.
 - [ ] Obtain qualified native campaign/transport frontend through its external owner.
-- [ ] Transfer/resolve Harbor-CAD through native workspace handling; verify bytes.
+- [x] Transfer/resolve Harbor-CAD through native workspace handling; verify bytes (`303bff2`, canonical Nomad adoption; staged source retained).
 - [ ] Observe existing sessions, effective policies and physical context on both hosts.
 - [ ] Declare resource reserves/capacity from fresh observations before admission.
 - [ ] Register exact 16 owners/worktrees once and persist native requests before delivery.
@@ -51,7 +51,7 @@ only affected exact-source packaging/evidence, not previously qualified runtimes
 manifest and generated CI. Domain package changes flow through this owner.
 - [ ] Preserve isolated Python/native ABIs, immutable pins and narrow unfree policy.
 - [ ] Expose meaningful package/framework readiness through the shared MCP worker.
-- [ ] Verify `python scripts/check_cpu.py`; realize production outputs through guarded Canix.
+- [x] Verify `python scripts/check_cpu.py`; realize current CLI/MCP/cooling worker production outputs through guarded Canix (`303bff2`, source gate 3 and `c8-34`; no broader package qualification inferred).
 **Consumes:** Domain package/ABI deltas; no initial dependency.
 
 ## 04 — FreeCAD — Nomad
@@ -97,12 +97,12 @@ MCP inspection against existing original-field fixtures.
 
 ## 08 — Freezing / retained cooling — Nomad
 
-**First slice:** Complete the exact V18 worker lifecycle gate after the cooling
-campaign/profile repair, including original CSV/VTK result queries.
+**First slice:** Reconcile the completed exact V18 worker lifecycle gate and
+deliver framework-scoped cooling inspection/MCP coverage against its originals.
 **Files:** `src/{freezing*,retained_cooling,cooling*}.rs`, cooling/freezing adapters,
 `scripts/verify_retained_cooling_worker.py`, focused tests and MCP module.
 - [ ] Preserve stationary equal-property scope, original water fraction and all fixed gates.
-- [ ] Own before-ack retention, source loss, restart/idempotency, cancellation/death and export/release evidence.
+- [x] Before-ack retention, source loss, restart/idempotency, cancellation/death and export/release evidence pass `c8-34` with original CSV/VTK queries. Completed by Atlas coordinator while owner registration remains blocked; not a Nomad dispatch receipt.
 - [ ] Verify `python/tests/test_retained_cooling*.py`, `test_freezing*.py`; run the exact newly captured worker campaign on Atlas.
 **Consumes:** Role 7 closed originals, role 3 matching packages; no baseline source replacement.
 

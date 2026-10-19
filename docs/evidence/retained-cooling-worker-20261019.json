@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "revision": "303bff25e69b1e396d7442c2e6d2034ac3ed8f7e",
+  "source_archive_sha256": "936d103ec3633f2106599c76cbc39626a0455cca6ad460abebe2279298356e56",
+  "campaign_sha256": "a10b3906974d1ad6473d702f16559abc9d6334b00f91d77696f47725c0aab268",
+  "verification": "/data/scratch/tmp/opencode/harbor-cad-authority-20261005/c8-34/cooling-worker/verification.json",
+  "verification_sha256": "d13f9a8f4c08aadf899184143e1882be7542ecb7eb9dab22182073dabe181b5d",
+  "package_selection": "/data/scratch/tmp/opencode/harbor-cad-nomad-20261019/cooling-worker-5/packages.json",
+  "binary": "/nix/store/lgmhg4biv72z1jznlhl5axnqfidhbkjm-harbor-cad-0.1.0/bin/harbor-cad",
+  "binary_sha256": "6ed81d391ef32083c89a776e8ece98741541136449ab2bb07d5bbd2e5ccc5907",
+  "mcp": "/nix/store/9xhpbprkls02czr171mgsslmpq31z010-harbor-cad-mcp/bin/harbor-cad-mcp",
+  "mcp_sha256": "16ccc034ebfd118c5b0ea5bd0d628df26318e29c48ef5b4180d8e77a55fa2ee3",
+  "runtime": "/nix/store/2mrmy2lcpfrypbyhn72qxv62islrh0p5-harbor-cad-native-runtime.json",
+  "runtime_sha256": "00756e6164e1737fa03810ffa41b731963293b22169adaf3a70e737634bacbca",
+  "source_report_sha256": "0755c13fa5b4dde495c2063fcbca8e6c66d41cbaa595c39db4a70bb178cfcd66",
+  "independent_native_reference_sha256": "217fe0f93d7ad1196392367021410282cd51cb3b61b4dc52c8df84fbbc5267d8",
+  "interfaces": ["cli", "mcp"],
+  "successful_jobs": ["c8211a0e-6935-4d1c-bf42-34424de4cd25", "592e291e-c20f-4b88-88c2-15d77316d5e0"],
+  "recorded_refusals": 12,
+  "lifecycle_cases": ["cancel", "service-death", "source-loss"],
+  "checks": {
+    "originals_retained_before_acknowledgment": true,
+    "distinct_original_inodes": true,
+    "same_invocation_after_worker_restart": true,
+    "idempotent_resubmission": true,
+    "original_csv_queries_at_four_retained_times_per_job": true,
+    "lossless_original_float64_vtk_at_all_retained_times": true,
+    "original_and_receipt_mutation_rejected": true,
+    "checksummed_success_and_failure_exports": true,
+    "original_source_tree_unchanged": true,
+    "all_job_reservations_and_runtime_roots_released": true,
+    "post_server_restart_owned_units_terminal_without_control_groups": true,
+    "post_server_restart_canonical_reservations": 0
+  },
+  "qualification": {
+    "runtime_execution": "recorded",
+    "numerical_verification": "reported_pass",
+    "conservation_tolerance": 1e-10,
+    "maximum_reported_conservation_error": 7.345540966844738e-13,
+    "fine_analytic_spatial_temporal_reference": "separately recorded c8-30; same immutable native/reference closure and original runtime checksum",
+    "coarse_refinement": "unqualified; original failed gates preserved",
+    "physical_validation": "unqualified",
+    "scope": "synthetic stationary original-parent retained-water native CPU conduction with equal sensible properties; no physical water-air or freeze-thaw lifetime claim"
+  },
+  "resources": {
+    "campaign_memory_max_bytes": 2147483648,
+    "campaign_memory_peak_bytes": 310038528,
+    "campaign_swap_max_bytes": 0,
+    "job_memory_peak_bytes": [44863488, 53444608],
+    "job_cpu_usage_microseconds": [12603935, 24867296],
+    "job_cpu_max": "200000 100000",
+    "job_pids_max": 128
+  },
+  "fleetix": {
+    "cargo_version": "0.6.0",
+    "nix_contract_revision": "2230d9ee804a66d94424a91919182e4fcca13ab2",
+    "contract_sha256": "829a8ff1e89c7df0f4d0b38dee3850a29efda1e43d457a15d8e534e062dafe54",
+    "parity": "clean packaged doctor matches Nix evaluation; identical Nix/lock/contract inputs verified across the admission-only repair"
+  },
+  "source_gate": {
+    "log": "/data/scratch/tmp/opencode/harbor-cad-nomad-20261019/source-gate-3.log",
+    "sha256": "715715e08b1d11ad81faba9942e12fc4e24e976c0a8f905ca9def83fcde14108",
+    "rust_tests": 220,
+    "python_tests": 223,
+    "strict_clippy_locked_build_format_lint": "passed"
+  },
+  "preserved_failures": ["c8-31 MCP planning profile", "c8-33 generic freezing admission resolver", "auxiliary reference-runtime rebuild refused by Canix memory safety gate"],
+  "reference_rebuild_disposition": "already realized immutable reference checksum matches c8-30; no fresh reference execution or memory-guard bypass claimed"
+}
