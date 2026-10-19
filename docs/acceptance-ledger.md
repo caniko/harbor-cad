@@ -559,6 +559,14 @@ empty service control groups are reconciled in the
 Matching packaged checks remain pending. No guard was bypassed and no native
 factorization or independent owner qualification is claimed.
 
+The runtime slice is committed locally as `aaf297b`. A following test-only slice
+lets the same FEM/matrix/protocol stdio checks select an exact packaged MCP
+executable while clearing child checkout imports. Selecting the old package
+correctly fails on its missing structured backend result; the unchanged-default
+source suite then passes the complete 222-Rust/228-Python gate. Its final service
+is terminal/empty with a 1,353,719,808-byte peak and no swap. This prepares packaged
+verification; it does not claim that a matching new package has been tested yet.
+
 ### Complete MCP framework/tool/profile inventory — 2026-10-20
 
 The [executable matrix](../python/tests/framework_mcp_matrix.json) now maps all

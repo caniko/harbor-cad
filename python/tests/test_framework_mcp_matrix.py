@@ -95,6 +95,9 @@ def test_framework_matrix_matches_real_profiles_and_shared_worker(tmp_path):
         "PYTHONPATH": str(repo / "python"),
         "HARBOR_CAD_SOCKET": str(state / "worker.sock"),
     }
+    mcp_binary = os.environ.get("HARBOR_CAD_MCP_TEST_BINARY")
+    if mcp_binary:
+        environment["PYTHONPATH"] = ""
     worker = subprocess.Popen(
         [
             binary,
@@ -117,8 +120,9 @@ def test_framework_matrix_matches_real_profiles_and_shared_worker(tmp_path):
         async def check():
             for profile in sorted(profiles):
                 parameters = StdioServerParameters(
-                    command=sys.executable,
-                    args=["-m", "harbor_cad_mcp.server", "--profile", profile],
+                    command=mcp_binary or sys.executable,
+                    args=([] if mcp_binary else ["-m", "harbor_cad_mcp.server"])
+                    + ["--profile", profile],
                     env=environment,
                 )
                 async with Client(parameters) as client:

@@ -47,6 +47,18 @@
     {"attempt": "list-focused-2", "reason": "duplicated Python log-bounds guard hid expected error; deleted duplicate guard to reuse strict Rust validation, retaining all refusal assertions", "log_sha256": "ead7162e51d9616eb285f12f9f7514af0bd035fb8af39a8fd2a9ef5898fbbb1b"}
   ],
   "locks_native_dependencies_host_configuration": "unchanged",
+  "packaged_executable_selection": {
+    "base_revision": "aaf297be72f9130f14be3e6a7be82f87518c937c",
+    "scope": "Existing FEM, framework-matrix and protocol stdio checks accept HARBOR_CAD_MCP_TEST_BINARY and clear child checkout PYTHONPATH; default source coverage and all assertions retained",
+    "source_files_sha256": {
+      "python/tests/test_fem_protocol.py": "aa7bcdf99ed854aeb45806779f8a98ced6fa7776927a4ae59f7685ddceb0aa56",
+      "python/tests/test_framework_mcp_matrix.py": "920c70a5dd9a4ae494ef337f557b2a408bf62c7a301284e7db655604328ee364",
+      "python/tests/test_protocol.py": "caff699adcc73c3e22076c903a0e64d42839171f4137d0a8d051a61886ac2ea4"
+    },
+    "red": {"result": "Old exact packaged MCP returns no structured backend result; 1 failed, proving packaged selection does not silently use checkout server", "log_sha256": "a3fb52259e63f8d6ff35a1d8d4d6f892e30183ae4662c42fd83373d214dcaea1"},
+    "source_gate": {"rust_tests_passed": 222, "python_tests_passed": 228, "strict_clippy_locked_build_format_lint": "passed", "log_sha256": "03c8ceb5c44d4a8d418890b76194bbeb9ffda0618f080a64bcf6e41e383b3a9d", "unit": "harbor-cad-packaged-selector-source-1.service", "invocation": "75da734043024a16a6670df6e506468c", "memory_peak_bytes": 1353719808, "memory_max_bytes": 3221225472, "swap_peak_bytes": 0, "final_state": "inactive/dead, success, exit0, empty ControlGroup; red and refused build units terminal/empty"},
+    "preserved_build_refusal": {"result": "First guarded CLI build refused by another Canix evaluation lease; no realization or lease override", "report_sha256": "92e7e51d9d619e0a8e78a4010c6c5808d1dcd0da304b386bae1c1b16be8efc9c", "log_sha256": "3764626d090c44a1ef4fcbe678b50591b353f5b9c34865ed3c98a5d95351df37"}
+  },
   "packaged_verification": "pending matching lightweight CLI/MCP and affected checks; no native factorization campaign requested",
   "native_factorization_executed": false,
   "independent_owner_admission": "none; Atlas coordinator continuation, not a Nomad owner or independent product-closure receipt",

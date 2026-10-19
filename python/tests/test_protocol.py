@@ -255,11 +255,17 @@ def test_real_mcp_client_and_rust_worker(tmp_path, monkeypatch):
             and expected_freezing["moisture_risk"]["status"] == "missing_inputs"
         )
 
+        mcp_binary = os.environ.get("HARBOR_CAD_MCP_TEST_BINARY")
+        mcp_environment = dict(os.environ)
+        if mcp_binary:
+            mcp_environment["PYTHONPATH"] = ""
+        mcp_args = [] if mcp_binary else ["-m", "harbor_cad_mcp.server"]
+
         async def check():
             params = StdioServerParameters(
-                command=str(Path(os.sys.executable)),
-                args=["-m", "harbor_cad_mcp.server", "--profile", "all"],
-                env=dict(os.environ),
+                command=mcp_binary or os.sys.executable,
+                args=mcp_args + ["--profile", "all"],
+                env=mcp_environment,
             )
             async with Client(params) as client:
                 names = {t.name for t in (await client.list_tools()).tools}
@@ -472,9 +478,9 @@ def test_real_mcp_client_and_rust_worker(tmp_path, monkeypatch):
                 assert cli_logs
                 for profile in ("cad", "simulation", "results", "all"):
                     profile_params = StdioServerParameters(
-                        command=os.sys.executable,
-                        args=["-m", "harbor_cad_mcp.server", "--profile", profile],
-                        env=dict(os.environ),
+                        command=mcp_binary or os.sys.executable,
+                        args=mcp_args + ["--profile", profile],
+                        env=mcp_environment,
                     )
                     async with Client(profile_params) as reader:
                         tools = {t.name: t for t in (await reader.list_tools()).tools}

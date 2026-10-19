@@ -100,6 +100,11 @@ PYTHONPATH="$PWD/python" HARBOR_CAD_TEST_BINARY=/nix/store/CLI/bin/harbor-cad \
 
 Use the reported environment path and a CLI built from matching Rust source.
 This is a source-check environment, not authorization for native solver jobs.
+For packaged stdio conformance, also set
+`HARBOR_CAD_MCP_TEST_BINARY=/nix/store/MCP/bin/harbor-cad-mcp` and select
+`test_fem_protocol.py`, `test_framework_mcp_matrix.py` and `test_protocol.py`.
+Their stdio clients clear checkout `PYTHONPATH` before launching that executable;
+the default suite continues to test the checkout server.
 
 `doctor` is read-only inventory, not a GPU benchmark. `qualify` reports gate
 status without promoting untested combinations. Native package outputs and
