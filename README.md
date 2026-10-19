@@ -58,6 +58,20 @@ HARBOR_CAD_TEST_BINARY="$PWD/target/debug/harbor-cad" uv run --locked pytest -q
 treefmt --config-file treefmt.toml
 ```
 
+`python-test-environment` exposes the same locked Python/pytest/Ruff environment
+used by the Nix Python check. Realize it on the build authority with
+`canix cache binary build .#python-test-environment`; a development host can
+consume its exact prebuilt closure without installing an interpreter or compiling.
+Run checks against the checkout, not the packaged MCP copy:
+
+```sh
+PYTHONPATH="$PWD/python" HARBOR_CAD_TEST_BINARY=/nix/store/CLI/bin/harbor-cad \
+  /nix/store/TEST-ENV/bin/python -B -m pytest -q python/tests
+```
+
+Use the reported environment path and a CLI built from matching Rust source.
+This is a source-check environment, not authorization for native solver jobs.
+
 `doctor` is read-only inventory, not a GPU benchmark. `qualify` reports gate
 status without promoting untested combinations. Native package outputs and
 execution receipts must be qualified before A0/B1 can be declared complete.
