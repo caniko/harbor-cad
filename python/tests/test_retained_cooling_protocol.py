@@ -17,14 +17,14 @@ from mcp import Client
 from mcp.client.stdio import StdioServerParameters
 
 
-def test_cooling_campaign_tools_exist_in_their_selected_mcp_profiles(monkeypatch):
-    repo = Path(__file__).parents[2]
-    monkeypatch.syspath_prepend(str(repo / "scripts"))
-    from native_worker_campaign import WorkerCampaign
-
-    default = inspect.signature(WorkerCampaign.mcp_call).parameters["profile"].default
+def campaign_mcp_calls(tree, default):
+    """Resolve only explicit names/profiles and unchanged literal profile loops."""
+    parents = {
+        child: parent
+        for parent in ast.walk(tree)
+        for child in ast.iter_child_nodes(parent)
+    }
     calls = {}
-    tree = ast.parse((repo / "scripts/verify_retained_cooling_worker.py").read_text())
     for node in ast.walk(tree):
         if not (
             isinstance(node, ast.Call)
@@ -34,11 +34,81 @@ def test_cooling_campaign_tools_exist_in_their_selected_mcp_profiles(monkeypatch
             and node.func.attr == "mcp_call"
         ):
             continue
-        profile = next((k.value for k in node.keywords if k.arg == "profile"), None)
-        profile = default if profile is None else ast.literal_eval(profile)
-        calls.setdefault(profile, []).append(
-            (node.lineno, ast.literal_eval(node.args[0]))
+        assert node.args and all(k.arg is not None for k in node.keywords)
+        tool = ast.literal_eval(node.args[0])
+        assert isinstance(tool, str)
+        value = next((k.value for k in node.keywords if k.arg == "profile"), None)
+        if isinstance(value, ast.Name):
+            loop = parents.get(node)
+            while loop is not None:
+                if (
+                    isinstance(loop, ast.For)
+                    and isinstance(loop.target, ast.Name)
+                    and loop.target.id == value.id
+                ):
+                    break
+                assert not isinstance(
+                    loop, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)
+                )
+                loop = parents.get(loop)
+            assert loop is not None, (
+                "unresolved MCP profile; require explicit finite profiles"
+            )
+            assert not any(
+                isinstance(child, ast.Name)
+                and child.id == value.id
+                and isinstance(child.ctx, (ast.Store, ast.Del))
+                and child is not loop.target
+                for child in ast.walk(loop)
+            ), "MCP profile loop binding is modified"
+            profiles = ast.literal_eval(loop.iter)
+        else:
+            profiles = (default if value is None else ast.literal_eval(value),)
+        assert isinstance(profiles, (list, tuple)) and 1 <= len(profiles) <= 4
+        assert all(
+            profile in {"cad", "simulation", "results", "all"} for profile in profiles
         )
+        for profile in profiles:
+            calls.setdefault(profile, []).append((node.lineno, tool))
+    return calls
+
+
+def test_campaign_profile_resolution_is_complete_and_rejects_unknown_bindings():
+    tree = ast.parse("""
+campaign.mcp_call("case_plan", {})
+campaign.mcp_call("qualification_report", {}, profile="results")
+for profile in ("cad", "results"):
+    campaign.mcp_call("cad_prepare_spectral_scene", {}, profile=profile)
+""")
+    assert campaign_mcp_calls(tree, "simulation") == {
+        "simulation": [(2, "case_plan")],
+        "results": [(3, "qualification_report"), (5, "cad_prepare_spectral_scene")],
+        "cad": [(5, "cad_prepare_spectral_scene")],
+    }
+    for source in (
+        'campaign.mcp_call("doctor", {}, profile=runtime_profile)',
+        'for profile in ("cad", "results"):\n    profile = "simulation"\n    campaign.mcp_call("doctor", {}, profile=profile)',
+        'for profile in runtime_profiles:\n    campaign.mcp_call("doctor", {}, profile=profile)',
+        "campaign.mcp_call(runtime_tool, {})",
+        'campaign.mcp_call("doctor", {}, **runtime_options)',
+    ):
+        with pytest.raises((AssertionError, ValueError)):
+            campaign_mcp_calls(ast.parse(source), "simulation")
+
+
+def test_all_shared_campaign_tools_exist_in_their_selected_mcp_profiles(monkeypatch):
+    repo = Path(__file__).parents[2]
+    monkeypatch.syspath_prepend(str(repo / "scripts"))
+    from native_worker_campaign import WorkerCampaign
+
+    default = inspect.signature(WorkerCampaign.mcp_call).parameters["profile"].default
+    calls = {}
+    for script in sorted((repo / "scripts").glob("*.py")):
+        tree = ast.parse(script.read_text())
+        for profile, entries in campaign_mcp_calls(tree, default).items():
+            calls.setdefault(profile, []).extend(
+                (script.name, line, tool) for line, tool in entries
+            )
     assert calls
 
     async def exercise():
@@ -50,10 +120,8 @@ def test_cooling_campaign_tools_exist_in_their_selected_mcp_profiles(monkeypatch
             )
             async with Client(parameters) as client:
                 names = {tool.name for tool in (await client.list_tools()).tools}
-            for line, tool in tools:
-                assert tool in names, (
-                    f"cooling campaign:{line}: {tool} absent in {profile}"
-                )
+            for script, line, tool in tools:
+                assert tool in names, f"{script}:{line}: {tool} absent in {profile}"
 
     asyncio.run(exercise())
 

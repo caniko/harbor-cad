@@ -531,6 +531,19 @@ numerical/physical qualification remain separate gates. [Exact preflight evidenc
 preserves the interrupted realization and two private test-driver failures; all
 owned gate/build/check units finish terminal with empty control groups.
 
+### Shared campaign MCP profile conformance — 2026-10-19
+
+The existing real-SDK discovery guard now checks all 25 static shared campaign
+call sites across `scripts`, resolving 26 tool/profile pairs. This includes the
+previous finite-profile-loop exception in `verify_cad_variant_worker.py:440`.
+Unknown/computed profiles, mutated loop bindings and expanded runtime arguments
+fail closed rather than silently escaping the guard. Focused checks pass seven
+tests; the final full Python suite passes 225 with Ruff lint/format unchanged.
+The two earlier missing-toolchain setup failures remain preserved. No native
+campaign or Rust/package rebuild was needed; the exact existing CLI is
+source-compatible. [Scoped conformance evidence](evidence/campaign-mcp-profiles-20261019.json)
+does not qualify every framework's capability inventory or Nomad agent admission.
+
 ### Portable Python source-check environment — 2026-10-19
 
 The existing locked Nix Python check environment is now a reusable production

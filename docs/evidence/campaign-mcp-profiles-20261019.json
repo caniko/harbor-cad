@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "base_revision": "f3b07731886e9dc756fefc315f1749dc1270e2a2",
+  "test_file": "python/tests/test_retained_cooling_protocol.py",
+  "test_file_sha256": "eee0794ad313bc4b0e1366233205d8ad1e760890ce2d70a06754fb450ba66217",
+  "scope": "Real MCP discovery for every static campaign.mcp_call site in scripts, including unchanged finite literal profile loops; not general Python interpretation or full framework capability qualification",
+  "raw_call_sites": 25,
+  "resolved_call_profile_pairs": 26,
+  "pairs_by_profile": {"cad": 5, "simulation": 8, "results": 13},
+  "previous_exception_closed": "verify_cad_variant_worker.py:440 cad_prepare_spectral_scene resolves both cad and results profiles",
+  "rejected_ambiguities": ["unbound profile", "modified loop binding", "nonliteral profile collection", "computed tool name", "expanded runtime keyword arguments"],
+  "matrix_sha256": "ea259f84215cee877e338ea44d8347b448fae68725daabcd93d9c6d724adb18e",
+  "verification": {
+    "focused_tests_passed": 7,
+    "focused_log_sha256": "af851ee7d00c5040ebbd5afcff5b7daa6481dbd5deec51c34ba4abfaad9b298b",
+    "python_tests_passed": 225,
+    "final_python_log_sha256": "b9815ec55cd731e0a164326276dc515036730d046e846097f4dd7e9558e724ab",
+    "ruff_check_and_format": "passed for python, scripts and adapters",
+    "rust_sources_locks_profiles": "unchanged from the qualified 8f77e2c CLI; no rebuild or repeated native campaign",
+    "cli": "/nix/store/jqnm6ayhl8apyb4kr86czrsmbhgwlhq3-harbor-cad-0.1.0/bin/harbor-cad",
+    "service_invocation": "3596b4158e91422dad1939cf7eb02070",
+    "memory_peak_bytes": 354639872,
+    "memory_max_bytes": 2147483648,
+    "swap_peak_bytes": 0,
+    "final_state": "inactive/dead; every scoped service terminal with empty ControlGroup"
+  },
+  "preserved_failures": [
+    {"attempt": "service-1", "reason": "minimal PATH omitted Git before source-identity precheck; no tests ran", "log_sha256": "b389a9e9a7871f1931498d6417d4ea9dbcbab72c97e261e6c124bedf57a101b0"},
+    {"attempt": "service-2", "reason": "minimal PATH omitted compiler for existing C++ guard; 224 passed, 1 failed. Focused guard and final full suite then passed with approved toolchain", "log_sha256": "09d2938b7df4b7510d05deffe6452c55add0e6b4a4a8c9da0984efe71d191942"}
+  ],
+  "receipts_root": "/data/scratch/tmp/opencode/harbor-cad-nomad-20261019/campaign-profile-matrix-1",
+  "native_solver_execution": false,
+  "nomad_owner_admission": "blocked separately",
+  "framework_specific_capability_inventory": "incomplete"
+}
