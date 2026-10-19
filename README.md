@@ -49,6 +49,16 @@ HARBOR_CAD_SOCKET=/absolute/private/state/worker.sock \
 Profiles: `cad`, `simulation`, `results`, `all`. There is no arbitrary shell,
 Python evaluation, package installation or scientific-array response tool.
 
+`job preflight PLAN.json` (MCP `execution_preflight`, all profiles) inspects a
+plan against the **effective worker** using submission's pre-staging source,
+package, device, policy and declared-resource checks. It returns exact executable,
+runtime/closure and plan/profile identities plus declared peak RAM and reserved
+disk requirements. It never imports native applications, changes the plan,
+approves execution, reserves resources or creates a job. Typed refusals match
+these shared checks. Input acquisition/retention and available storage remain
+unchecked. A successful preflight is not a live capacity lease, sandbox test or
+numerical/physical qualification; submission and launch recheck independently.
+
 ## Verification
 
 ```sh

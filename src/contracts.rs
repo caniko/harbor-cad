@@ -2307,6 +2307,9 @@ pub enum Operation {
     },
     Doctor {},
     BackendList {},
+    ExecutionPreflight {
+        plan: Box<ExecutionPlan>,
+    },
     Validate {
         case: Box<CaseSpec>,
     },
@@ -2489,6 +2492,7 @@ pub fn schemas() -> serde_json::Value {
         "B1Selections": schemars::schema_for!(B1Selections),
         "ArtifactPage": schemars::schema_for!(ArtifactPage),
         "ExecutionBinding": schemars::schema_for!(crate::execution::ExecutionBinding),
+        "ExecutionPreflight": schemars::schema_for!(crate::execution::ExecutionPreflight),
         "HostAuthority": schemars::schema_for!(crate::authority::HostAuthority),
         "ExecutionAuthorization": schemars::schema_for!(crate::authority::ExecutionAuthorization),
         "FieldSnapshot": schemars::schema_for!(crate::fields::FieldSnapshot),

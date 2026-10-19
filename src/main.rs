@@ -240,6 +240,10 @@ enum Case {
 }
 #[derive(Subcommand)]
 enum Job {
+    /// Inspect submission-time package/source/policy checks without approval, reservation or execution.
+    Preflight {
+        plan: PathBuf,
+    },
     Submit {
         plan: PathBuf,
         #[arg(long)]
@@ -612,6 +616,7 @@ fn run(cli: Cli) -> Result<()> {
             }
         },
         Commands::Job { command } => match command {
+            Job::Preflight { plan } => Operation::ExecutionPreflight { plan: read(&plan)? },
             Job::Submit {
                 plan,
                 approve,

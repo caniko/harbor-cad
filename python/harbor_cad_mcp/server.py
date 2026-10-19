@@ -37,6 +37,11 @@ def build_server(profile: str) -> MCPServer:
         """List model/backend qualification; no native imports or GPU launch."""
         return await request("backend_list")
 
+    @server.tool()
+    async def execution_preflight(plan: dict[str, Any]) -> dict[str, Any]:
+        """Inspect exact packages, registered-source checks, policy and declared RAM/disk using submission's pre-staging checks. No input retention, approval, resource reservation, live capacity guarantee, native execution or qualification."""
+        return await request("execution_preflight", plan=plan)
+
     if profile in {"cad", "simulation", "all"}:
 
         @server.tool()

@@ -156,6 +156,20 @@ pub struct ExecutionBinding {
     pub native_files: BTreeMap<String, FileIdentity>,
 }
 
+/// A read-only submission check, never an approval or a capacity reservation.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ExecutionPreflight {
+    pub schema_version: u32,
+    pub execution_binding: ExecutionBinding,
+    pub peak_ram_bytes: u64,
+    pub disk_reservation_bytes: u64,
+    pub execution_approved: bool,
+    pub resources_reserved: bool,
+    pub executed: bool,
+    pub qualification: String,
+}
+
 impl ExecutionBinding {
     pub fn capture(
         plan: &ExecutionPlan,

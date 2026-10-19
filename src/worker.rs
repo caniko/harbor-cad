@@ -623,6 +623,21 @@ fn dispatch(
         }
         Operation::Doctor {} => doctor(),
         Operation::BackendList {} => Ok(backends()),
+        Operation::ExecutionPreflight { plan } => {
+            let execution_binding = submission_binding(store, profile, authority, &plan)?;
+            Ok(serde_json::to_value(
+                crate::execution::ExecutionPreflight {
+                    schema_version: 1,
+                    execution_binding,
+                    peak_ram_bytes: plan.peak_ram(),
+                    disk_reservation_bytes: plan.disk_reservation()?,
+                    execution_approved: false,
+                    resources_reserved: false,
+                    executed: false,
+                    qualification: "not_assessed".into(),
+                },
+            )?)
+        }
         Operation::Validate { case } => {
             case.validate()?;
             Ok(

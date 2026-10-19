@@ -47,6 +47,141 @@ fn start_with_binary(
 }
 
 #[test]
+fn execution_preflight_shares_submission_checks_without_creating_jobs() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("state");
+    let _worker = start(&root);
+    let socket = root.join("worker.sock");
+    let plan = ExecutionPlan::reference(CaseSpec::reference()).unwrap();
+    let operation = |plan: &ExecutionPlan| {
+        serde_json::from_value(serde_json::json!({
+            "operation": "execution_preflight", "plan": plan
+        }))
+        .unwrap()
+    };
+    let response = request(&socket, operation(&plan)).unwrap();
+    assert!(response.ok, "{response:?}");
+    let report = response.data.unwrap();
+    assert_eq!(report["schema_version"], 1);
+    assert_eq!(
+        report["execution_binding"]["plan_digest"],
+        plan.id().unwrap()
+    );
+    assert_eq!(report["peak_ram_bytes"], plan.peak_ram());
+    assert_eq!(
+        report["disk_reservation_bytes"],
+        plan.disk_reservation().unwrap()
+    );
+    assert_eq!(report["execution_approved"], false);
+    assert_eq!(report["resources_reserved"], false);
+    assert_eq!(report["executed"], false);
+    assert_eq!(report["qualification"], "not_assessed");
+    assert_eq!(
+        request(&socket, operation(&plan)).unwrap().data.unwrap(),
+        report
+    );
+
+    let path = temp.path().join("plan.json");
+    std::fs::write(&path, serde_json::to_vec(&plan).unwrap()).unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_harbor-cad"))
+        .arg("--socket")
+        .arg(&socket)
+        .args(["job", "preflight"])
+        .arg(path)
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&output.stdout).unwrap()["data"],
+        report
+    );
+
+    let mut changed = plan.clone();
+    changed.policy = "research".into();
+    assert_eq!(
+        request(&socket, operation(&changed))
+            .unwrap()
+            .error
+            .unwrap()["code"],
+        "invalid_input"
+    );
+    changed = plan.clone();
+    changed.stages[0].ram_bytes = 1024 * 1024 * 1024;
+    assert_eq!(
+        request(&socket, operation(&changed))
+            .unwrap()
+            .error
+            .unwrap()["code"],
+        "resource_unavailable"
+    );
+    let store = Store::open(&root).unwrap();
+    for table in [
+        "jobs",
+        "events",
+        "artifacts",
+        "job_profiles",
+        "job_executions",
+        "job_authorizations",
+        "studies",
+    ] {
+        let count: i64 = store
+            .connection
+            .query_row(&format!("SELECT count(*) FROM {table}"), [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(count, 0, "preflight wrote {table}");
+    }
+    assert!(!root.join("artifacts").exists());
+    assert!(!root.join("runtime-roots").exists());
+}
+
+#[test]
+fn native_execution_preflight_refuses_a_missing_runtime_without_dispatch() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("state");
+    let mut profile = load_profile(std::path::Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/profiles/ci.json"
+    )))
+    .unwrap();
+    profile.policy = "research".into();
+    profile.service_mode = "systemd".into();
+    profile.max_ram_bytes = 4 * 1024 * 1024 * 1024;
+    profile.max_disk_bytes = 4 * 1024 * 1024 * 1024;
+    let path = temp.path().join("profile.json");
+    std::fs::write(&path, serde_json::to_vec(&profile).unwrap()).unwrap();
+    let _worker = start_with_profile(&root, &path);
+    let mut case = CaseSpec::reference();
+    case.applicability.formulation = "periodic_forced_channel".into();
+    case.applicability.numerical_tolerance = 0.02;
+    case.length.value = 0.02;
+    case.acceleration.value = 0.001;
+    case.resolution = 16;
+    case.max_time_s = 20.;
+    let plan = ExecutionPlan::openlb_reference(case, "research".into()).unwrap();
+    let operation =
+        serde_json::from_value(serde_json::json!({"operation":"execution_preflight", "plan":plan}))
+            .unwrap();
+    let response = request(&root.join("worker.sock"), operation).unwrap();
+    assert!(!response.ok);
+    let error = response.error.unwrap();
+    assert_eq!(error["code"], "unqualified");
+    assert!(
+        error["message"]
+            .as_str()
+            .unwrap()
+            .contains("runtime not configured")
+    );
+    let store = Store::open(&root).unwrap();
+    let jobs: i64 = store
+        .connection
+        .query_row("SELECT count(*) FROM jobs", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(jobs, 0);
+}
+
+#[test]
 fn queued_job_and_duplicate_submission_keep_runner_a_after_worker_b_restart() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("state");
