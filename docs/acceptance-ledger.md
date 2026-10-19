@@ -556,16 +556,37 @@ focused checks also pass. Failed attempts remain under
 After intermittent process-governor launch refusals, final hashes and terminal
 empty service control groups are reconciled in the
 [source evidence](evidence/fem-factorization-readiness-20261020.json).
-Matching packaged checks remain pending. No guard was bypassed and no native
-factorization or independent owner qualification is claimed.
+No guard was bypassed and no native factorization or independent owner
+qualification is claimed.
 
 The runtime slice is committed locally as `aaf297b`. A following test-only slice
 lets the same FEM/matrix/protocol stdio checks select an exact packaged MCP
 executable while clearing child checkout imports. Selecting the old package
 correctly fails on its missing structured backend result; the unchanged-default
 source suite then passes the complete 222-Rust/228-Python gate. Its final service
-is terminal/empty with a 1,353,719,808-byte peak and no swap. This prepares packaged
-verification; it does not claim that a matching new package has been tested yet.
+is terminal/empty with a 1,353,719,808-byte peak and no swap.
+
+At committed source `96563f4`, the matching lightweight CLI/MCP and Python,
+clean-runtime and policy Nix checks passed guarded realization and verified
+private publication. Retained Canix logs show all selected outputs built; detailed
+Nix log queries were permission-rejected, so no additional per-test build-log
+counts are claimed. Three clean-service real-client checks then passed against
+the exact packaged stdio executable and Rust worker, including every profile,
+matrix/schema parity, structured backend/log arrays and shared Rust refusals.
+The installed MCP server hash matches source; the test service peaks at
+183,193,600 bytes/no swap and both test/build-client trees are terminal/empty.
+This closes the scoped package/interface slice, not native factorization or A0–F.
+
+**Separate security gate:** the inherited `attic.xuyh0120.win/lantian` cache
+returned HTTP503 with a compromise notice. Its repository owner
+[reports compromised servers](https://github.com/xddxdd/nix-cachyos-kernel/issues/110#issuecomment-6189203183)
+and shutdown pending investigation; the owner's belief that kernels were not
+tampered with is not an integrity audit. Selected outputs were locally built,
+but existing dependency-closure provenance remains unaudited. Canix owns the
+substituter/signing policy at `root/modules/config/nix.nix:108/118`; host/trust
+changes are outside this task. Functional checks remain recorded, not dependency-
+security clearance. [Exact evidence](evidence/fem-factorization-readiness-20261020.json)
+retains the response and primary-source snapshot; no host compromise is asserted.
 
 ### Complete MCP framework/tool/profile inventory — 2026-10-20
 

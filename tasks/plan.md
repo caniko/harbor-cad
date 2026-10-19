@@ -36,6 +36,7 @@ the consuming integration task, not the owner's whole assignment.
 | Project transfer | Complete `303bff2` bundle verified and adopted through native workspace preview/apply at `/data/can/canix/projects/owned/harbor-cad`; verified incremental bundle fast-forwards cleanly to `06ce6ec` | Complete for that source; do not transfer/adopt again or infer worker admission |
 | Nomad test environment | Exact prebuilt locked `python-test-environment` and source-compatible CLI transferred/verified; 15 real MCP/protocol checks pass without `.venv`, installers or remote compilation | Complete scoped source-check environment; native solver and agent admission remain separate |
 | Capacity | Nomad OpenCode service has an 8 GiB hard ceiling; observed usage about 1.8 GiB | Fresh backend/cgroup and existing-session observations, explicit aggregate admission policy and diagnostic reserve |
+| Dependency/cache security | 2026-10-20 guarded builds hit the inherited `lantian` cache's HTTP503 compromise notice; its owner confirms a server incident | External Canix owner reviews cache trust and existing closure provenance before further build/native qualification; no host/trust changes authorized here |
 
 These are observations, not dispatch receipts. The 13 roles are **not** a grant
 for 13 simultaneous turns. Unknown context usage or capacity blocks admission.

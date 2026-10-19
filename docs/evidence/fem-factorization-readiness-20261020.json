@@ -59,7 +59,51 @@
     "source_gate": {"rust_tests_passed": 222, "python_tests_passed": 228, "strict_clippy_locked_build_format_lint": "passed", "log_sha256": "03c8ceb5c44d4a8d418890b76194bbeb9ffda0618f080a64bcf6e41e383b3a9d", "unit": "harbor-cad-packaged-selector-source-1.service", "invocation": "75da734043024a16a6670df6e506468c", "memory_peak_bytes": 1353719808, "memory_max_bytes": 3221225472, "swap_peak_bytes": 0, "final_state": "inactive/dead, success, exit0, empty ControlGroup; red and refused build units terminal/empty"},
     "preserved_build_refusal": {"result": "First guarded CLI build refused by another Canix evaluation lease; no realization or lease override", "report_sha256": "92e7e51d9d619e0a8e78a4010c6c5808d1dcd0da304b386bae1c1b16be8efc9c", "log_sha256": "3764626d090c44a1ef4fcbe678b50591b353f5b9c34865ed3c98a5d95351df37"}
   },
-  "packaged_verification": "pending matching lightweight CLI/MCP and affected checks; no native factorization campaign requested",
+  "packaged_verification": "passed for exact lightweight CLI/MCP inspection, structured results and affected checks; not native factorization, independent owner or dependency-security clearance",
+  "packaged_source_revision": "96563f4800ce07ee00b8ba86df82b713f6e54f2f",
+  "source_archive_sha256": "d5789bff60c0ba828d29842995bb9db9009a03883f8f454b5e70ef795f2ab656",
+  "packages": {
+    "cli": {"executable": "/nix/store/ypjddczmsplvnd977zr3gmd9nhj7a3db-harbor-cad-0.1.0/bin/harbor-cad", "sha256": "183245647b49a1683b97395d576c67a58ce3e2fa3c9ea2242f887284d361c76b", "derivation": "/nix/store/fc06357pjdfql9hfy4hpdzsx6qwfash9-harbor-cad-0.1.0.drv", "report_sha256": "fbfcc4ff7d57b584b990addce20a0d7d269fb516c27367dec3d0c7a44d98650a", "build_log_sha256": "ed1184e50cb6dd2ac604a94b9f1fd2e021651367028122df639dbdca0d5f14f0"},
+    "mcp": {"executable": "/nix/store/qn41nvb7kgcqi97jaaxb12lfw4syzjad-harbor-cad-mcp/bin/harbor-cad-mcp", "sha256": "9d978485768ecb8f67e9d694584bd0a3a596324476ed9cd65eae1acc3b033060", "derivation": "/nix/store/rd5mbli4z92xmfhlgz5n49avr5h5c90i-harbor-cad-mcp.drv", "report_sha256": "5c7d2b4093a482c1a56e22504f8d1deb54d8b42fb3271ea450aca8b2bf191c10", "installed_server_sha256": "a31c196152728bcd6de3a83bede3305e9a10e8578627c7d8dccac88a5ee84747", "installed_server_matches_source": true},
+    "checks": {
+      "python": {"output": "/nix/store/bvlnyjz4yzijxliz6l8dx3j199370y0g-harbor-cad-python-tests", "derivation": "/nix/store/yz63l4946z9z4qxc9d83rz1d2ds4s109-harbor-cad-python-tests.drv", "report_sha256": "600429907b2cccb3e4cb0af9aaf36715d9a15b6f4418452f8faca3c18a506516", "build_log_sha256": "fb80ee04ac255dbc589bba7118354885144b26ce846363f510a03744bd3e7089"},
+      "clean_runtime": {"output": "/nix/store/r1x08vm7xrb626m3lm1lwrz4dv01flfv-harbor-cad-clean-runtime", "report_sha256": "f3abe1ea5ff1c94e7303b2fcfa9b2c6ee148bbd86d8ddd22ab45018837b37785"},
+      "policy": {"output": "/nix/store/vp8pg3wkvk455by1wnydixkv333dbgvg-harbor-cad-policy", "report_sha256": "53dafd6cfc3814ec886652f263336001693152bf0555fdcc65523b5153c3d211"}
+    },
+    "private_publication_verified": true,
+    "selection_sha256": "a3016282b31080de06aed1e1a07116251fc7d7adcbbda6bb24937d8b7111efbe",
+    "freshness": "Retained Canix logs show CLI, MCP and all three checks built, not only reused cached outputs; detailed nix log --offline queries were permission-rejected and were not worked around, so no additional per-test build-log counts are claimed",
+    "measurement_boundary": "Build-client service peak 140640256 bytes/no swap excludes Nix daemon builder trees"
+  },
+  "packaged_check": {
+    "root": "/data/scratch/tmp/opencode/hc-fac-20261020-1",
+    "verification_sha256": "91fbf7e545a845a5c75022fed0cb6556b07e2d9d8f49a8627778cc93336a6bd6",
+    "log_sha256": "b6a8496f63e1a5107d2d699a71583b08311530f58308a3b952de452fa2981ecf",
+    "checks_passed": 3,
+    "clean_service_environment": true,
+    "stdio_checkout_pythonpath": "cleared; existing in-process profile unit checks remain source checks",
+    "profiles": ["cad", "simulation", "results", "all"],
+    "scope": "Exact packaged CLI worker and stdio MCP: candidate/doctor/CPU-plan parity, no GPU factorization fallback, all-tool input/output schemas, allowed/denied framework matrix, structured backend/log arrays, pagination/empty pages and shared Rust bound refusals; one analytical CI job, no native solver",
+    "unit": "harbor-cad-factorization-packaged-mcp-1.service",
+    "invocation": "9d551f1b49dc4509a133c64c02da8528",
+    "memory_peak_bytes": 183193600,
+    "memory_max_bytes": 2147483648,
+    "swap_peak_bytes": 0,
+    "final_state": "inactive/dead, success, exit0, empty ControlGroup; build-client service also terminal/empty",
+    "terminal_states_sha256": "d942fdca34998fef5d4b52c28409d97842a5cf3f87db1e04a1afc05188cb678d"
+  },
+  "inherited_cache_security_observation": {
+    "status": "external_canix_security_review_required; functional checks are not supply-chain clearance",
+    "observed_at": "2026-10-20T01:49:52+02:00",
+    "endpoint": "https://attic.xuyh0120.win/lantian",
+    "observed_response": "CLI narinfo request returned HTTP503 with server-compromise notice; subsequent selected outputs timed out or failed connection and were built locally",
+    "primary_source": "https://github.com/xddxdd/nix-cachyos-kernel/issues/110#issuecomment-6189203183",
+    "primary_statement": "Repository owner xddxdd reported on 2026-10-15 that servers were compromised and shut down pending investigation/rebuild; they did not believe built kernels were tampered with, which is not an independent integrity finding",
+    "comments_snapshot_sha256": "06a35404a779aa9bf3cf899c66f52421987a5b82f34e217df123e42b6ef6207b",
+    "snapshot": "cache-incident-comments.json under receipts_root",
+    "policy_owner_source": "Canix root/modules/config/nix.nix:108/118 declares this x86_64 substituter and signing trust",
+    "boundary": "No evidence here proves Harbor-CAD or this host compromised; existing dependency-closure origins were not independently audited. No host/cache/trust/driver/upstream configuration changed, no key revoked and no further build/native qualification authorized by this receipt"
+  },
   "native_factorization_executed": false,
   "independent_owner_admission": "none; Atlas coordinator continuation, not a Nomad owner or independent product-closure receipt",
   "receipts_root": "/data/scratch/tmp/opencode/harbor-cad-nomad-20261019/fem-factorization-1"

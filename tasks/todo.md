@@ -55,6 +55,7 @@ only affected exact-source packaging/evidence, not previously qualified runtimes
 manifest and generated CI. Domain package changes flow through this owner.
 - [ ] Preserve isolated Python/native ABIs, immutable pins and narrow unfree policy.
 - [ ] Expose meaningful package/framework readiness through the shared MCP worker.
+- [ ] Obtain the external Canix owner's inherited-cache trust/provenance disposition before further build/native qualification; the owner-confirmed `lantian` server incident is recorded in the factorization-readiness evidence, not repaired here.
 - [x] Exact-plan package/source/policy preflight through all four MCP profiles; matching lightweight CLI/MCP privately published. Broader framework-specific capability inventory remains separate.
 - [x] Expose compiled lock/source provenance through existing `doctor` on CLI/all MCP profiles, without native imports/evaluation or readiness promotion (`1eaaf52`; 222 Rust / 226 Python source and exact Nix package/check gates; clean all-profile inspection passed).
 - [x] Verify `python scripts/check_cpu.py`; realize current CLI/MCP/cooling worker production outputs through guarded Canix (`303bff2`, source gate 3 and `c8-34`; no broader package qualification inferred).
@@ -134,13 +135,15 @@ ownership of `adapters/fem_reference.py`; mechanical tests and MCP module.
 - [ ] Verify `python/tests/test_fem*.py`, `test_contact_reference.py`, `test_thermal_contact.py`; own native FEM/contact evidence.
 **Consumes:** Role 9 temperature-transfer contract and role 3 packages when integrating.
 
-Coordinator continuation, not a Nomad owner turn: source-only candidate inspection
+Coordinator continuation, not a Nomad owner turn: read-only candidate inspection
 now exposes pinned modified PaStiX/PaRSEC compatibility/build/ILP64 blockers and
 unknown resource estimates through `doctor`/`backend_list`. CPU planning parity
-and strict no-fallback checks pass in the 228-case Python source gate. Matching
-packaged verification remains pending; source hashes and terminal empty service
-trees are reconciled after intermittent harness launch refusals. This does not complete the
-factorization/resource or independent domain qualification assignments above.
+and strict no-fallback checks pass in the 228-case Python source gate. Exact
+lightweight packages, affected Nix checks and clean packaged stdio conformance
+pass at `96563f4`; source hashes and terminal empty trees are reconciled in the
+[scoped evidence](../docs/evidence/fem-factorization-readiness-20261020.json).
+Inherited-cache dependency-security review remains external. This does not
+complete factorization/resource or independent domain qualification above.
 
 ## 11 — Atmospheric radiation — Nomad
 

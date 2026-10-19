@@ -1,6 +1,8 @@
 # Qualification record
 
-Recorded on 2026-10-05. The implementation remains pre-qualification.
+Record begun on 2026-10-05. Historical sections retain their original scope;
+see the [acceptance ledger](acceptance-ledger.md) for subsequent A0–F evidence.
+Full-product qualification remains incomplete.
 Source availability, package builds, execution, numerical checks, convergence
 and physical validation are independent gates.
 
@@ -375,7 +377,7 @@ generator retains event-scoped concurrency groups, so push/PR runs are not
 coalesced, and it does not expose a total job timeout; these generator gaps
 remain recorded upstream requirements. Generation defaults are preserved.
 
-## Current gate status
+## Gate snapshot — 2026-10-05
 
 The packaged authority-bound shared-admission verifier passed on 2026-10-05.
 Separate private state roots shared RAM limits, including while the first worker
