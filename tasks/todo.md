@@ -43,6 +43,7 @@ framework-to-tool matrix, catching campaign/profile mismatches before native wor
 - [ ] Compose domain modules without native imports or a second worker/scheduler.
 - [ ] Test real SDK discovery, schema/error parity and allowed/denied profiles.
 - [x] Check all static shared campaign tool/profile pairs against real SDK discovery, including finite profile loops (25 sites / 26 pairs; Atlas source checks, not a Nomad dispatch).
+- [x] Reconcile all 61 registered tools / 139 allowed profile pairs against the executable 28-framework matrix; real-client discovery, schema, denied profiles and ten typed worker-refusal probes pass without native programs on `PATH`. PaStiX4CalculiX/PaRSEC remain missing and three optional integrations deferred; this is not native or full framework qualification.
 - [x] Verify `python -m pytest -q python/tests/test_protocol.py python/tests/test_native_campaign_api.py python/tests/test_retained_cooling_protocol.py` using the locked check environment (included in the 225-case Python suite).
 **Consumes:** Domain-owned MCP tool contracts; current registrations suffice initially.
 

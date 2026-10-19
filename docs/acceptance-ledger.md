@@ -531,6 +531,22 @@ numerical/physical qualification remain separate gates. [Exact preflight evidenc
 preserves the interrupted realization and two private test-driver failures; all
 owned gate/build/check units finish terminal with empty control groups.
 
+### Complete MCP framework/tool/profile inventory — 2026-10-20
+
+The [executable matrix](../python/tests/framework_mcp_matrix.json) now maps all
+61 registered tools to 28 framework/runtime entries and 139 allowed profile
+pairs. A real-client check validates every discovered input schema, all 105
+denied registered-tool/profile pairs, 20 additional forbidden calls and 23 typed
+Rust refusals across ten planning/preflight tools. Inspection checks read actual
+`doctor` fields; native programs are absent from the worker/MCP `PATH` and no jobs
+or artifacts are created. This is interface conformance, not native execution or
+scientific acceptance. PaStiX4CalculiX/PaRSEC interfaces remain missing;
+Catalyst/Conduit/VTKHDF remain optional and deferred. The full 227-case Python
+suite, Ruff and treefmt checks pass; the documented-checkout-path setup failure
+is preserved. [Evidence](evidence/framework-mcp-matrix-20261020.json) records
+source identities and terminal empty service control groups. Rust/runtime/locks
+are unchanged, so no rebuild or repeated native campaign was needed.
+
 ### Compiled build provenance through doctor — 2026-10-20
 
 The existing shared `doctor` now exposes a strict versioned `BuildProvenance`

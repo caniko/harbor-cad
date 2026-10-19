@@ -68,6 +68,13 @@ MCP process's environment, realized native packages or qualified execution.
 Use `execution_preflight` for a specific effective worker/plan and `qualify`
 for a registered job's independent evidence.
 
+The [executable framework matrix](python/tests/framework_mcp_matrix.json) maps
+all 61 tools and their exact profiles to 28 framework/runtime entries. Its
+real-client check validates discovery/schemas, rejects denied tools and exercises
+ten typed worker refusals with native programs absent from `PATH`. This is
+interface coverage, not native qualification: PaStiX4CalculiX/PaRSEC interfaces
+are still missing; Catalyst/Conduit/VTKHDF remain optional and deferred.
+
 ## Verification
 
 ```sh

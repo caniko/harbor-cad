@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "base_revision": "abecfec8ba51ace1459c605893dd4ea568cf3fe0",
+  "scope": "Source-only interface conformance through the real SDK and shared Rust worker; no new runtime API, native solver execution, package realization or scientific qualification",
+  "matrix": "python/tests/framework_mcp_matrix.json",
+  "matrix_sha256": "4f46273c5fa4935a4c5b57984e5fb52c3c37c367fb922ef755c60be3f4e551d9",
+  "test": "python/tests/test_framework_mcp_matrix.py",
+  "test_sha256": "1d4058b36eb96be3c5feefc26ef886dda2fee55473f0d097b447cd3783bee5bb",
+  "framework_entries": 28,
+  "registered_tools": 61,
+  "allowed_tool_profile_pairs": 139,
+  "denied_registered_tool_profile_pairs": 105,
+  "additional_forbidden_calls": 20,
+  "typed_worker_refusal_tools": 10,
+  "typed_worker_refusal_calls": 23,
+  "checks": ["exact real discovery equals declared profiles", "every registered tool has a framework entry", "every discovered input schema is valid", "all denied and arbitrary shell/eval/native/resume calls reject as unknown tools", "inspection paths exist in actual doctor data", "domain-malformed calls satisfy MCP input schemas but return Rust invalid_input", "worker and MCP have no native programs on PATH", "zero jobs/events/artifacts/executions/authorizations/studies created"],
+  "missing_interfaces": ["PaStiX4CalculiX", "PaRSEC"],
+  "optional_deferred": ["Catalyst", "Conduit", "VTKHDF"],
+  "focused_test": {"passed": 1, "log_sha256": "c4088e7e4182f05fc693abc61e8e0f617147b74aac54ba4b9cb19b3ff208f91d"},
+  "full_python_gate": {
+    "command": "PYTHONPATH=$PWD/python HARBOR_CAD_TEST_BINARY=<exact matching packaged CLI> <locked test environment>/bin/python -B -m pytest -q python/tests; approved direnv supplies the existing C++ guard compiler",
+    "passed": 227,
+    "ruff_lint_and_treefmt_check": "passed",
+    "log_sha256": "f9a88751c5611ef44d6b6f94f3da5adeba4a845fb489e75830d3a5d4e013c5b4",
+    "unit": "harbor-cad-framework-matrix-python-2.service",
+    "invocation": "6ea44609cc164ca0babfb18f9c41d765",
+    "memory_peak_bytes": 422191104,
+    "memory_max_bytes": 2147483648,
+    "swap_peak_bytes": 0,
+    "final_state": "inactive/dead with empty ControlGroup; earlier red/focused/failed-gate services also terminal with empty ControlGroup"
+  },
+  "preserved_failures": [
+    {"attempt": "test-first red", "reason": "Missing executable framework matrix", "log_sha256": "767cee04bb0ff8d7a7aefc49509bda1dd53fe495cffe96ba17d5b69e90506483"},
+    {"attempt": "full-python-1", "result": "1 failed, 226 passed", "reason": "Invocation omitted documented checkout PYTHONPATH, so one pre-existing test launched the test environment's historical MCP copy without execution_preflight; fixed invocation only, no assertions changed", "log_sha256": "3fbe9ee5084535bf75b0e14dc85ecd0709b9b4cd69f5ae6baad0a820a8c9f892"}
+  ],
+  "rust_mcp_runtime_locks_profiles_adapters": "unchanged from 1eaaf525cef362a64245f2443f52c4c7ade425bb; verified with git diff --exit-code",
+  "matching_cli": "/nix/store/ja657nfq0r09h15rk6x6yl61k8wlrf89-harbor-cad-0.1.0/bin/harbor-cad",
+  "native_execution": false,
+  "owner_admission": "none; Atlas coordinator source checks, not Nomad owner dispatch or independent product closure",
+  "receipts_root": "/data/scratch/tmp/opencode/harbor-cad-nomad-20261019/framework-matrix-1"
+}
