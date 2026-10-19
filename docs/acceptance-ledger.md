@@ -512,6 +512,21 @@ records exact source, packages, originals, gates and resources. A redundant
 reference-runtime rebuild was refused by Canix's memory safety gate; the already
 realized reference matches its original checksum, without a fresh-execution claim.
 
+### Portable Python source-check environment — 2026-10-19
+
+The existing locked Nix Python check environment is now a reusable production
+output, `python-test-environment`. A cold checkout exposed three tests assuming
+checkout-local `.venv` launchers (`3 failed, 220 passed`). They now use the active
+locked interpreter and its MCP sibling without changing assertions. The cold
+Atlas suite passes all 223 Python tests; Ruff lint/format pass. Nomad consumes
+the checksum-verified prebuilt closure and source-compatible CLI, with no remote
+compilation or interpreter installer. Its five scoped protocol files pass all
+15 checks, including real SDK stdio clients. The bounded test service ends
+inactive/dead with an empty control group; peak RAM is 169.2 MiB/no swap.
+[Portable-check evidence](evidence/portable-python-checks-20261019.json) binds
+source, lockfiles, package/transfer bytes, exchanged receipts and the preserved
+failure. This qualifies source checking, not solver execution or agent admission.
+
 ### Receipt and packaging continuation — 2026-10-08
 
 Commit `413fe00` separates numerical-only atmospheric receipt reconstruction from

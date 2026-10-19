@@ -18,6 +18,7 @@ No pushes, host changes, upstream changes or weakened scientific gates.
 - [x] Check current baseline and preserve the newer registry-Fleetix change.
 - [ ] Obtain qualified native campaign/transport frontend through its external owner.
 - [x] Transfer/resolve Harbor-CAD through native workspace handling; verify bytes (`303bff2`, canonical Nomad adoption; staged source retained).
+- [x] Supply exact locked Python source-check environment and matching CLI; verify on Nomad without remote compilation (`06ce6ec`, 15 scoped real MCP/protocol checks passed; Atlas cold suite 223 passed).
 - [ ] Observe existing sessions, effective policies and physical context on both hosts.
 - [ ] Declare resource reserves/capacity from fresh observations before admission.
 - [ ] Register exact 16 owners/worktrees once and persist native requests before delivery.

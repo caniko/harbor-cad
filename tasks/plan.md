@@ -33,8 +33,8 @@ the consuming integration task, not the owner's whole assignment.
 | Handoff profile | `canix host profile status atlas-adjacent nomad` reports `ON` via `dnomad` | Preserve the existing profile; no activation requested |
 | Nomad runtime | `opencode v2.0.22+047c74e`; existing service active on loopback port 4096; host-local credentials authenticated read-only API discovery | Native transport plus complete session-policy/context observation remain required; no worker admitted |
 | Campaign frontend | Installed `canix fleet --help` on both hosts has no `campaign`; Atlas `host opencode` is also absent | Qualified Canix producer/consumer exposes `import`, `plan`, `status`, `run`, `deliver`, `checkpoint`, `stop` and native OpenCode transport |
-| Project transfer | Complete `303bff2` bundle verified and adopted through native workspace preview/apply at `/data/can/canix/projects/owned/harbor-cad`; exact clean HEAD/origin verified, staged source retained | Complete for that source; do not transfer/adopt again or infer worker admission |
-| Nomad test environment | Login PATH has no `python`, `python3` or `uv` | Exact approved packaged test environment supplied; no ad-hoc installer |
+| Project transfer | Complete `303bff2` bundle verified and adopted through native workspace preview/apply at `/data/can/canix/projects/owned/harbor-cad`; verified incremental bundle fast-forwards cleanly to `06ce6ec` | Complete for that source; do not transfer/adopt again or infer worker admission |
+| Nomad test environment | Exact prebuilt locked `python-test-environment` and source-compatible CLI transferred/verified; 15 real MCP/protocol checks pass without `.venv`, installers or remote compilation | Complete scoped source-check environment; native solver and agent admission remain separate |
 | Capacity | Nomad OpenCode service has an 8 GiB hard ceiling; observed usage about 1.8 GiB | Fresh backend/cgroup and existing-session observations, explicit aggregate admission policy and diagnostic reserve |
 
 These are observations, not dispatch receipts. The 13 roles are **not** a grant
@@ -49,6 +49,13 @@ Atlas continuation completed exact retained-cooling worker campaign `c8-34` at
 records CLI/MCP/VTK/lifecycle gates and post-server-restart release checks.
 This is coordinator work while dispatch is blocked, not a Nomad owner/session
 receipt. All 16 session identities remain unassigned.
+
+[Portable source-check evidence](../docs/evidence/portable-python-checks-20261019.json)
+records the cold Atlas suite (223 passed) and scoped Nomad protocol checks (15
+passed), including the preserved three-test portability failure. Read-only Nomad
+enumeration covers all 304 sessions, with no Harbor-CAD candidate or active session
+at that observation. Atlas enumeration hit its 4000-session bound; completeness,
+effective policies and physical context remain unknown, not empty or zero.
 
 ## Ownership and integration
 
