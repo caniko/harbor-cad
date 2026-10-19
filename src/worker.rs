@@ -1219,6 +1219,7 @@ pub fn doctor() -> Result<serde_json::Value> {
     Ok(
         serde_json::json!({"schema_version":1,"devices":devices::inventory()?,"fleetix_revision":FLEETIX_REV,
         "fleetix_contract_digest":fleetix_digest(),"backends":backends(),
+        "build_provenance":crate::provenance::inspect()?,
         "hardware_qualification":"unqualified: inventory is not execution evidence",
         "historical_evidence_query":"qualify --job JOB_ID through the owning worker; source/runtime/device scope remains immutable",
         "driver_boundary":"read-only; no driver installation or host activation",

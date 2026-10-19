@@ -59,6 +59,15 @@ these shared checks. Input acquisition/retention and available storage remain
 unchecked. A successful preflight is not a live capacity lease, sandbox test or
 numerical/physical qualification; submission and launch recheck independently.
 
+`doctor` (CLI and every MCP profile) includes versioned `build_provenance`:
+compiled `flake.lock`/`Cargo.lock`/`uv.lock` hashes, direct locked source revisions
+and NAR hashes (including Nixpkgs, Harbor-Rs and Harbor-Py), the Fleetix contract
+digest and linked SQLite version. It never reads the caller's checkout or runs
+Nix. These identify the reporting Rust executable's dependency locks, not the
+MCP process's environment, realized native packages or qualified execution.
+Use `execution_preflight` for a specific effective worker/plan and `qualify`
+for a registered job's independent evidence.
+
 ## Verification
 
 ```sh

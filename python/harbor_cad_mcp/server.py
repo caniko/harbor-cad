@@ -29,7 +29,7 @@ def build_server(profile: str) -> MCPServer:
 
     @server.tool()
     async def doctor() -> dict[str, Any]:
-        """Inspect read-only inventory and independent qualification states."""
+        """Inspect read-only inventory, compiled dependency locks/source pins and independent qualification states; no Nix evaluation or native imports."""
         return await request("doctor")
 
     @server.tool()

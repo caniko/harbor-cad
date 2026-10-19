@@ -531,6 +531,19 @@ numerical/physical qualification remain separate gates. [Exact preflight evidenc
 preserves the interrupted realization and two private test-driver failures; all
 owned gate/build/check units finish terminal with empty control groups.
 
+### Compiled build provenance through doctor — 2026-10-20
+
+The existing shared `doctor` now exposes a strict versioned `BuildProvenance`
+schema: compiled flake/Cargo/uv lock hashes, direct root source revisions/NAR
+hashes, the existing Fleetix contract digest and linked SQLite version. CLI and
+all four real MCP profiles agree; changed caller-checkout locks cannot influence
+the report. It invokes no evaluator or native import and explicitly leaves
+qualification unassessed. The full source gate passes 222 Rust and 226 Python
+tests with strict Clippy, locked build and formatting/lint. Two implementation
+failures and test-first red remain preserved. [Source evidence](evidence/build-provenance-20261020.json)
+does not yet establish the affected Nix outputs' clean-runtime qualification or
+complete framework-specific runtime readiness.
+
 ### Shared campaign MCP profile conformance — 2026-10-19
 
 The existing real-SDK discovery guard now checks all 25 static shared campaign

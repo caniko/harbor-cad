@@ -42,6 +42,7 @@ pub mod materials;
 mod measurements;
 pub mod moisture_results;
 pub mod presentation;
+pub mod provenance;
 pub mod qualification;
 pub mod radiation;
 pub mod recipes;

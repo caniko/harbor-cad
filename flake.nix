@@ -97,6 +97,8 @@
       src = ./.;
       filter = path: type:
         craneLib.filterCargoSources path type
+        || pkgs.lib.hasSuffix "/flake.lock" path
+        || pkgs.lib.hasSuffix "/uv.lock" path
         || pkgs.lib.hasInfix "/profiles/" path
         || pkgs.lib.hasSuffix "/examples/thermal-contact.json" path
         || pkgs.lib.hasSuffix "/examples/freezing-reference.json" path
@@ -247,7 +249,7 @@
         env -i HOME=$PWD/home ${mcp}/bin/harbor-cad-mcp --help > mcp.txt
         mkdir $out; cp doctor.json schemas.json mcp.txt $out/
       '';
-      python = pkgs.runCommand "harbor-cad-python-tests" {} ''
+      python = pkgs.runCommand "harbor-cad-python-tests" {nativeBuildInputs = [pkgs.stdenv.cc];} ''
         export HOME=$TMPDIR
         export HARBOR_CAD_TEST_BINARY=${cli}/bin/harbor-cad
         cp -r ${self}/python ./python
@@ -255,6 +257,9 @@
         cp -r ${self}/adapters ./adapters
         cp -r ${self}/scripts ./scripts
         cp -r ${self}/examples ./examples
+        cp ${./flake.lock} flake.lock
+        cp ${./Cargo.lock} Cargo.lock
+        cp ${./uv.lock} uv.lock
         ${testEnv}/bin/python -m pytest -q python/tests
         mkdir $out
       '';

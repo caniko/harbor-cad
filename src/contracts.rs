@@ -2522,6 +2522,8 @@ pub fn schemas() -> serde_json::Value {
         "ColdRestartSpec": schemars::schema_for!(crate::recipes::ColdRestartSpec),
         "ValidationReport": schemars::schema_for!(ValidationReport), "WorkerRequest": schemars::schema_for!(WorkerRequest)});
     // Keep individual expansions below the macro recursion bound as contracts grow.
+    schemas["BuildProvenance"] =
+        serde_json::json!(schemars::schema_for!(crate::provenance::BuildProvenance));
     schemas["StudyRequest"] = serde_json::json!(schemars::schema_for!(crate::study::StudyRequest));
     schemas["PreparedStudy"] =
         serde_json::json!(schemars::schema_for!(crate::study::PreparedStudy));

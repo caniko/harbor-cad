@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "base_revision": "610211d3986152c894f192440d52a191709f9f49",
+  "scope": "Additive compiled dependency-lock provenance through the existing shared doctor operation, CLI and all MCP profiles; not realized native-package, hardware or numerical qualification",
+  "contract": "BuildProvenance schema version 1",
+  "compiled_inputs": ["flake.lock", "Cargo.lock", "uv.lock"],
+  "fields": ["lockfile SHA-256 hashes", "direct root flake input revisions and NAR hashes", "existing Fleetix contract digest", "linked SQLite version", "crate version"],
+  "behavior": {
+    "caller_checkout_read": false,
+    "nix_evaluation": false,
+    "native_imports": false,
+    "executed": false,
+    "qualification": "not_assessed",
+    "new_dependencies": []
+  },
+  "source_gate": {
+    "command": "RUST_TEST_THREADS=2 python -B scripts/check_cpu.py",
+    "rust_tests_passed": 222,
+    "python_tests_passed": 226,
+    "strict_clippy_locked_build_format_lint": "passed",
+    "log_sha256": "0dd31c2bdf6219f88c0f9b95b1d53eb53657ecf2a7efd406168b3d955dc30197",
+    "service_invocation": "d2530982eedf41898754aaa8ea5f4dfb",
+    "memory_peak_bytes": 2735616000,
+    "memory_max_bytes": 3221225472,
+    "swap_peak_bytes": 0,
+    "final_state": "inactive/dead; all three source-gate units terminal with empty ControlGroup",
+    "checks": ["compiled hashes and input pins equal the source locks", "foreign working-directory locks cannot change the report", "unknown schema fields reject", "real stdio MCP doctor equals CLI provenance for cad/simulation/results/all", "read-only inspection creates no jobs or artifacts"]
+  },
+  "preserved_failures": [
+    {"attempt": "test-first red", "reason": "Previous exact CLI lacks build_provenance", "log_sha256": "b254aeb4f1bd282d3fa217eb2582f131aede08cb5e5df8de48adaf0764788661"},
+    {"attempt": "source-gate-1", "reason": "Large existing json! schema expansion hit the recursion bound; use its existing separate schema-insertion pattern, without raising the bound", "log_sha256": "921b99001c1d4eb557d39fa68f8b5c2608a5f731bd36bd2ff53116992fee8881"},
+    {"attempt": "source-gate-2", "reason": "New report initializer omitted collected flake_inputs; corrected before the passing source gate", "log_sha256": "c8058366fdd5128eeaf6058e070170672dd4350709b8941931016b899bf1f8ee"}
+  ],
+  "nix_check_inputs": "Filtered Rust source retains both non-Cargo locks; isolated Python check receives all three locks and the compiler required by its existing C++ guard",
+  "packaged_qualification": "pending exact clean-runtime CLI/MCP and affected Nix checks",
+  "receipts_root": "/data/scratch/tmp/opencode/harbor-cad-nomad-20261019/build-provenance-1",
+  "native_solver_execution": false,
+  "physical_validation": "unqualified"
+}

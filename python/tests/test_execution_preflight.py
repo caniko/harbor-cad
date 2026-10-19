@@ -44,6 +44,9 @@ def test_execution_preflight_cli_and_all_real_mcp_profiles_do_not_submit(
         plan = json.loads(
             subprocess.check_output([binary, "case", "plan", "/dev/stdin"], input=case)
         )["plan"]
+        provenance = json.loads(subprocess.check_output([binary, "doctor"]))[
+            "build_provenance"
+        ]
 
         async def check():
             expected = None
@@ -56,6 +59,9 @@ def test_execution_preflight_cli_and_all_real_mcp_profiles_do_not_submit(
                 async with Client(parameters) as client:
                     tools = {tool.name for tool in (await client.list_tools()).tools}
                     assert "execution_preflight" in tools
+                    doctor = await client.call_tool("doctor", {})
+                    assert not doctor.is_error
+                    assert doctor.structured_content["build_provenance"] == provenance
                     result = await client.call_tool(
                         "execution_preflight", {"plan": plan}
                     )
