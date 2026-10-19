@@ -32,7 +32,47 @@
     {"attempt": "source-gate-2", "reason": "New report initializer omitted collected flake_inputs; corrected before the passing source gate", "log_sha256": "c8058366fdd5128eeaf6058e070170672dd4350709b8941931016b899bf1f8ee"}
   ],
   "nix_check_inputs": "Filtered Rust source retains both non-Cargo locks; isolated Python check receives all three locks and the compiler required by its existing C++ guard",
-  "packaged_qualification": "pending exact clean-runtime CLI/MCP and affected Nix checks",
+  "source_revision": "1eaaf525cef362a64245f2443f52c4c7ade425bb",
+  "source_archive_sha256": "803085dbb22c539cd9674010dd479c6664f1279f287c1ca0fbc9ad45a27ebc5c",
+  "packaged_qualification": "passed for exact lightweight CLI/MCP provenance and affected checks; no native solver/hardware qualification inferred",
+  "packages": {
+    "cli": "/nix/store/ja657nfq0r09h15rk6x6yl61k8wlrf89-harbor-cad-0.1.0/bin/harbor-cad",
+    "cli_sha256": "d1d05e0dc35c7c1a251e2d92afd046302aa7103372ffaf4a737b11efdf7d4dc6",
+    "cli_derivation": "/nix/store/pf0fw7g5vf94paxy4fpkfnsiszm85iqs-harbor-cad-0.1.0.drv",
+    "cli_report_sha256": "dc4b470761f6248be63cfcb4f3b35d1cf20fd1db32f15e3ae53889b1363a812c",
+    "cli_realization_log_sha256": "8060d9444abb88a89d8f3737452a643a2f311aad36245fb75ef743137adb99d3",
+    "cli_packaged_rust_tests_passed": 222,
+    "mcp": "/nix/store/pzwsj8d17x3ipa27p9bnqm05zv3yf4iq-harbor-cad-mcp/bin/harbor-cad-mcp",
+    "mcp_sha256": "e943ff9cc80d6535f485bdb9c82247fc69e360ff0804e11ecfa436d9a416b548",
+    "mcp_derivation": "/nix/store/rz72k8c60c0k9hx6v7azhix1nj3l13jb-harbor-cad-mcp.drv",
+    "mcp_report_sha256": "695cd054c3b087d52b4b69ba425d308c0666d49487e4c8dee84b01b55bbb2550",
+    "checks": {
+      "python": {"output": "/nix/store/fbkkgj3sa4yc6jm18l679jli72kkdspf-harbor-cad-python-tests", "report_sha256": "f7a76b6a29b541d7901f8391a102d331eb08a7bf42fdfd97dae57d0a17e9eca1", "realization_log_sha256": "26f55532a1bcfcc0ae5c56be7d22494f9d5abc5b474bf7505549abb8be783670", "tests_passed": 226},
+      "clean_runtime": {"output": "/nix/store/n0z6yqfla3z24jz0r55vvm7nxf4ky5q1-harbor-cad-clean-runtime", "report_sha256": "e44a1d2a5fbeba9470684f996a442d731f24a23826fac8eb2cbc36714b76c155"},
+      "policy": {"output": "/nix/store/0fsamhb7v1lashggh020miqdi7h6rz1b-harbor-cad-policy", "report_sha256": "8476529ae1d8405a1973c1879bfb885e5a0a2ce73b33076755f2e69dce09ff35"}
+    },
+    "private_publication_verified": true,
+    "execution_observation": "Canix build logs show exact CLI/Python derivations being built; retained realization logs verify test execution, not merely a cached check output",
+    "measurement_boundary": "Build-service memory covers the Canix client, not Nix daemon builder trees"
+  },
+  "packaged_check": {
+    "root": "/data/scratch/tmp/opencode/hc-prov-20261020-1",
+    "verification_sha256": "ba0d385ddd6c65e39eacde229842401a1f8c0647705e7c9e4bf010f55885c790",
+    "doctor_sha256": "d1325c194e03c086e6427e0a9c66891ffaf4e06c50d818769e44646171cb8853",
+    "log_sha256": "ace51a8f8038fe88e61eb8abde530575fea01c87b86ad574d8520c74c8aa700f",
+    "clean_environment": true,
+    "foreign_caller_locks_ignored": true,
+    "profiles_matching_cli": ["cad", "simulation", "results", "all"],
+    "denied_calls": ["job_submit in cad", "cad_submit in simulation", "job_submit in results", "arbitrary_nix_eval in all"],
+    "unknown_schema_field_rejected": true,
+    "created_job_event_artifact_execution_authorization_study_counts": 0,
+    "service_invocation": "95078a3b9b9546d4b07aa604652c0ee6",
+    "memory_peak_bytes": 109707264,
+    "memory_max_bytes": 2147483648,
+    "swap_peak_bytes": 0,
+    "final_state": "inactive/dead with empty ControlGroup; build-client service also terminal/empty"
+  },
+  "post_check_reconciliation_sha256": "faf83cfbafdc58d1ee73276e86d454928f8b8cbc2229e6b7ec95e0bb5fbbe49f",
   "receipts_root": "/data/scratch/tmp/opencode/harbor-cad-nomad-20261019/build-provenance-1",
   "native_solver_execution": false,
   "physical_validation": "unqualified"

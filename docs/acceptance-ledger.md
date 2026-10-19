@@ -540,9 +540,15 @@ all four real MCP profiles agree; changed caller-checkout locks cannot influence
 the report. It invokes no evaluator or native import and explicitly leaves
 qualification unassessed. The full source gate passes 222 Rust and 226 Python
 tests with strict Clippy, locked build and formatting/lint. Two implementation
-failures and test-first red remain preserved. [Source evidence](evidence/build-provenance-20261020.json)
-does not yet establish the affected Nix outputs' clean-runtime qualification or
-complete framework-specific runtime readiness.
+failures and test-first red remain preserved. Matching immutable CLI/MCP packages
+and the Python, clean-runtime and policy Nix checks then passed guarded builds
+and verified private publication. Retained build logs confirm fresh execution of
+222 Rust and 226 Python tests. Clean-environment CLI/all-profile MCP provenance
+matches despite false caller lockfiles; denied tools reject and no jobs or
+artifacts are created. The 104.6 MiB/no-swap check service ends inactive/dead with
+an empty control group. [Exact evidence](evidence/build-provenance-20261020.json)
+does not promote native solver/hardware qualification or complete framework-
+specific runtime readiness.
 
 ### Shared campaign MCP profile conformance — 2026-10-19
 

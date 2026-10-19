@@ -55,7 +55,7 @@ manifest and generated CI. Domain package changes flow through this owner.
 - [ ] Preserve isolated Python/native ABIs, immutable pins and narrow unfree policy.
 - [ ] Expose meaningful package/framework readiness through the shared MCP worker.
 - [x] Exact-plan package/source/policy preflight through all four MCP profiles; matching lightweight CLI/MCP privately published. Broader framework-specific capability inventory remains separate.
-- [x] Expose compiled lock/source provenance through existing `doctor` on CLI/all MCP profiles, without native imports/evaluation or readiness promotion (222 Rust / 226 Python source gate; exact Nix outputs pending).
+- [x] Expose compiled lock/source provenance through existing `doctor` on CLI/all MCP profiles, without native imports/evaluation or readiness promotion (`1eaaf52`; 222 Rust / 226 Python source and exact Nix package/check gates; clean all-profile inspection passed).
 - [x] Verify `python scripts/check_cpu.py`; realize current CLI/MCP/cooling worker production outputs through guarded Canix (`303bff2`, source gate 3 and `c8-34`; no broader package qualification inferred).
 **Consumes:** Domain package/ABI deltas; no initial dependency.
 
