@@ -3,6 +3,7 @@
 import json
 import os
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -81,7 +82,7 @@ def test_real_cad_spectral_cli_and_stdio_profiles_use_the_same_bounded_worker(
     binary = os.environ["HARBOR_CAD_TEST_BINARY"]
     campaign = object.__new__(WorkerCampaign)
     campaign.binary = binary
-    campaign.mcp = repo / ".venv/bin/harbor-cad-mcp"
+    campaign.mcp = Path(sys.executable).with_name("harbor-cad-mcp")
     campaign.endpoint = tmp_path / "state/worker.sock"
     campaign.environment = dict(os.environ)
     worker = subprocess.Popen(

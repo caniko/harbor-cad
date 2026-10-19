@@ -95,6 +95,7 @@ def test_shared_packaged_stdio_call_preserves_worker_payload_and_expected_refusa
     import json
     import os
     import subprocess
+    import sys
     import time
 
     import pytest
@@ -105,7 +106,7 @@ def test_shared_packaged_stdio_call_preserves_worker_payload_and_expected_refusa
 
     binary = os.environ["HARBOR_CAD_TEST_BINARY"]
     campaign = object.__new__(WorkerCampaign)
-    campaign.mcp = repo / ".venv/bin/harbor-cad-mcp"
+    campaign.mcp = Path(sys.executable).with_name("harbor-cad-mcp")
     campaign.endpoint = tmp_path / "state/worker.sock"
     campaign.environment = dict(os.environ)
     worker = subprocess.Popen(

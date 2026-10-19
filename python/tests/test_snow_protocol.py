@@ -5,6 +5,7 @@ import copy
 import json
 import os
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -148,7 +149,7 @@ def test_snow_prescription_schema_approval_and_typed_applicability_match_cli_and
 
         async def exercise():
             parameters = StdioServerParameters(
-                command=str(repo / ".venv/bin/python"),
+                command=sys.executable,
                 args=["-m", "harbor_cad_mcp.server", "--profile", "simulation"],
                 env=dict(os.environ),
             )
