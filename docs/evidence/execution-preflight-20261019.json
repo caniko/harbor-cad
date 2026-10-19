@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "source_revision": "8f77e2c46f5e1af110a4ec3776fd5873866795e4",
+  "source_archive_sha256": "08c196f22f1a1b8c1b2f101d2ccccf2d88745c84e5a598ad5c23861331b03635",
+  "scope": "Read-only pre-staging submission checks through the effective shared worker; not a live capacity lease, input-retention check, sandbox test or new native solver qualification",
+  "source_gate": {
+    "command": "RUST_TEST_THREADS=2 python -B scripts/check_cpu.py",
+    "rust_tests_passed": 222,
+    "python_tests_passed": 224,
+    "strict_clippy_locked_build_format_lint": "passed",
+    "log_sha256": "a691ef2a015fbc1d45c991f3b25c676f0b62b1749a118aa6253af43bdb9115ac",
+    "service_invocation": "cf61bdf218bf4b3ab56acba305b02919",
+    "memory_peak_bytes": 2472501248,
+    "memory_max_bytes": 3221225472,
+    "swap_peak_bytes": 0
+  },
+  "packages": {
+    "cli": "/nix/store/jqnm6ayhl8apyb4kr86czrsmbhgwlhq3-harbor-cad-0.1.0/bin/harbor-cad",
+    "cli_sha256": "3275c5496c8a94beff9d62be318d9479768e2b8b098a03b23c726d5e33cb4538",
+    "cli_derivation": "/nix/store/vq86sm8flfiwa7n7arlifkg014x6sh6l-harbor-cad-0.1.0.drv",
+    "cli_report_sha256": "dcc2bad8a872095b0fe4c48ef7d23932b0bf42a582d1d0806a8b7d0d203cdace",
+    "mcp": "/nix/store/zp2qybaa5qs40jizq5vy9q2k3dqqhcy0-harbor-cad-mcp/bin/harbor-cad-mcp",
+    "mcp_sha256": "f29e4ccecb68c2963bded7d55cbadeeb87b1abe8fea245216e806ebcfca438e6",
+    "mcp_derivation": "/nix/store/9m3vaavyy00lvikbkf9d46g19f97yssx-harbor-cad-mcp.drv",
+    "mcp_report_sha256": "0769cd5995dcf59c874338342c265d8b9980ab49bf8c3faa92cf2293f3503fbf",
+    "private_publication_verified": true,
+    "recovery": "Server restart interrupted the first CLI realization before its output existed; resume used the saved derivation, not another flake evaluation. The unfinished CLI/MCP builds used invocation-only substitute=false; host cache policy was not changed."
+  },
+  "packaged_check": {
+    "root": "/data/scratch/tmp/opencode/harbor-cad-authority-20261005/c8-35/preflight",
+    "verification_sha256": "d6b0a2c29d389dee83856fa604f4f4996bb6f82fdc359e9de44e84c3c9bb84fe",
+    "runtime": "/nix/store/2mrmy2lcpfrypbyhn72qxv62islrh0p5-harbor-cad-native-runtime.json",
+    "runtime_sha256": "00756e6164e1737fa03810ffa41b731963293b22169adaf3a70e737634bacbca",
+    "runtime_scope": "Existing unchanged cooling-only closure; preflight selects retained_cooling_closure, not the unrelated freezing adapter",
+    "source_job": "8fd6ea05-fae2-434b-94ea-b77fc01e6b91",
+    "source_csv_sha256": "a44100275a604b3bee23071d4e152f01f7f41d3231dfe3a275ea5c8ebe2857f1",
+    "clean_environment": true,
+    "profiles_matching_cli": ["cad", "simulation", "results", "all"],
+    "refusals": ["effective policy mismatch", "weakened original mass gate", "changed registered original (CLI and MCP)"],
+    "unchanged_job_event_artifact_profile_binding_authorization_study_counts": true,
+    "canonical_policy_unchanged": true,
+    "source_originals_unchanged": true,
+    "created_jobs": 0,
+    "resources_reserved": false,
+    "native_solver_execution": false,
+    "execution_approved": false,
+    "qualification": "not_assessed",
+    "service_invocation": "b8de1bab024541e2a5fd5d6dff361940",
+    "memory_peak_bytes": 109797376,
+    "memory_max_bytes": 2147483648,
+    "swap_peak_bytes": 0,
+    "final_state": "inactive/dead with empty ControlGroup; source-gate/build/check units all terminal with empty ControlGroup",
+    "log_sha256": "7fa801b9b5f446fc1e9872a7a60577d679ac9212e575c9dae92792b644ea7545"
+  },
+  "preserved_failures": [
+    {"attempt": "package-smoke-1", "reason": "Private check queried studies before the worker initialized that table in the historical source copy; no worker started", "log_sha256": "8a10a6c929884bc7ad1bb75d494e46007f2d9c82bd3c6f4798645f143ef8e4e5"},
+    {"attempt": "package-smoke-2", "reason": "CLI preflight and schema check succeeded; private check then incorrectly read executable instead of runner. Continuation reused the saved successful CLI response/plan without recopying or replanning", "log_sha256": "c6f3a92126767f8eb6bf8b5fc74a73ca458f9d2596cf7139220163ceb4e65e79"}
+  ],
+  "receipts_root": "/data/scratch/tmp/opencode/harbor-cad-nomad-20261019/execution-preflight-1",
+  "post_check_reconciliation_sha256": "2a9ca26d6d3f1c0988cae54232cb8c54a8bb07e687d714fe39a5e631bc01d409",
+  "physical_validation": "unqualified"
+}

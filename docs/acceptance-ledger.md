@@ -512,6 +512,25 @@ records exact source, packages, originals, gates and resources. A redundant
 reference-runtime rebuild was refused by Canix's memory safety gate; the already
 realized reference matches its original checksum, without a fresh-execution claim.
 
+### Read-only shared execution preflight — 2026-10-19
+
+`8f77e2c` adds `job preflight` and all-profile MCP `execution_preflight` by
+reusing submission's pre-staging source/package/device/policy checks. The report
+binds exact runner/runtime/closure identities and declared RAM/disk; it explicitly
+approves, reserves and executes nothing. Full source verification passes 222 Rust
+and 224 Python tests, strict Clippy, locked build and formatting/lint.
+
+The exact lightweight CLI/MCP packages are realized and privately published.
+Clean-runtime `c8-35/preflight` matches CLI to all four real MCP profiles on the
+unchanged cooling-only runtime and closed wetting source copy. Policy mismatch,
+weakened mass gates and source mutation reject. Counts of jobs/events/artifacts,
+profiles/bindings/authorizations/studies stay unchanged; source originals and the
+canonical policy stay unchanged, with zero reservations. Peak check RAM is
+104.7 MiB/no swap. Input retention, available capacity, sandbox execution and
+numerical/physical qualification remain separate gates. [Exact preflight evidence](evidence/execution-preflight-20261019.json)
+preserves the interrupted realization and two private test-driver failures; all
+owned gate/build/check units finish terminal with empty control groups.
+
 ### Portable Python source-check environment — 2026-10-19
 
 The existing locked Nix Python check environment is now a reusable production

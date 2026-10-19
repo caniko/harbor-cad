@@ -31,7 +31,8 @@ the current worker without changing historical approvals.
 shared runtime/resource/sandbox modules and `scripts/native_worker_campaign.py`.
 - [ ] Keep one dispatch/lifecycle implementation and explicit independent approvals.
 - [ ] Integrate domain contract deltas in small compatible batches; preserve idempotency.
-- [ ] Verify `cargo test --locked --jobs 2 --test worker --test contracts --test lifecycle`.
+- [x] Read-only CLI/MCP execution preflight reuses submission's pre-staging checks; no approval, retention, reservation or execution (`8f77e2c`, source gate and clean-runtime `c8-35/preflight`).
+- [x] Verify `cargo test --locked --jobs 2 --test worker --test contracts --test lifecycle` (included in the complete 222-Rust/224-Python source gate).
 **Consumes:** Each domain's narrow integration handoff; no initial dependency.
 
 ## 02 — MCP platform and conformance — Nomad
@@ -52,6 +53,7 @@ only affected exact-source packaging/evidence, not previously qualified runtimes
 manifest and generated CI. Domain package changes flow through this owner.
 - [ ] Preserve isolated Python/native ABIs, immutable pins and narrow unfree policy.
 - [ ] Expose meaningful package/framework readiness through the shared MCP worker.
+- [x] Exact-plan package/source/policy preflight through all four MCP profiles; matching lightweight CLI/MCP privately published. Broader framework-specific capability inventory remains separate.
 - [x] Verify `python scripts/check_cpu.py`; realize current CLI/MCP/cooling worker production outputs through guarded Canix (`303bff2`, source gate 3 and `c8-34`; no broader package qualification inferred).
 **Consumes:** Domain package/ABI deltas; no initial dependency.
 
