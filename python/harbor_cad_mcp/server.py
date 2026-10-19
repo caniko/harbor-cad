@@ -33,7 +33,7 @@ def build_server(profile: str) -> MCPServer:
         return await request("doctor")
 
     @server.tool()
-    async def backend_list() -> list:
+    async def backend_list() -> list[dict[str, Any]]:
         """List model/backend qualification; no native imports or GPU launch."""
         return await request("backend_list")
 
@@ -307,10 +307,10 @@ def build_server(profile: str) -> MCPServer:
             return await request("status", job_id=job_id)
 
         @server.tool()
-        async def job_logs(job_id: str, after: int = 0, limit: int = 20) -> list:
+        async def job_logs(
+            job_id: str, after: int = 0, limit: int = 20
+        ) -> list[dict[str, Any]]:
             """Read at most 100 bounded structured events using a durable cursor."""
-            if after < 0 or not 1 <= limit <= 100:
-                raise ValueError("bounded nonnegative cursor and 1..100 limit required")
             return await request("logs", job_id=job_id, after=after, limit=limit)
 
     if profile in {"results", "all"}:

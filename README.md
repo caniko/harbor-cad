@@ -48,6 +48,8 @@ HARBOR_CAD_SOCKET=/absolute/private/state/worker.sock \
 
 Profiles: `cad`, `simulation`, `results`, `all`. There is no arbitrary shell,
 Python evaluation, package installation or scientific-array response tool.
+`backend_list` and `job_logs` publish output schemas and return their bounded
+arrays as structured `{"result": [...]}` objects, alongside the SDK's text blocks.
 
 `job preflight PLAN.json` (MCP `execution_preflight`, all profiles) inspects a
 plan against the **effective worker** using submission's pre-staging source,
@@ -72,8 +74,9 @@ The [executable framework matrix](python/tests/framework_mcp_matrix.json) maps
 all 61 tools and their exact profiles to 28 framework/runtime entries. Its
 real-client check validates discovery/schemas, rejects denied tools and exercises
 ten typed worker refusals with native programs absent from `PATH`. This is
-interface coverage, not native qualification: PaStiX4CalculiX/PaRSEC interfaces
-are still missing; Catalyst/Conduit/VTKHDF remain optional and deferred.
+interface coverage, not native qualification. PaStiX4CalculiX/PaRSEC expose only
+[pinned candidate/build blockers](docs/fem-factorization-readiness.md), with no
+execution or resource estimate; Catalyst/Conduit/VTKHDF remain optional and deferred.
 
 ## Verification
 

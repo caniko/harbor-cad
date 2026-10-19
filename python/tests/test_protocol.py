@@ -462,6 +462,54 @@ def test_real_mcp_client_and_rust_worker(tmp_path, monkeypatch):
                     assert status["state"] != "failed", status
                     assert time.monotonic() < deadline
                     await asyncio.sleep(0.02)
+                cli_logs = json.loads(
+                    await asyncio.to_thread(
+                        subprocess.check_output,
+                        [binary(), "job", "logs", job["id"], "--limit", "100"],
+                        timeout=10,
+                    )
+                )["data"]
+                assert cli_logs
+                for profile in ("cad", "simulation", "results", "all"):
+                    profile_params = StdioServerParameters(
+                        command=os.sys.executable,
+                        args=["-m", "harbor_cad_mcp.server", "--profile", profile],
+                        env=dict(os.environ),
+                    )
+                    async with Client(profile_params) as reader:
+                        tools = {t.name: t for t in (await reader.list_tools()).tools}
+                        schema = tools["job_logs"].output_schema
+                        assert schema
+                        for after, limit, expected in (
+                            (0, 100, cli_logs),
+                            (0, 1, cli_logs[:1]),
+                            (cli_logs[0]["seq"], 1, cli_logs[1:2]),
+                            (cli_logs[-1]["seq"], 100, []),
+                        ):
+                            logs = await reader.call_tool(
+                                "job_logs",
+                                {"job_id": job["id"], "after": after, "limit": limit},
+                            )
+                            assert not logs.is_error
+                            Draft202012Validator(schema).validate(
+                                logs.structured_content
+                            )
+                            assert logs.structured_content == {"result": expected}
+                            assert [
+                                json.loads(item.text) for item in logs.content
+                            ] == expected
+                        for invalid in (
+                            {"limit": 0},
+                            {"limit": 101},
+                            {"after": -1},
+                            {"after": 1 << 63},
+                        ):
+                            refused = await reader.call_tool(
+                                "job_logs", {"job_id": job["id"], **invalid}
+                            )
+                            assert refused.is_error and "invalid_input:" in str(
+                                refused.content
+                            )
                 duplicate = (
                     await client.call_tool(
                         "job_submit",

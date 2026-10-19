@@ -78,8 +78,9 @@ def test_framework_matrix_matches_real_profiles_and_shared_worker(tmp_path):
             else:
                 assert row["refusal_probe"] in row["tools"]
                 assert row["refusal_probe"] in matrix["refusal_probes"]
-    assert frameworks["PaStiX4CalculiX"]["coverage"] == "missing"
-    assert frameworks["PaRSEC"]["coverage"] == "missing"
+    for name in ("PaStiX4CalculiX", "PaRSEC"):
+        assert frameworks[name]["coverage"] == "inspection"
+        assert frameworks[name]["backend_adapter"]
     for name in ("Catalyst", "Conduit", "VTKHDF"):
         assert frameworks[name]["coverage"] == "optional_deferred"
 
@@ -131,6 +132,8 @@ def test_framework_matrix_matches_real_profiles_and_shared_worker(tmp_path):
                     }
                     for tool in tools.values():
                         Draft202012Validator.check_schema(tool.input_schema)
+                        assert tool.output_schema, tool.name
+                        Draft202012Validator.check_schema(tool.output_schema)
                     for name in set(registered) - set(tools) | set(
                         matrix["forbidden_tools"]
                     ):
@@ -149,6 +152,16 @@ def test_framework_matrix_matches_real_profiles_and_shared_worker(tmp_path):
                             value = value[key]
                         if row.get("inspection"):
                             assert value
+                        if row.get("backend_adapter"):
+                            [backend] = [
+                                entry
+                                for entry in doctor["backends"]
+                                if entry["adapter"] == row["backend_adapter"]
+                            ]
+                            assert backend["availability"] == "inspection_only"
+                            assert backend["execution"] == "unsupported"
+                            assert backend["build"] == "not_packaged"
+                            assert backend["resource_estimate"] is None
                     for name, arguments in matrix["refusal_probes"].items():
                         if name in tools:
                             Draft202012Validator(tools[name].input_schema).validate(

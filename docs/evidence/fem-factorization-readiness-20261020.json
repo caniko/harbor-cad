@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "base_revision": "862af55214f63b58fcda296149500ca0850ce694",
+  "scope": "Read-only modified PaStiX/PaRSEC source-candidate inspection through existing shared backend_list/doctor; structured MCP backend/log arrays and shared Rust log refusals; no native factorization implementation or qualification",
+  "candidate_revisions": {
+    "pastix4calculix": "d6b493bc431ecf860b3578a2ee6a25f392eb44be",
+    "parsec_pastix_6_0_1": "b580d208094e6cb4106e41d5eeec84f304a090b8"
+  },
+  "source_findings": "docs/fem-factorization-readiness.md and docs/dependency-manifest.json retain upstream file hashes, required ILP64 stack, modified runtime, reproducibility blockers and best-effort CUDA boundary; these are inspected candidates, not selected runtime dependencies",
+  "candidate_status": {
+    "availability": "inspection_only",
+    "build": "not_packaged",
+    "execution": "unsupported",
+    "resource_estimate": null,
+    "runtime_numerical_physical_qualification": "unqualified",
+    "executed": false
+  },
+  "source_files_sha256": {
+    "src/worker.rs": "e1c56bf2c2c512e86964ff7fe6ac0cd1f8c859b9a5f76061d3a0461264bebd80",
+    "python/harbor_cad_mcp/server.py": "a31c196152728bcd6de3a83bede3305e9a10e8578627c7d8dccac88a5ee84747",
+    "python/tests/test_fem_protocol.py": "72a17c3b7565b2a7352c634dcf64fcc9416d42c3b53bcc7058d4529ee4eea6f9",
+    "python/tests/test_protocol.py": "c5f99020f243dae7666f32d30012d22cfb18b0e747fbdcd6c55693c8b784b764",
+    "python/tests/test_framework_mcp_matrix.py": "16d34a861d5bc828ce7c2c6a88de7fcc42610ff748d67f97d5b3d37420526fed",
+    "python/tests/framework_mcp_matrix.json": "55d68d98588d4b34f91d0047287ae83eaadf6086af07bec2a743488581984452"
+  },
+  "checks": ["CLI/backend_list/doctor candidate parity in cad/simulation/results/all", "explicit CPU FEM plan parity without submission", "CUDA/HIP/Vulkan and injected factorization requests refuse without CPU fallback", "all 61 MCP tools publish valid output schemas", "backend/log structured result arrays preserve existing text blocks", "all-profile log pagination, empty pages and strict Rust limit/negative/overflow-cursor refusals", "candidate inspection/planning creates no jobs/artifacts; log fixture reuses one existing analytical CI job"],
+  "source_gate": {
+    "command": "RUST_TEST_THREADS=2 python -B scripts/check_cpu.py in approved direnv",
+    "rust_tests_passed": 222,
+    "python_tests_passed": 228,
+    "strict_clippy_locked_build_format_lint": "passed",
+    "log_sha256": "8aa75b93c70d276ef3167d2fb8f131e6245d4daf5ea6eb4cfc9535da16a89dec",
+    "unit": "harbor-cad-fem-readiness-source-3.service",
+    "invocation": "25a8d40975ac4753a15f14cbd2bdc541",
+    "memory_peak_bytes": 1327120384,
+    "memory_max_bytes": 3221225472,
+    "swap_peak_bytes": 0,
+    "final_state": "inactive/dead, success, exit0, empty ControlGroup; all earlier source/list-test units terminal with empty ControlGroup"
+  },
+  "focused_gate": {"passed": 4, "log_sha256": "6675fbcc44a4097f57d825f3921cf512e076b0da4c90c060f32c13b070d8a8d4"},
+  "preserved_failures": [
+    {"attempt": "test-first red", "reason": "previous exact CLI lacks candidate descriptors", "log_sha256": "ed4f1caaac52d8edf913eef9d5d28b9ddc7119c08e82a6892b05a4f72a06f1ea"},
+    {"attempt": "source-gate-1", "reason": "Ruff ASYNC221 in new async test; repaired with existing asyncio.to_thread pattern, no suppression", "log_sha256": "ee1ab758f2846e0caef86f05435fbf094fb85c4ab63b94b1e02649ec428cdefd"},
+    {"attempt": "source-gate-2", "reason": "untyped MCP list exposes no structured_content; 222 Rust passed, 227 Python passed/1 failed", "log_sha256": "8a36a63ce3422c30fc7565708dfb957acf0009c19d5edda55f8af90927d0b1d7"},
+    {"attempt": "list-structured-red", "reason": "both existing untyped-list tools omit output schemas", "log_sha256": "59076d537e5dddb9f9900e4366d6d32af55907da562c9433c59aa9a85fc77ec7"},
+    {"attempt": "list-focused-1", "reason": "test mishandled CLI log envelope and attempted native planning under CI policy; corrected test envelope and isolated research planning profile, not worker policy", "log_sha256": "df2f1785822a1e065955c252b6e939becaf435eb24318666d4e056ae2835a898"},
+    {"attempt": "list-focused-2", "reason": "duplicated Python log-bounds guard hid expected error; deleted duplicate guard to reuse strict Rust validation, retaining all refusal assertions", "log_sha256": "ead7162e51d9616eb285f12f9f7514af0bd035fb8af39a8fd2a9ef5898fbbb1b"}
+  ],
+  "locks_native_dependencies_host_configuration": "unchanged",
+  "packaged_verification": "pending matching lightweight CLI/MCP and affected checks; no native factorization campaign requested",
+  "native_factorization_executed": false,
+  "independent_owner_admission": "none; Atlas coordinator continuation, not a Nomad owner or independent product-closure receipt",
+  "receipts_root": "/data/scratch/tmp/opencode/harbor-cad-nomad-20261019/fem-factorization-1"
+}

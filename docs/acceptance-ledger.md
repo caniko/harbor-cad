@@ -531,6 +531,34 @@ numerical/physical qualification remain separate gates. [Exact preflight evidenc
 preserves the interrupted realization and two private test-driver failures; all
 owned gate/build/check units finish terminal with empty control groups.
 
+### Factorization candidate inspection and structured MCP arrays — 2026-10-20
+
+The current source slice, based on `862af55`, adds read-only
+[modified PaStiX/PaRSEC candidate inspection](fem-factorization-readiness.md)
+through the existing CLI and all four MCP profiles. Both candidates remain
+not packaged, unsupported for execution and unqualified; resource estimates are
+`null`. Source inspection identifies the separate ILP64 closure, patched runtime
+and reproducibility blockers. No native dependency, CUDA implementation or CPU
+fallback was added. The real-client test confirms explicit CPU planning still
+matches CLI, while GPU selectors and injected factorizations refuse.
+
+The same test exposed bare-list MCP annotations without structured output.
+`backend_list` and `job_logs` now publish output schemas and structured
+`{"result": [...]}` arrays without changing their text blocks. Log limits/cursors
+use the existing Rust checks rather than a duplicated Python guard that hid
+expected errors. Tests cover all profiles, pagination, empty pages, invalid limits,
+negative/overflow cursors and every registered tool's output schema.
+
+Full source gate `harbor-cad-fem-readiness-source-3.service` passes 222 Rust and
+228 Python tests, strict Clippy, locked build, formatting and lint; the four
+focused checks also pass. Failed attempts remain under
+`/data/scratch/tmp/opencode/harbor-cad-nomad-20261019/fem-factorization-1/`.
+After intermittent process-governor launch refusals, final hashes and terminal
+empty service control groups are reconciled in the
+[source evidence](evidence/fem-factorization-readiness-20261020.json).
+Matching packaged checks remain pending. No guard was bypassed and no native
+factorization or independent owner qualification is claimed.
+
 ### Complete MCP framework/tool/profile inventory — 2026-10-20
 
 The [executable matrix](../python/tests/framework_mcp_matrix.json) now maps all

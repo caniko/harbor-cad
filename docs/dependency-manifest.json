@@ -123,6 +123,37 @@
     "numerical": "synthetic steady conduction and free expansion at resolutions 2/4/8; unchanged 1e-6 gates passed; docs/evidence/fem-cpu.json",
     "physical_validation": "unqualified"
   },
+  "fem_factorization_candidates": {
+    "review_date": "2026-10-20",
+    "status": "source candidates inspected only; neither selected, packaged nor integrated",
+    "pastix": {
+      "repository": "https://github.com/Dhondtguido/PaStiX4CalculiX",
+      "revision": "d6b493bc431ecf860b3578a2ee6a25f392eb44be",
+      "cmake_version": "6.0.1",
+      "cmake_sha256": "c893632f8025adf63714546ab9fcf4314f7698aa67f0c07bd6da063f91cf0621",
+      "readme_sha256": "a4855e0096ba258522a2b2b57330a72efaab2f98e8c8f98d9a311c6482be66d8",
+      "license": "CeCILL 2.0 according to pinned LICENSE; no candidate redistribution performed",
+      "license_sha256": "2dcf0966f7eaae3af05f3e640215ac537c76d938d50ad02ad9d4260f1ca4bda5",
+      "build_blockers": ["unconditional -march=native", "site-specific CUDA include paths", "separate compatible ILP64 BLAS/ordering/CalculiX closure not realized"]
+    },
+    "parsec": {
+      "repository": "https://bitbucket.org/mfaverge/parsec",
+      "tag": "pastix-6.0.1",
+      "revision": "b580d208094e6cb4106e41d5eeec84f304a090b8",
+      "cmake_version": "2.0.0",
+      "cmake_sha256": "b5a86658aa779949c57fcac80d0eebe5de1dd8662f1140c0d49686c39a872b06",
+      "tag_observation_sha256": "f31df4abc888fc945d87ceb01c0a1af760958b62474715ee904de2a0e19b7203",
+      "license": "Pinned License.txt has BSD-style three-clause redistribution terms with additional patent-assurance disclaimer; component notices remain separate",
+      "license_sha256": "a3f21695ec3dccaf25acde3a0e5899bfcb51b2243dcc9c321c95698b09babe17",
+      "build_blockers": ["exact modified-PaStiX/CalculiX compatibility unqualified", "development headers, home-configuration, MPI/thread and CUDA policy must be explicit"]
+    },
+    "calculix_install_instructions": {"url": "https://www.dhondt.de/ccx_2.23.README.INSTALL", "sha256": "c974f617cf8f57e3291c0531380a43f1134d48c5c641fb2d6d870ee6089e5835", "integer_abi": "eight-byte integer stack and separate Makefile_i8/-DPASTIX required"},
+    "gpu_priority": "candidate NVIDIA/CUDA path best-effort; no qualified Vulkan/HIP factorization inferred",
+    "resource_estimate": null,
+    "execution": "unsupported by this worker; explicit CPU SPOOLES is not a fallback",
+    "qualification": "unqualified",
+    "evidence": "docs/fem-factorization-readiness.md"
+  },
   "thermal_cpu_reference": {
     "review_date": "2026-10-06",
     "source_and_abi": "same immutable Gmsh 4.15.2/Python 3.13 and CalculiX 2.23 sources as static FEM; independent package with native NT/TS serialization-only patch",
