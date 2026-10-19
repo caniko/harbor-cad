@@ -26,7 +26,7 @@ the consuming integration task, not the owner's whole assignment.
 
 ## Admission prerequisites and current observations
 
-| Prerequisite | Observed on 2026-10-19 | Release condition |
+| Prerequisite | Observed on 2026-10-19/20 | Release condition |
 |---|---|---|
 | Atlas shell and source | Shell restored; checkout initially clean at the baseline | Recheck scoped diffs/HEAD before each integration |
 | Direct route | `canix host ssh ... dnomad -- hostname -s` returned `nomad`, as `can` on port 1337 | Reverify destination on each transport |
@@ -54,8 +54,23 @@ receipt. All 16 session identities remain unassigned.
 records the cold Atlas suite (223 passed) and scoped Nomad protocol checks (15
 passed), including the preserved three-test portability failure. Read-only Nomad
 enumeration covers all 304 sessions, with no Harbor-CAD candidate or active session
-at that observation. Atlas enumeration hit its 4000-session bound; completeness,
-effective policies and physical context remain unknown, not empty or zero.
+at that observation. Atlas continuation reused the first 40 historical pages and
+read 44 more, reaching the end cursor: 8,291 sessions at
+`2026-10-19T21:54:44.767064+00:00`. Only this coordinator and its old idle review
+child matched Harbor-CAD; five sessions were active. The retained summary is
+`/home/can/.local/state/harbor-cad-opencode-observation-2/summary.json`, SHA-256
+`1a57a34056eacc40490a5f5e44c0c169d2d08bc1dabb5d68460de35b7240b00a`.
+This completed historical enumeration is not a frozen current inventory, an
+effective owner-policy/context review or a capacity/admission grant.
+
+At `2026-10-19T22:17:52.332154+00:00` the coordinator's own canonical location and
+merged agent response were observed read-only. Its latest completed input/cache
+total exceeded 180k tokens, so native compaction was requested with persisted ID
+`msg_harborcad_compact_20261020_1`. The native context subsequently contains that
+compaction and four active messages; the latest completed input/cache total is
+94,922 tokens. The private post-compaction receipt SHA-256 is
+`a21d6cd1ff4d4c0968d983604113c14f6bb5e867b52990ad35aabc0b85b2fa14`.
+No framework owner has been registered, admitted or prompted by these checks.
 
 ## Ownership and integration
 
