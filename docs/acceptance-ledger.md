@@ -476,6 +476,20 @@ This repairs campaign preflight, not native execution. Fresh matching immutable
 source/package selections and the complete cooling worker lifecycle gate remain
 required; old captures, failed campaigns and coarse numerical refusals are unchanged.
 
+### Cooling-only runtime admission — 2026-10-19
+
+The exact `73f9a80` CLI/MCP packages and cooling-only runtime passed clean-runtime
+smoke and registry Fleetix 0.6.0/Nix contract-digest parity. The guarded `c8-33`
+worker campaign then rejected the first valid submission: common admission used
+the generic freezing adapter resolver instead of the existing plan-aware cooling
+resolver. No native cooling job started. That failure and its immutable source
+selection remain at `/data/scratch/tmp/opencode/harbor-cad-authority-20261005/c8-33`.
+Admission now shares the execution/binding resolver for both the executable and
+operation-only closure. Source gate 3 passes 220 Rust and 223 Python tests plus
+strict Clippy/build/format/lint; the existing exact worker campaign is the runtime
+regression gate and must pass with newly captured matching packages. No unrelated
+adapter was added to the isolated runtime and no scientific gate was changed.
+
 ### Receipt and packaging continuation — 2026-10-08
 
 Commit `413fe00` separates numerical-only atmospheric receipt reconstruction from

@@ -160,15 +160,12 @@ fn check_plan(plan: &ExecutionPlan, profile: &HostExecutionProfile) -> Result<()
                 Error::Unqualified("isolated native runtime not configured".into())
             })?;
             let native = NativeRuntime::load(Path::new(runtime))?;
-            native.executable(&stage.operation)?;
+            let executable = native.executable_for(&stage.operation, plan)?;
             if matches!(
                 stage.operation,
                 StageOperation::CadInspect | StageOperation::CadFixture
             ) {
-                crate::sandbox::importer_mounts(
-                    native.importer_closure()?,
-                    Path::new(native.executable(&stage.operation)?),
-                )?;
+                crate::sandbox::importer_mounts(native.importer_closure()?, Path::new(executable))?;
             }
             if matches!(stage.operation, StageOperation::Openlb) {
                 let backend = stage
@@ -195,8 +192,8 @@ fn check_plan(plan: &ExecutionPlan, profile: &HostExecutionProfile) -> Result<()
                     | StageOperation::FemImported
             ) {
                 crate::sandbox::importer_mounts(
-                    native.solver_closure(&stage.operation)?,
-                    Path::new(native.executable(&stage.operation)?),
+                    native.solver_closure_for(&stage.operation, plan)?,
+                    Path::new(executable),
                 )?;
             }
         }
