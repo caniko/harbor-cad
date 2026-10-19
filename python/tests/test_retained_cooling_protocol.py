@@ -1,7 +1,9 @@
 """Strict explicit thermal input and original-source refusal via the same worker."""
 
+import ast
 import asyncio
 import copy
+import inspect
 import json
 import os
 import subprocess
@@ -13,6 +15,47 @@ import pytest
 from jsonschema import Draft202012Validator, ValidationError
 from mcp import Client
 from mcp.client.stdio import StdioServerParameters
+
+
+def test_cooling_campaign_tools_exist_in_their_selected_mcp_profiles(monkeypatch):
+    repo = Path(__file__).parents[2]
+    monkeypatch.syspath_prepend(str(repo / "scripts"))
+    from native_worker_campaign import WorkerCampaign
+
+    default = inspect.signature(WorkerCampaign.mcp_call).parameters["profile"].default
+    calls = {}
+    tree = ast.parse((repo / "scripts/verify_retained_cooling_worker.py").read_text())
+    for node in ast.walk(tree):
+        if not (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "campaign"
+            and node.func.attr == "mcp_call"
+        ):
+            continue
+        profile = next((k.value for k in node.keywords if k.arg == "profile"), None)
+        profile = default if profile is None else ast.literal_eval(profile)
+        calls.setdefault(profile, []).append(
+            (node.lineno, ast.literal_eval(node.args[0]))
+        )
+    assert calls
+
+    async def exercise():
+        for profile, tools in calls.items():
+            parameters = StdioServerParameters(
+                command=sys.executable,
+                args=["-m", "harbor_cad_mcp.server", "--profile", profile],
+                env={**os.environ, "PYTHONPATH": str(repo / "python")},
+            )
+            async with Client(parameters) as client:
+                names = {tool.name for tool in (await client.list_tools()).tools}
+            for line, tool in tools:
+                assert tool in names, (
+                    f"cooling campaign:{line}: {tool} absent in {profile}"
+                )
+
+    asyncio.run(exercise())
 
 
 def test_cooling_schema_never_accepts_injected_source_fields_or_missing_thermal_state():

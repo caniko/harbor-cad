@@ -359,7 +359,7 @@ def main():
                 job["id"],
             )["data"]
             assert qualification == campaign.mcp_call(
-                "qualification_report", {"job_id": job["id"]}
+                "qualification_report", {"job_id": job["id"]}, profile="results"
             )
             assert (
                 qualification["capabilities"][0]["runtime_execution"] == "recorded"

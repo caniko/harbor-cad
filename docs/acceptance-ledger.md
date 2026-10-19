@@ -463,6 +463,19 @@ CSV bytes. Source gate 57 passes the complete Rust/Clippy/build/format/lint and
 222-case Python gate; its VTK topology/Float64/unit roundtrip regression passes.
 Exact native/shared-worker qualification of this updated runtime is pending.
 
+### Cooling campaign profile preflight — 2026-10-19
+
+The retained-cooling worker qualifier now calls `qualification_report` with the
+results profile instead of the shared helper's simulation default. A real SDK
+client first reproduced the missing-tool failure, then verified every static
+cooling campaign call against discovery in its selected profile. The full source
+gate passes 220 Rust tests, 223 Python tests, strict Clippy, locked build and
+format/lint checks; its log is retained at
+`/data/scratch/tmp/opencode/harbor-cad-nomad-20261019/source-gate-1.log`.
+This repairs campaign preflight, not native execution. Fresh matching immutable
+source/package selections and the complete cooling worker lifecycle gate remain
+required; old captures, failed campaigns and coarse numerical refusals are unchanged.
+
 ### Receipt and packaging continuation — 2026-10-08
 
 Commit `413fe00` separates numerical-only atmospheric receipt reconstruction from
