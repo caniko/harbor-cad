@@ -23,9 +23,7 @@ def test_results_correlate_reads_bounded_csv_under_input_root(tmp_path):
     (inputs / "unsorted.csv").write_text(
         "time,probe,value,unit\n10,tc1,20.0,degC\n0,tc1,20.5,degC\n"
     )
-    profile = json.loads(
-        (Path(__file__).parents[2] / "profiles/ci.json").read_text()
-    )
+    profile = json.loads((Path(__file__).parents[2] / "profiles/ci.json").read_text())
     profile["allowed_input_root"] = str(inputs)
     (tmp_path / "profile.json").write_text(json.dumps(profile))
     state = tmp_path / "state"
@@ -58,7 +56,14 @@ def test_results_correlate_reads_bounded_csv_under_input_root(tmp_path):
     schemas = json.loads(subprocess.check_output([binary, "schema"]))
     Draft202012Validator(schemas["CorrelationRequest"]).validate(request)
     worker = subprocess.Popen(
-        [binary, "worker", "--state", str(state), "--profile", str(tmp_path / "profile.json")],
+        [
+            binary,
+            "worker",
+            "--state",
+            str(state),
+            "--profile",
+            str(tmp_path / "profile.json"),
+        ],
         env=environment,
     )
     try:
