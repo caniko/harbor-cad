@@ -499,7 +499,9 @@ impl Store {
           CREATE TABLE IF NOT EXISTS job_profiles(job TEXT PRIMARY KEY, digest TEXT NOT NULL, profile TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS job_executions(job TEXT PRIMARY KEY, digest TEXT NOT NULL, binding TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS job_authorizations(job TEXT PRIMARY KEY, digest TEXT NOT NULL, authorization TEXT NOT NULL);
-          CREATE TABLE IF NOT EXISTS studies(id TEXT PRIMARY KEY, idem TEXT UNIQUE NOT NULL, intent TEXT NOT NULL);")?;
+          CREATE TABLE IF NOT EXISTS studies(id TEXT PRIMARY KEY, idem TEXT UNIQUE NOT NULL, intent TEXT NOT NULL);
+          CREATE TABLE IF NOT EXISTS designs(id TEXT PRIMARY KEY, idem TEXT UNIQUE NOT NULL, intent TEXT NOT NULL, state TEXT NOT NULL, error TEXT);
+          CREATE TABLE IF NOT EXISTS design_candidates(design TEXT NOT NULL, idx INTEGER NOT NULL, candidate TEXT NOT NULL, PRIMARY KEY(design,idx));")?;
         Ok(Self {
             connection,
             root: root.into(),

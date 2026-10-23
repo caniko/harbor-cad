@@ -100,6 +100,11 @@ enum Commands {
         #[command(subcommand)]
         command: Cost,
     },
+    /// Bounded approval-bound design loop over ordinary worker jobs.
+    Design {
+        #[command(subcommand)]
+        command: Design,
+    },
 }
 #[derive(Subcommand)]
 enum Materials {
@@ -399,6 +404,39 @@ enum Artifact {
         state: PathBuf,
         id: String,
         destination: PathBuf,
+    },
+}
+#[derive(Subcommand)]
+enum Design {
+    /// Print the CI-runnable analytical example envelope with a known optimum.
+    Init,
+    /// Validate an envelope and its strict template substitution; no worker.
+    Validate {
+        file: PathBuf,
+    },
+    /// Print the envelope approval digest; submission requires --approve.
+    Plan {
+        file: PathBuf,
+    },
+    /// Persist the approved design intent and submit its first candidate.
+    Submit {
+        file: PathBuf,
+        #[arg(long)]
+        approve: String,
+        #[arg(long)]
+        idempotency_key: String,
+    },
+    /// Evaluate an external candidate within the approved bounds and budget.
+    Propose {
+        id: String,
+        candidate: PathBuf,
+    },
+    Status {
+        id: String,
+    },
+    /// Report the winner, its child jobs and per-constraint evidence labels.
+    Export {
+        id: String,
     },
 }
 fn read<T: serde::de::DeserializeOwned>(path: &std::path::Path) -> Result<T> {
@@ -763,6 +801,34 @@ fn run(cli: Cli) -> Result<()> {
                 &read(&request)?,
             )?);
         }
+        Commands::Design { command } => match command {
+            Design::Init => return print(&harbor_cad::design::example()?),
+            Design::Validate { file } => {
+                return print(&harbor_cad::design::prepare(&read(&file)?, None)?);
+            }
+            Design::Plan { file } => {
+                let envelope: harbor_cad::design::DesignEnvelope = read(&file)?;
+                let prepared = harbor_cad::design::prepare(&envelope, None)?;
+                return print(
+                    &serde_json::json!({"approval_digest":prepared.approval_digest,"plan":envelope,"prepared":prepared}),
+                );
+            }
+            Design::Submit {
+                file,
+                approve,
+                idempotency_key,
+            } => Operation::DesignSubmit {
+                envelope: Box::new(read(&file)?),
+                approved_digest: approve,
+                idempotency_key,
+            },
+            Design::Propose { id, candidate } => Operation::DesignPropose {
+                design_id: id,
+                candidate: Box::new(read(&candidate)?),
+            },
+            Design::Status { id } => Operation::DesignStatus { design_id: id },
+            Design::Export { id } => Operation::DesignExport { design_id: id },
+        },
     };
     let socket = cli
         .socket

@@ -2483,6 +2483,24 @@ pub enum Operation {
     CostEstimate {
         request: Box<crate::manufacturing::CostRequest>,
     },
+    DesignPlan {
+        envelope: Box<crate::design::DesignEnvelope>,
+    },
+    DesignSubmit {
+        envelope: Box<crate::design::DesignEnvelope>,
+        approved_digest: String,
+        idempotency_key: String,
+    },
+    DesignPropose {
+        design_id: String,
+        candidate: Box<crate::design::ExternalCandidate>,
+    },
+    DesignStatus {
+        design_id: String,
+    },
+    DesignExport {
+        design_id: String,
+    },
 }
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -2660,5 +2678,11 @@ pub fn schemas() -> serde_json::Value {
         serde_json::json!(schemars::schema_for!(crate::manufacturing::CostRequest));
     schemas["CostReport"] =
         serde_json::json!(schemars::schema_for!(crate::manufacturing::CostReport));
+    schemas["DesignEnvelope"] =
+        serde_json::json!(schemars::schema_for!(crate::design::DesignEnvelope));
+    schemas["ExternalCandidate"] =
+        serde_json::json!(schemars::schema_for!(crate::design::ExternalCandidate));
+    schemas["DesignStatus"] = serde_json::json!(schemars::schema_for!(crate::design::DesignStatus));
+    schemas["DesignReport"] = serde_json::json!(schemars::schema_for!(crate::design::DesignReport));
     schemas
 }

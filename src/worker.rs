@@ -1052,6 +1052,49 @@ fn dispatch(
         Operation::CostEstimate { request } => Ok(serde_json::to_value(
             crate::manufacturing::evaluate(&crate::manufacturing::Library::builtin()?, &request)?,
         )?),
+        Operation::DesignPlan { envelope } => {
+            let prepared = crate::design::prepare(&envelope, Some(&profile.policy))?;
+            Ok(
+                serde_json::json!({"approval_digest":prepared.approval_digest,"plan":envelope,"prepared":prepared}),
+            )
+        }
+        Operation::DesignSubmit {
+            envelope,
+            approved_digest,
+            idempotency_key,
+        } => {
+            if digest(&envelope)? != approved_digest {
+                return Err(invalid("immutable design approval digest mismatch"));
+            }
+            // Every template set must already pass ordinary submission checks.
+            for plan in crate::design::probe_plans(&envelope, &profile.policy)? {
+                submission_binding(store, profile, authority, &plan)?;
+            }
+            let intent = crate::design::retain_intent(store, &envelope, &idempotency_key, profile)?;
+            advance_design(store, profile, authority, &intent.id)?;
+            Ok(serde_json::to_value(crate::design::status(
+                store, &intent.id,
+            )?)?)
+        }
+        Operation::DesignPropose {
+            design_id,
+            candidate,
+        } => {
+            let candidate = crate::design::propose_external(
+                store,
+                &design_id,
+                &candidate,
+                profile,
+                &mut |plan, key| design_child(store, profile, authority, plan, key),
+            )?;
+            Ok(serde_json::json!({"design_id":design_id,"candidate":candidate}))
+        }
+        Operation::DesignStatus { design_id } => Ok(serde_json::to_value(crate::design::status(
+            store, &design_id,
+        )?)?),
+        Operation::DesignExport { design_id } => Ok(serde_json::to_value(crate::design::export(
+            store, &design_id,
+        )?)?),
     }
 }
 pub fn serve(state: &Path, socket: &Path, profile_path: &Path) -> Result<()> {
@@ -1167,6 +1210,7 @@ pub fn serve_authorized(
             Err(e) => return Err(e.into()),
         }
         reconcile(&store, &profile, false, admission.as_ref())?;
+        advance_designs(&store, &profile, authority.as_ref());
     }
 }
 pub fn request(socket: &Path, op: Operation) -> Result<Response> {
@@ -2749,6 +2793,57 @@ fn annotate_native_artifacts(
     crate::atmospheric_transport::annotate_fields(plan, artifacts)?;
     crate::contact::annotate_fields(plan, artifacts);
     Ok(())
+}
+
+/// Design children are ordinary jobs: the envelope approval covers the plan,
+/// and the normal submission path owns binding, staging and admission.
+fn design_child(
+    store: &Store,
+    profile: &HostExecutionProfile,
+    authority: Option<&HostAuthority>,
+    plan: &ExecutionPlan,
+    key: &str,
+) -> Result<()> {
+    dispatch(
+        store,
+        profile,
+        authority,
+        Operation::Submit {
+            plan: Box::new(plan.clone()),
+            approved_digest: plan.id()?,
+            idempotency_key: key.into(),
+        },
+    )
+    .map(|_| ())
+}
+fn advance_design(
+    store: &Store,
+    profile: &HostExecutionProfile,
+    authority: Option<&HostAuthority>,
+    id: &str,
+) -> Result<()> {
+    match crate::design::advance(store, id, profile, &mut |plan, key| {
+        design_child(store, profile, authority, plan, key)
+    }) {
+        // Transient state/IO errors retry on the next worker tick.
+        Err(error @ (Error::Io(_) | Error::Sql(_))) => Err(error),
+        Err(error) => crate::design::fail(store, id, &error.to_string()),
+        Ok(()) => Ok(()),
+    }
+}
+/// Worker completion hook: advance running designs after each reconcile.
+fn advance_designs(
+    store: &Store,
+    profile: &HostExecutionProfile,
+    authority: Option<&HostAuthority>,
+) {
+    let result = crate::design::running(store).and_then(|ids| {
+        ids.iter()
+            .try_for_each(|id| advance_design(store, profile, authority, id))
+    });
+    if let Err(error) = result {
+        eprintln!("design advancement deferred: {error}");
+    }
 }
 
 #[cfg(test)]

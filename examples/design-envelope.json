@@ -1,0 +1,315 @@
+{
+  "schema_version": 1,
+  "name": "channel_drive_height",
+  "provenance": "synthetic analytical channel reference with a known grid optimum; not an enclosure model",
+  "seed": 7,
+  "space": {
+    "continuous": [
+      {
+        "name": "height",
+        "low": 4.0,
+        "high": 20.0,
+        "step": 1.0,
+        "unit": "mm"
+      },
+      {
+        "name": "acceleration",
+        "low": 0.05,
+        "high": 0.5,
+        "step": 0.01,
+        "unit": "m/s2"
+      }
+    ],
+    "categorical": []
+  },
+  "objective": {
+    "kind": "minimize",
+    "terms": [
+      {
+        "metric": "height",
+        "weight": 0.1
+      },
+      {
+        "metric": "acceleration",
+        "weight": 1.0
+      }
+    ]
+  },
+  "constraints": [
+    {
+      "metric": "mean_velocity",
+      "op": "ge",
+      "limit": 0.1,
+      "unit": "m/s",
+      "safety_factor": null
+    }
+  ],
+  "budget": {
+    "max_evaluations": 32,
+    "max_wall_seconds": 600,
+    "max_artifact_bytes": 33554432
+  },
+  "fidelity": {
+    "screen": "screen",
+    "refine_top_k": 1,
+    "refine": "refine"
+  },
+  "templates": {
+    "refine": [
+      {
+        "role": "flow",
+        "plan": {
+          "case": {
+            "acceleration": {
+              "$param": "acceleration",
+              "unit": "m/s2"
+            },
+            "applicability": {
+              "dimensionality": 3,
+              "exclusions": [
+                "thermal coupling",
+                "wetting and ingress"
+              ],
+              "formulation": "steady_incompressible_channel",
+              "numerical_tolerance": 1e-12,
+              "physical_validation": "unqualified",
+              "precision": "float64",
+              "validated_reynolds_max": null
+            },
+            "channel_height": {
+              "$param": "height",
+              "unit": "mm"
+            },
+            "claims": [
+              "velocity"
+            ],
+            "geometry": {
+              "sha256": null,
+              "source": "synthetic parallel plates",
+              "synthetic": true
+            },
+            "geometry_tolerance": {
+              "unit": "m",
+              "value": 0.00001
+            },
+            "kinematic_viscosity": {
+              "unit": "m2/s",
+              "value": 0.00001
+            },
+            "length": {
+              "unit": "m",
+              "value": 1.0
+            },
+            "material": {
+              "density": {
+                "unit": "kg/m3",
+                "value": 1.0
+              },
+              "humidity_fraction": null,
+              "name": "synthetic Newtonian fluid",
+              "provenance": {
+                "sha256": null,
+                "source": "analytical fixture",
+                "synthetic": true
+              }
+            },
+            "max_time_s": 1.0,
+            "name": "synthetic-channel",
+            "presentation": {
+              "camera": [
+                1.0,
+                1.0,
+                1.0
+              ],
+              "field": "velocity",
+              "height": 480,
+              "range": [
+                0.0,
+                0.125
+              ],
+              "width": 640
+            },
+            "regions": [
+              "fluid",
+              "wall"
+            ],
+            "resolution": 65,
+            "schema_version": 1
+          },
+          "fleetix_contract_digest": "829a8ff1e89c7df0f4d0b38dee3850a29efda1e43d457a15d8e534e062dafe54",
+          "fleetix_revision": "2230d9ee804a66d94424a91919182e4fcca13ab2",
+          "observation": {
+            "checkpoint_times_s": [],
+            "max_artifact_bytes": 1048576,
+            "metrics": [
+              "mean_velocity"
+            ],
+            "preview_may_drop": false,
+            "preview_times_s": [],
+            "probes": [],
+            "retained_times_s": [
+              0.0
+            ],
+            "scientific_congestion": "fail"
+          },
+          "policy": "ci",
+          "schema_version": 1,
+          "stages": [
+            {
+              "dependencies": [],
+              "gpu": "cpu_only",
+              "id": "reference",
+              "operation": "channel_reference",
+              "ram_bytes": 16787616,
+              "selection": null,
+              "vram_bytes": 0
+            }
+          ],
+          "transfers": []
+        }
+      }
+    ],
+    "screen": [
+      {
+        "role": "flow",
+        "plan": {
+          "case": {
+            "acceleration": {
+              "$param": "acceleration",
+              "unit": "m/s2"
+            },
+            "applicability": {
+              "dimensionality": 3,
+              "exclusions": [
+                "thermal coupling",
+                "wetting and ingress"
+              ],
+              "formulation": "steady_incompressible_channel",
+              "numerical_tolerance": 1e-12,
+              "physical_validation": "unqualified",
+              "precision": "float64",
+              "validated_reynolds_max": null
+            },
+            "channel_height": {
+              "$param": "height",
+              "unit": "mm"
+            },
+            "claims": [
+              "velocity"
+            ],
+            "geometry": {
+              "sha256": null,
+              "source": "synthetic parallel plates",
+              "synthetic": true
+            },
+            "geometry_tolerance": {
+              "unit": "m",
+              "value": 0.00001
+            },
+            "kinematic_viscosity": {
+              "unit": "m2/s",
+              "value": 0.00001
+            },
+            "length": {
+              "unit": "m",
+              "value": 1.0
+            },
+            "material": {
+              "density": {
+                "unit": "kg/m3",
+                "value": 1.0
+              },
+              "humidity_fraction": null,
+              "name": "synthetic Newtonian fluid",
+              "provenance": {
+                "sha256": null,
+                "source": "analytical fixture",
+                "synthetic": true
+              }
+            },
+            "max_time_s": 1.0,
+            "name": "synthetic-channel",
+            "presentation": {
+              "camera": [
+                1.0,
+                1.0,
+                1.0
+              ],
+              "field": "velocity",
+              "height": 480,
+              "range": [
+                0.0,
+                0.125
+              ],
+              "width": 640
+            },
+            "regions": [
+              "fluid",
+              "wall"
+            ],
+            "resolution": 33,
+            "schema_version": 1
+          },
+          "fleetix_contract_digest": "829a8ff1e89c7df0f4d0b38dee3850a29efda1e43d457a15d8e534e062dafe54",
+          "fleetix_revision": "2230d9ee804a66d94424a91919182e4fcca13ab2",
+          "observation": {
+            "checkpoint_times_s": [],
+            "max_artifact_bytes": 1048576,
+            "metrics": [
+              "mean_velocity"
+            ],
+            "preview_may_drop": false,
+            "preview_times_s": [],
+            "probes": [],
+            "retained_times_s": [
+              0.0
+            ],
+            "scientific_congestion": "fail"
+          },
+          "policy": "ci",
+          "schema_version": 1,
+          "stages": [
+            {
+              "dependencies": [],
+              "gpu": "cpu_only",
+              "id": "reference",
+              "operation": "channel_reference",
+              "ram_bytes": 16782496,
+              "selection": null,
+              "vram_bytes": 0
+            }
+          ],
+          "transfers": []
+        }
+      }
+    ]
+  },
+  "metric_sources": [
+    {
+      "metric": "mean_velocity",
+      "unit": "m/s",
+      "source": {
+        "kind": "job",
+        "role": "flow",
+        "artifact": "validation.json",
+        "pointer": "/mean_velocity_m_s"
+      }
+    },
+    {
+      "metric": "height",
+      "unit": "mm",
+      "source": {
+        "kind": "parameter",
+        "param": "height"
+      }
+    },
+    {
+      "metric": "acceleration",
+      "unit": "m/s2",
+      "source": {
+        "kind": "parameter",
+        "param": "acceleration"
+      }
+    }
+  ]
+}
