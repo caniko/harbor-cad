@@ -155,6 +155,11 @@ of independently approved CPU cases through the same durable worker. Simulation/
 MCP profiles use the same study operations. See [bounded studies](docs/studies.md)
 for partial-submission recovery, resource admission and qualification boundaries.
 
+`design plan|submit|propose|status|export` run one approved, bounded design
+loop (at most 32 evaluations) whose candidates are ordinary worker jobs built
+from strict plan templates. `design init` prints the CI-runnable analytical
+example. See [design loop](docs/design-loop.md) for approval, metrics and limits.
+
 `case validate-snow-openings examples/snow-openings.json` and simulation/all MCP
 measure named planar-opening coverage by explicit prescribed snow geometry.
 See [snow openings](docs/snow-openings.md) for union-area and applicability semantics.
