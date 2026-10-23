@@ -457,6 +457,11 @@ def build_server(profile: str) -> MCPServer:
                 raise ValueError("artifact page limit 1..100 required")
             return await request("artifacts", job_id=job_id, after=after, limit=limit)
 
+        @server.tool()
+        async def results_correlate(request_spec: dict[str, Any]) -> dict[str, Any]:
+            """Score a bounded measured CSV (relative to the worker input root) against one registered thermal history: per-probe bias/MAE/RMSE/max error and tolerance pass, sensor accuracy reported separately. Linear interpolation inside the overlap only; correlation is not validation of untested conditions."""
+            return await request("results_correlate", request=request_spec)
+
     return server
 
 
