@@ -254,6 +254,7 @@ impl ExecutionPlan {
             cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
             fleetix_revision: FLEETIX_REV.into(),
             fleetix_contract_digest: fleetix_digest(),
             policy,

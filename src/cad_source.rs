@@ -41,6 +41,7 @@ impl ExecutionPlan {
             cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
             source: None,
             frames: None,
             filter: None,
@@ -260,17 +261,17 @@ struct BrepManifest {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct BrepRegion {
-    region_name: String,
-    path: String,
-    bytes: u64,
-    sha256: String,
-    source_unit: String,
-    scale_to_m: f64,
-    bounds_m: [f64; 6],
-    volume_m3: f64,
-    source_transform: [f64; 16],
-    placement_translation_unit: String,
+pub(crate) struct BrepRegion {
+    pub region_name: String,
+    pub path: String,
+    pub bytes: u64,
+    pub sha256: String,
+    pub source_unit: String,
+    pub scale_to_m: f64,
+    pub bounds_m: [f64; 6],
+    pub volume_m3: f64,
+    pub source_transform: [f64; 16],
+    pub placement_translation_unit: String,
 }
 
 /// Check every native named BREP against independently verified world geometry
@@ -382,18 +383,20 @@ pub(crate) fn authorized(
     Ok((plan, report, binding, authorization))
 }
 
-/// Resolve only a completed, originally authorized CAD job and registered solid.
-/// Bounds and placement come from verified importer evidence, never caller overrides.
-pub fn source(
-    store: &Store,
-    id: &str,
-    region: &str,
-    resolution: u32,
-    geometry_tolerance_m: f64,
-) -> Result<(PathBuf, CadSource)> {
-    if !token(region) {
-        return Err(invalid("completed committed named CAD source required"));
-    }
+/// A succeeded, originally authorized CAD job with its closed BREP manifest
+/// rechecked against the registered region evidence. Shared by every recipe
+/// that binds named BREPs; bounds and placement never come from callers.
+pub(crate) struct VerifiedManifest {
+    pub plan: ExecutionPlan,
+    pub report: crate::cad::RegionReport,
+    pub binding: crate::execution::ExecutionBinding,
+    pub authorization: crate::authority::ExecutionAuthorization,
+    pub manifest: EvidenceRecord,
+    pub synthetic: bool,
+    pub regions: Vec<BrepRegion>,
+}
+
+pub(crate) fn verified_manifest(store: &Store, id: &str) -> Result<VerifiedManifest> {
     let (plan, report, binding, authorization) = authorized(store, id)?;
     let (manifest, value) = qualification::registered_json(store, id, "brep-manifest.json")?
         .ok_or_else(|| invalid("registered closed BREP manifest required"))?;
@@ -428,17 +431,28 @@ pub fn source(
             ));
         }
     }
-    let selected = decoded
-        .regions
-        .into_iter()
-        .find(|r| r.region_name == region)
-        .ok_or_else(|| invalid("approved named BREP region missing"))?;
-    let root = store.job_dir(id)?;
+    Ok(VerifiedManifest {
+        plan,
+        report,
+        binding,
+        authorization,
+        manifest,
+        synthetic: decoded.synthetic,
+        regions: decoded.regions,
+    })
+}
+
+/// The registered BREP artifact of one manifest region, byte-checked on disk.
+pub(crate) fn verified_brep(
+    store: &Store,
+    id: &str,
+    selected: &BrepRegion,
+) -> Result<ArtifactManifest> {
     let brep = store
         .artifact_record(id, &selected.path)?
         .ok_or_else(|| invalid("closed registered BREP artifact required"))?;
     let observed = native_manifest(
-        &root,
+        &store.job_dir(id)?,
         &selected.path,
         64 * 1024 * 1024,
         "CAD source byte verification",
@@ -452,9 +466,39 @@ pub fn source(
             "imported CAD BREP bytes differ from original registered evidence",
         ));
     }
+    Ok(brep)
+}
+
+/// Resolve only a completed, originally authorized CAD job and registered solid.
+/// Bounds and placement come from verified importer evidence, never caller overrides.
+pub fn source(
+    store: &Store,
+    id: &str,
+    region: &str,
+    resolution: u32,
+    geometry_tolerance_m: f64,
+) -> Result<(PathBuf, CadSource)> {
+    if !token(region) {
+        return Err(invalid("completed committed named CAD source required"));
+    }
+    let VerifiedManifest {
+        plan,
+        report,
+        binding,
+        authorization,
+        manifest,
+        synthetic,
+        regions,
+    } = verified_manifest(store, id)?;
+    let selected = regions
+        .into_iter()
+        .find(|r| r.region_name == region)
+        .ok_or_else(|| invalid("approved named BREP region missing"))?;
+    let root = store.job_dir(id)?;
+    let brep = verified_brep(store, id, &selected)?;
     let geometry = CadMeshDescriptor {
         schema_version: 1,
-        synthetic: decoded.synthetic,
+        synthetic,
         backend: "cpu".into(),
         formulation: "imported_axis_aligned_box".into(),
         geometry_provenance: format!(

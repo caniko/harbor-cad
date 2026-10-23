@@ -2,8 +2,13 @@
   pkgs,
   fem,
 }: let
+  # General imported solids (docs/enclosure-thermal.md); dispatched by formulation.
+  solidBridge = pkgs.replaceVars ../adapters/solid_mesh.py {
+    gmsh_version = fem.gmsh.version;
+  };
   bridge = pkgs.replaceVars ../adapters/cad_mesh.py {
     fem_bridge = "${fem.bridge}";
+    solid_mesh_bridge = "${solidBridge}";
     gmsh_version = fem.gmsh.version;
   };
   adapter = pkgs.writeShellScriptBin "harbor-cad-cad-mesh" ''
@@ -11,7 +16,7 @@
   '';
   closure = pkgs.closureInfo {rootPaths = [adapter];};
 in {
-  inherit bridge;
+  inherit bridge solidBridge;
   cad-mesh-cpu = adapter;
   runtime-cad-mesh-cpu = pkgs.writeText "harbor-cad-cad-mesh-runtime.json" (builtins.toJSON {
     schema_version = 1;

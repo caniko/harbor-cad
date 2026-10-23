@@ -31,6 +31,7 @@ pub mod correlation;
 pub mod design;
 pub mod design_providers;
 pub mod devices;
+pub mod enclosure_thermal;
 pub mod estimates;
 pub mod execution;
 pub mod fem;

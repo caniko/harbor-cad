@@ -105,6 +105,10 @@ enum Commands {
         #[command(subcommand)]
         command: Design,
     },
+    /// Plan steady enclosure conduction on a succeeded general-solid mesh job.
+    EnclosureThermal {
+        request: PathBuf,
+    },
 }
 #[derive(Subcommand)]
 enum Materials {
@@ -324,6 +328,8 @@ enum Cad {
         #[arg(long, default_value = "research")]
         policy: String,
     },
+    /// Plan conformal multi-region tetrahedral meshing of registered closed solids.
+    SolidMesh { request: PathBuf },
 }
 #[derive(Subcommand)]
 enum Results {
@@ -687,6 +693,12 @@ fn run(cli: Cli) -> Result<()> {
                 let plan = ExecutionPlan::enclosure_fixture(policy)?;
                 return print(&serde_json::json!({"approval_digest":plan.id()?,"plan":plan}));
             }
+            Cad::SolidMesh { request } => Operation::PlanCadSolidMesh {
+                request: Box::new(read(&request)?),
+            },
+        },
+        Commands::EnclosureThermal { request } => Operation::PlanEnclosureThermal {
+            request: Box::new(read(&request)?),
         },
         Commands::Job { command } => match command {
             Job::Preflight { plan } => Operation::ExecutionPreflight { plan: read(&plan)? },

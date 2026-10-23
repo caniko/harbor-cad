@@ -572,6 +572,7 @@ impl Store {
             || plan.cad_variant.is_some()
             || plan.cad_sheet_variant.is_some()
             || plan.cad_source.is_some()
+            || plan.cad_solids.is_some()
             || plan.atmospheric_transport.is_some())
             && (profile.is_none() || binding.is_none() || authorization.is_none())
         {
@@ -656,6 +657,7 @@ impl Store {
         crate::presentation::retain(self, &id, plan)?;
         crate::frames::retain(self, &id, plan)?;
         crate::cad_source::retain(self, &id, plan)?;
+        crate::enclosure_thermal::retain(self, &id, plan)?;
         crate::cad_variant::retain(self, &id, plan)?;
         crate::cad_transport::retain(self, &id, plan)?;
         crate::atmospheric_transport::retain(self, &id, plan)?;
@@ -752,6 +754,7 @@ impl Store {
             if !exists {
                 crate::presentation::recover_orphan(self, &id)?;
                 crate::cad_source::recover_orphan(self, &id)?;
+                crate::enclosure_thermal::recover_orphan(self, &id)?;
                 crate::cad_variant::recover_orphan(self, &id)?;
                 crate::cad_transport::recover_orphan(self, &id)?;
                 crate::atmospheric_transport::recover_orphan(self, &id)?;

@@ -3,9 +3,17 @@
   fem,
   cadMesh,
 }: let
+  # Version-2 descriptors run the enclosure thermal recipe (docs/enclosure-thermal.md).
+  enclosureBridge = pkgs.replaceVars ../adapters/enclosure_thermal.py {
+    solid_mesh_bridge = "${cadMesh.solidBridge}";
+    calculix = "${fem.calculix}/bin/ccx";
+    ccx_version = fem.calculix.version;
+    gmsh_version = fem.gmsh.version;
+  };
   bridge = pkgs.replaceVars ../adapters/fem_imported.py {
     fem_bridge = "${fem.bridge}";
     cad_mesh_bridge = "${cadMesh.bridge}";
+    enclosure_bridge = "${enclosureBridge}";
     calculix = "${fem.calculix}/bin/ccx";
     ccx_version = fem.calculix.version;
     gmsh_version = fem.gmsh.version;

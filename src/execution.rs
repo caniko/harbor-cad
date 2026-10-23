@@ -41,6 +41,12 @@ fn sandbox_policy(plan: &ExecutionPlan) -> &'static str {
         CONTACT_SANDBOX_POLICY
     } else if let Some(spec) = &plan.wetting {
         spec.sandbox_policy()
+    } else if let Some(recipe) = &plan.cad_solids {
+        if recipe.thermal.is_some() {
+            FEM_IMPORTED_SANDBOX_POLICY
+        } else {
+            CAD_MESH_SANDBOX_POLICY
+        }
     } else if plan.imported_fem.is_some() {
         FEM_IMPORTED_SANDBOX_POLICY
     } else if plan.cad_source.is_some() {

@@ -320,6 +320,12 @@ pub fn inspect(store: &Store, id: &str) -> Result<JobEvidenceReport> {
                 spec.formulation.clone()
             } else if let Some(spec) = &plan.freezing {
                 spec.formulation.clone()
+            } else if let Some(recipe) = &plan.cad_solids {
+                if recipe.thermal.is_some() {
+                    crate::enclosure_thermal::THERMAL_FORMULATION.into()
+                } else {
+                    crate::enclosure_thermal::MESH_FORMULATION.into()
+                }
             } else if let Some(spec) = &plan.imported_fem {
                 spec.formulation()
             } else if let Some(source) = &plan.cad_source {
@@ -373,6 +379,8 @@ pub fn inspect(store: &Store, id: &str) -> Result<JobEvidenceReport> {
                 spec.resolution
             } else if let Some(spec) = &plan.freezing {
                 spec.resolution
+            } else if let Some(recipe) = &plan.cad_solids {
+                recipe.source.geometry.refinement()
             } else if let Some(source) = &plan.cad_source {
                 source.geometry.resolution
             } else {
@@ -466,7 +474,45 @@ pub fn inspect(store: &Store, id: &str) -> Result<JobEvidenceReport> {
                     crate::cad_sheet_variant::verify_registered_outputs(store, id, &plan, &value)?;
                     capability.formulation = "source_bound_spreadsheet_variant".into();
                 }
-                if matches!(stage.operation, StageOperation::FemImported) {
+                if plan.cad_solids.is_some()
+                    && matches!(
+                        stage.operation,
+                        StageOperation::CadMesh | StageOperation::FemImported
+                    )
+                {
+                    let thermal = stage.operation == StageOperation::FemImported;
+                    let directory = if thermal { "fem-imported" } else { "mesh" };
+                    for name in ["mesh.json", "reference.dat"]
+                        .iter()
+                        .take(1 + usize::from(thermal))
+                    {
+                        let path = format!("stages/{directory}/{name}");
+                        let record = store
+                            .artifact_record(id, &path)?
+                            .ok_or_else(|| invalid("registered general-solid output missing"))?;
+                        let observed = crate::storage::native_manifest(
+                            &store.job_dir(id)?,
+                            &path,
+                            256 * 1024 * 1024,
+                            "verify historical general-solid output",
+                        )?;
+                        if record.sha256 != observed.sha256 || record.bytes != observed.bytes {
+                            return Err(invalid("historical general-solid output bytes changed"));
+                        }
+                    }
+                    let root = store.job_dir(id)?.join(format!("stages/{directory}"));
+                    capability.numerical_evidence = Some(if thermal {
+                        crate::enclosure_thermal::verify_thermal_receipt(&plan, &root, &value)?
+                    } else {
+                        crate::enclosure_thermal::verify_mesh_receipt(&plan, &root, &value)?
+                    });
+                    capability.numerical_verification = EvidenceState::ReportedPass;
+                    capability.convergence = if thermal {
+                        "steady energy balance only; refinement study separate".into()
+                    } else {
+                        "geometric correspondence; no field solve or convergence claim".into()
+                    };
+                } else if matches!(stage.operation, StageOperation::FemImported) {
                     for path in [
                         "stages/fem-imported/mesh.json",
                         "stages/fem-imported/reference.dat",

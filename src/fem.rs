@@ -260,6 +260,7 @@ impl ExecutionPlan {
             cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
             source: None,
             frames: None,
             filter: None,

@@ -442,6 +442,8 @@ pub struct ExecutionPlan {
     pub cad_transport: Option<crate::cad_transport::CadSpectralTransportSpec>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub retained_cooling: Option<crate::cooling_execution::CoolingExecutionSpec>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cad_solids: Option<crate::enclosure_thermal::CadSolidsRecipe>,
 }
 
 // Decode versions explicitly: v1's field set remains strict, and v2 requires
@@ -494,6 +496,14 @@ struct ExecutionPlanRecord {
     cad_transport: Option<crate::cad_transport::CadSpectralTransportSpec>,
     #[serde(default, deserialize_with = "cooling_execution_spec")]
     retained_cooling: Option<crate::cooling_execution::CoolingExecutionSpec>,
+    #[serde(default, deserialize_with = "cad_solids_spec")]
+    cad_solids: Option<crate::enclosure_thermal::CadSolidsRecipe>,
+}
+
+fn cad_solids_spec<'de, D: serde::Deserializer<'de>>(
+    decoder: D,
+) -> std::result::Result<Option<crate::enclosure_thermal::CadSolidsRecipe>, D::Error> {
+    crate::enclosure_thermal::CadSolidsRecipe::deserialize(decoder).map(Some)
 }
 
 fn cooling_execution_spec<'de, D: serde::Deserializer<'de>>(
@@ -609,6 +619,14 @@ impl<'de> Deserialize<'de> for ExecutionPlan {
     fn deserialize<D: serde::Deserializer<'de>>(decoder: D) -> std::result::Result<Self, D::Error> {
         use serde::de::Error;
         let plan = ExecutionPlanRecord::deserialize(decoder)?;
+        if plan.cad_solids.is_some() {
+            if !crate::enclosure_thermal::envelope(&plan) {
+                return Err(D::Error::custom(
+                    "strict source-bound version-7/8 general-solid mesh or enclosure thermal recipe required",
+                ));
+            }
+            return Ok(plan);
+        }
         if plan.retained_cooling.is_some() {
             if !plan.retained_cooling_envelope() {
                 return Err(D::Error::custom(
@@ -737,8 +755,8 @@ impl JsonSchema for ExecutionPlan {
             {"if":{"properties":{"schema_version":{"const":5}}},"then":{"required":["fem"],"properties":{"fem":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["thermal"]}]}}},
             {"if":{"properties":{"schema_version":{"const":6}}},"then":{"required":["thermal"],"properties":{"thermal":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]}]}},"else":{"not":{"required":["thermal"]}}},
             {"if":{"properties":{"schema_version":{"enum":[1,2,3,4]}}},"then":{"required":["case"],"properties":{"case":{"type":"object"}},"not":{"required":["fem"]}}},
-            {"if":{"properties":{"schema_version":{"enum":[7,8]}}},"then":{"required":["cad_source"],"properties":{"cad_source":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]},{"required":["thermal"]}]}},"else":{"not":{"required":["cad_source"]}}},
-            {"if":{"properties":{"schema_version":{"const":8}}},"then":{"required":["imported_fem"],"properties":{"imported_fem":{"type":"object"}}},"else":{"not":{"required":["imported_fem"]}}},
+            {"if":{"properties":{"schema_version":{"enum":[7,8]}}},"then":{"oneOf":[{"required":["cad_source"]},{"required":["cad_solids"]}],"properties":{"cad_source":{"type":"object"},"cad_solids":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]},{"required":["thermal"]}]}},"else":{"not":{"anyOf":[{"required":["cad_source"]},{"required":["cad_solids"]}]}}},
+            {"if":{"properties":{"schema_version":{"const":8}}},"then":{"oneOf":[{"required":["imported_fem"]},{"required":["cad_solids"]}],"properties":{"imported_fem":{"type":"object"}}},"else":{"not":{"required":["imported_fem"]}}},
             {"if":{"properties":{"schema_version":{"const":9}}},"then":{"required":["wetting"],"properties":{"wetting":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]},{"required":["thermal"]},{"required":["cad_source"]},{"required":["imported_fem"]},{"required":["contact"]}]}},"else":{"not":{"required":["wetting"]}}},
             {"if":{"properties":{"schema_version":{"const":10}}},"then":{"required":["contact"],"properties":{"contact":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]},{"required":["thermal"]},{"required":["cad_source"]},{"required":["imported_fem"]},{"required":["wetting"]}]}},"else":{"not":{"required":["contact"]}}},
             {"if":{"properties":{"schema_version":{"const":11}}},"then":{"required":["thermal_contact"],"properties":{"thermal_contact":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]},{"required":["thermal"]},{"required":["cad_source"]},{"required":["imported_fem"]},{"required":["wetting"]},{"required":["contact"]}]}},"else":{"not":{"required":["thermal_contact"]}}},
@@ -782,6 +800,7 @@ impl JsonSchema for ExecutionPlan {
                 "atmospheric_transport",
                 "cad_variant",
                 "cad_sheet_variant",
+                "cad_solids",
             ]
             .map(|key| serde_json::json!({"required":[key]}));
             conditions.push(serde_json::json!({"if":{"properties":{"schema_version":{"const":17}}},"then":{"required":["cad_transport"],"properties":{"cad_transport":{"type":"object"}},"not":{"anyOf":prohibited}},"else":{"not":{"required":["cad_transport"]}}}));
@@ -991,6 +1010,12 @@ impl ExecutionPlan {
             .ok_or_else(|| invalid("fluid/CAD case required for this operation"))
     }
     pub fn science_id(&self) -> Result<String> {
+        if let Some(recipe) = &self.cad_solids {
+            if !crate::enclosure_thermal::envelope(self) {
+                return Err(invalid("independent v7/v8 general-solid recipe required"));
+            }
+            return digest(recipe);
+        }
         if let Some(spec) = &self.retained_cooling {
             if !self.retained_cooling_envelope() {
                 return Err(invalid(
@@ -1124,6 +1149,7 @@ impl ExecutionPlan {
             cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
             stages: vec![
                 Stage {
                     id: "filter".into(),
@@ -1204,6 +1230,7 @@ impl ExecutionPlan {
             cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
             stages: vec![
                 Stage {
                     id: "video".into(),
@@ -1333,6 +1360,7 @@ impl ExecutionPlan {
             cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
         };
         crate::estimates::minimum(&plan)?.apply(&mut plan);
         plan.validate()?;
@@ -1385,6 +1413,7 @@ impl ExecutionPlan {
             cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
         };
         plan.validate()?;
         Ok(plan)
@@ -1449,6 +1478,7 @@ impl ExecutionPlan {
             cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
         };
         plan.validate()?;
         Ok(plan)
@@ -1529,6 +1559,7 @@ impl ExecutionPlan {
             cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
         };
         crate::estimates::minimum(&plan)?.apply(&mut plan);
         plan.validate()?;
@@ -1621,11 +1652,13 @@ impl ExecutionPlan {
         if let Some(fem) = &self.fem {
             fem.validate()?;
         }
-        if (self.retained_cooling.is_some() && !self.retained_cooling_envelope())
+        if (self.cad_solids.is_some() && !crate::enclosure_thermal::envelope(self))
+            || (self.retained_cooling.is_some() && !self.retained_cooling_envelope())
             || (self.cad_transport.is_some() && !self.cad_transport_envelope())
             || ((self.cad_variant.is_some() || self.cad_sheet_variant.is_some())
                 && !self.cad_variant_envelope())
-            || !(self.retained_cooling_envelope()
+            || !(crate::enclosure_thermal::envelope(self)
+                || self.retained_cooling_envelope()
                 || self.cad_transport_envelope()
                 || self.cad_variant_envelope()
                 || self.atmospheric_transport_envelope()
@@ -1744,6 +1777,9 @@ impl ExecutionPlan {
                     "strict source-bound controlled CPU CAD-copy variant DAG and original region context required",
                 ));
             }
+        }
+        if self.cad_solids.is_some() {
+            crate::enclosure_thermal::validate_plan(self)?;
         }
         if let Some(source) = &self.cad_source {
             source.validate()?;
@@ -2022,13 +2058,21 @@ impl ExecutionPlan {
                     "freezing operation requires independent version-12 recipe",
                 ));
             }
-            if matches!(stage.operation, StageOperation::FemImported) && self.imported_fem.is_none()
+            if matches!(stage.operation, StageOperation::FemImported)
+                && self.imported_fem.is_none()
+                && !self
+                    .cad_solids
+                    .as_ref()
+                    .is_some_and(|recipe| recipe.thermal.is_some())
             {
                 return Err(invalid(
                     "imported FEM requires a source-bound version-8 recipe",
                 ));
             }
-            if matches!(stage.operation, StageOperation::CadMesh) && self.cad_source.is_none() {
+            if matches!(stage.operation, StageOperation::CadMesh)
+                && self.cad_source.is_none()
+                && self.cad_solids.is_none()
+            {
                 return Err(invalid(
                     "imported CAD mesh requires a source-bound version-7 recipe",
                 ));
@@ -2562,6 +2606,12 @@ pub enum Operation {
     DesignExport {
         design_id: String,
     },
+    PlanCadSolidMesh {
+        request: Box<crate::enclosure_thermal::SolidMeshRequest>,
+    },
+    PlanEnclosureThermal {
+        request: Box<crate::enclosure_thermal::EnclosureThermalRequest>,
+    },
 }
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -2611,6 +2661,12 @@ pub fn schemas() -> serde_json::Value {
     schemas["BuildProvenance"] =
         serde_json::json!(schemars::schema_for!(crate::provenance::BuildProvenance));
     schemas["StudyRequest"] = serde_json::json!(schemars::schema_for!(crate::study::StudyRequest));
+    schemas["SolidMeshRequest"] = serde_json::json!(schemars::schema_for!(
+        crate::enclosure_thermal::SolidMeshRequest
+    ));
+    schemas["EnclosureThermalRequest"] = serde_json::json!(schemars::schema_for!(
+        crate::enclosure_thermal::EnclosureThermalRequest
+    ));
     schemas["PreparedStudy"] =
         serde_json::json!(schemars::schema_for!(crate::study::PreparedStudy));
     schemas["AtmosphericReferenceSpec"] = serde_json::json!(schemars::schema_for!(

@@ -33,6 +33,13 @@ fn lattice_cells(case: &CaseSpec) -> Result<u64> {
     multiply(multiply(add(nx as u64, 4)?, add(n, 6)?)?, add(n, 4)?)
 }
 
+fn solid_elements(plan: &ExecutionPlan) -> Result<u64> {
+    plan.cad_solids
+        .as_ref()
+        .map(|recipe| recipe.source.geometry.mesh.max_elements)
+        .ok_or_else(|| invalid("general-solid resource recipe required"))
+}
+
 pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
     let pixels = plan.case.as_ref().map_or(Ok(0), |case| {
         multiply(
@@ -61,6 +68,12 @@ pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
                 add(variant.document.bytes, variant.regions.bytes)?,
                 add(192 * MIB, multiply(extra, 64 * MIB)?)?,
             )?,
+        )?;
+    }
+    if let Some(recipe) = &plan.cad_solids {
+        output = add(
+            output,
+            crate::enclosure_thermal::staged_bytes(&recipe.source)?,
         )?;
     }
     if let Some(source) = &plan.cad_source {
@@ -158,6 +171,18 @@ pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
                     add(128 * MIB, multiply(u64::from(resolution).pow(3), 16384)?)?,
                 )?;
                 2048 * MIB
+            }
+            StageOperation::FemImported if plan.cad_solids.is_some() => {
+                // Mesh, deck and nodal field bytes plus SPOOLES fill-in; per-element
+                // allowances are conservative bounds, not measured peaks.
+                let elements = solid_elements(plan)?;
+                output = add(output, add(64 * MIB, multiply(elements, 1024)?)?)?;
+                add(2048 * MIB, multiply(elements, 16 * 1024)?)?
+            }
+            StageOperation::CadMesh if plan.cad_solids.is_some() => {
+                let elements = solid_elements(plan)?;
+                output = add(output, add(16 * MIB, multiply(elements, 256)?)?)?;
+                add(1024 * MIB, multiply(elements, 8 * 1024)?)?
             }
             StageOperation::FemImported => {
                 let spec = plan

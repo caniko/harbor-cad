@@ -473,6 +473,7 @@ fn submission_binding(
         || plan.cad_sheet_variant.is_some()
         || plan.thermal.is_some()
         || plan.cad_source.is_some()
+        || plan.cad_solids.is_some()
         || plan.wetting.is_some()
         || plan.freezing.is_some()
         || plan.spectral.is_some()
@@ -754,6 +755,26 @@ fn dispatch(
             let plan = crate::cad_source::plan(store, *request, profile.policy.clone())?;
             Ok(serde_json::json!({"approval_digest":plan.id()?,"plan":plan}))
         }
+        Operation::PlanCadSolidMesh { request } => {
+            if authority.is_none() {
+                return Err(Error::Unqualified(
+                    "imported general-solid mesh requires authoritative admission".into(),
+                ));
+            }
+            let plan =
+                crate::enclosure_thermal::plan_mesh(store, *request, profile.policy.clone())?;
+            Ok(serde_json::json!({"approval_digest":plan.id()?,"plan":plan}))
+        }
+        Operation::PlanEnclosureThermal { request } => {
+            if authority.is_none() {
+                return Err(Error::Unqualified(
+                    "enclosure thermal requires authoritative admission".into(),
+                ));
+            }
+            let plan =
+                crate::enclosure_thermal::plan_thermal(store, *request, profile.policy.clone())?;
+            Ok(serde_json::json!({"approval_digest":plan.id()?,"plan":plan}))
+        }
         Operation::PlanCadVariant { request } => {
             if authority.is_none() {
                 return Err(Error::Unqualified(
@@ -869,6 +890,21 @@ fn dispatch(
                     {
                         return Err(Error::Resource(
                             "insufficient state-root capacity for immutable CAD variant staging"
+                                .into(),
+                        ));
+                    }
+                    Admission::open(&crate::admission::shared_root()?, authority)?
+                        .retain_inputs(store, bytes, submit)?
+                } else if let Some(recipe) = &plan.cad_solids {
+                    let bytes = crate::enclosure_thermal::staged_bytes(&recipe.source)?
+                        .checked_add(16 * 1024 * 1024)
+                        .ok_or_else(|| invalid("CAD solid staging budget overflow"))?;
+                    if bytes
+                        .checked_add(disk_bytes(&store.root, false)?)
+                        .is_none_or(|n| n > profile.max_disk_bytes)
+                    {
+                        return Err(Error::Resource(
+                            "insufficient state-root capacity for immutable CAD solid staging"
                                 .into(),
                         ));
                     }
@@ -1286,7 +1322,9 @@ pub fn backends() -> serde_json::Value {
         {"adapter":"ffmpeg","backend":"vaapi","runtime":"unqualified"},
         {"adapter":"openlb_wetting","backend":"hip","runtime":"unqualified","precision":"float64","formulation":"well_balanced_contact_angle_2d","plan_schema_version":9,"scope":"same synthetic recipe on one explicit PCI/UUID card; CPU/HIP Float64 phase parity and worker KFD gates pending","reference_evidence":"docs/gpu-backends.md"},
         {"adapter":"openlb_freezing","backend":"hip","runtime":"unsupported","reason":crate::freezing::GPU_REFUSAL,"decision_evidence":"docs/gpu-backends.md"},
-        {"adapter":"openlb_retained_cooling","backend":"hip","runtime":"unsupported","reason":"host-applied per-step half-link boundaries and energy ledger over total-enthalpy dynamics absent from pinned OpenLB GPU CI","decision_evidence":"docs/gpu-backends.md"}
+        {"adapter":"openlb_retained_cooling","backend":"hip","runtime":"unsupported","reason":"host-applied per-step half-link boundaries and energy ledger over total-enthalpy dynamics absent from pinned OpenLB GPU CI","decision_evidence":"docs/gpu-backends.md"},
+        {"adapter":"gmsh_solids","backend":"cpu","runtime":"unqualified","precision":"float64","formulations":["imported_general_solids"],"plan_schema_version":7,"scope":"conformal multi-region tetrahedral mesh of registered closed solids with quality, volume and exterior-face receipts; no solver; exact job qualification required","reference_evidence":"docs/enclosure-thermal.md"},
+        {"adapter":"calculix_enclosure","backend":"cpu","runtime":"unqualified","precision":"float64","formulations":["enclosure_steady_conduction"],"factorization":"SPOOLES","plan_schema_version":8,"scope":"steady conduction with declared film, solar, radiation and one effective internal air node on an approved solid mesh; energy-balance gate; no internal convection or physical validation","reference_evidence":"docs/enclosure-thermal.md"}
     ])
 }
 pub fn doctor() -> Result<serde_json::Value> {
@@ -1700,7 +1738,16 @@ fn native_stage(
             .arg(original)
             .arg("/inputs/wetting-original.csv");
     }
-    if matches!(
+    if let Some(recipe) = &plan.cad_solids {
+        let root = crate::enclosure_thermal::registered(store, id, plan)?;
+        command.args(["--dir", "/inputs"]);
+        for brep in &recipe.source.breps {
+            command
+                .args(["--ro-bind"])
+                .arg(safe_path(&root, &brep.path)?)
+                .arg(format!("/inputs/{}", brep.path));
+        }
+    } else if matches!(
         stage.operation,
         StageOperation::CadMesh | StageOperation::FemImported
     ) {
@@ -2116,7 +2163,14 @@ fn native_stage(
             &evidence,
         )?;
     }
-    if matches!(stage.operation, StageOperation::CadMesh) {
+    if plan.cad_solids.is_some() {
+        crate::enclosure_thermal::registered(store, id, plan)?;
+        if stage.operation == StageOperation::CadMesh {
+            crate::enclosure_thermal::verify_mesh_receipt(plan, dir, &evidence)?;
+        } else {
+            crate::enclosure_thermal::verify_thermal_receipt(plan, dir, &evidence)?;
+        }
+    } else if matches!(stage.operation, StageOperation::CadMesh) {
         crate::cad_source::registered(store, id, plan)?;
         crate::cad_mesh::verify_receipt(plan, dir, &evidence)?;
     }
@@ -2128,7 +2182,7 @@ fn native_stage(
         crate::cad_variant::registered(store, id, plan)?;
         crate::cad_sheet_variant::verify_outputs(plan, dir, &evidence)?;
     }
-    if matches!(stage.operation, StageOperation::FemImported) {
+    if matches!(stage.operation, StageOperation::FemImported) && plan.cad_solids.is_none() {
         crate::cad_source::registered(store, id, plan)?;
         crate::fem_imported::verify_receipt(plan, dir, &evidence)?;
     }
@@ -2740,6 +2794,13 @@ fn execute_job(store: &Store, profile: &HostExecutionProfile, id: &str) -> Resul
                         .ok_or_else(|| invalid("approved atmospheric recipe required"))?;
                     store.add_artifact(id,&commit_artifact(&dir,"native-atmosphere-request.json",&serde_json::to_vec(spec)?,"json","exact original UV source/profile, solar direction and full anisotropic angular grid; no inferred physical time")?)?;
                     native_stage(store, profile, &plan, stage, &working, id)?;
+                } else if stage.operation == StageOperation::FemImported
+                    && plan.cad_solids.is_some()
+                {
+                    let working = native_work.join("stages/fem-imported");
+                    private_dir(&working)?;
+                    store.add_artifact(id,&commit_artifact(&dir,"native-fem-imported-request.json",&serde_json::to_vec(&crate::enclosure_thermal::thermal_descriptor(&plan)?)?,"json","exact approved CAD solids, mesh digest and resolved provenance-bound thermal inputs; steady, no physical time")?)?;
+                    native_stage(store, profile, &plan, stage, &working, id)?;
                 } else if matches!(stage.operation, StageOperation::FemImported) {
                     let working = native_work.join("stages/fem-imported");
                     private_dir(&working)?;
@@ -2753,6 +2814,11 @@ fn execute_job(store: &Store, profile: &HostExecutionProfile, id: &str) -> Resul
                     })?;
                     crate::atmospheric_transport::registered_source(store, spec)?;
                     store.add_artifact(id,&commit_artifact(&dir,"native-atmospheric-spectral-request.json",&serde_json::to_vec(&spec.native_request()?)?,"json","exact original atmospheric angular fields, registered-source checksum, SI receiver and prescribed optical history")?)?;
+                    native_stage(store, profile, &plan, stage, &working, id)?;
+                } else if stage.operation == StageOperation::CadMesh && plan.cad_solids.is_some() {
+                    let working = native_work.join("stages/mesh");
+                    private_dir(&working)?;
+                    store.add_artifact(id,&commit_artifact(&dir,"native-cad-mesh-request.json",&serde_json::to_vec(crate::enclosure_thermal::mesh_descriptor(&plan)?)?,"json","exact approved SI general-solid mesh descriptor; original sources retained separately")?)?;
                     native_stage(store, profile, &plan, stage, &working, id)?;
                 } else if matches!(stage.operation, StageOperation::CadMesh) {
                     let working = native_work.join("stages/mesh");
