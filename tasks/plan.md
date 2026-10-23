@@ -40,7 +40,9 @@ Tasks and checks are in [todo.md](todo.md).
 | W8 | Chained templates, W1 providers, calibration envelopes | [design-loop](../docs/design-loop.md) |
 | W9 | General-solid Gmsh mesh; steady enclosure conduction (CalculiX deck) | [enclosure-thermal](../docs/enclosure-thermal.md) |
 
-There is no W6 deliverable on trunk. All of these are source/CPU only. They
+W6 (CLI/MCP integration) was folded into W1–W4 and W8–W9: each wired its own
+CLI commands and, except W9's two planning operations (CLI and design loop only),
+its MCP tools (61 → 69). All of these are source/CPU only. They
 have no Nix build, no native qualification and no A0–F closure. See the
 2026-10-23 ledger slice for the gate counts and limits.
 
