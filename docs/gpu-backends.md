@@ -103,3 +103,55 @@ Version-1 approvals retain their serialization. B1 planning now accepts explicit
 `hip` or `cuda` compute selections; `rocm` is not a backend alias and `vulkan`
 cannot silently select another solver. Existing historical execution bindings
 continue to name their original packages and policy.
+
+## Recipe backends
+
+Status 2026-10-23, from source inspection of OpenLB `145cd548` only. Nothing
+below has been built or run on the card yet.
+
+| Recipe | Backend | Why |
+|---|---|---|
+| Airflow channel (`openlb`) | HIP qualified for the scoped fixture; CUDA best-effort | See above. |
+| Planar wetting (`openlb_wetting`) | CPU; **HIP implemented, unqualified** | Upstream GPU CI (`.ci/build_cuda_only.sh`) builds `examples/multiComponent/contactAngle2d`, the example this driver wraps. CUDA is not offered: the driver has no CUDA device-identity code. |
+| Solidification (`openlb_freezing`) | CPU only; typed `Unqualified` refusal | Upstream GPU CI builds no `TotalEnthalpy` example (`stefanMelting2d` and `galliumMelting2d` are absent). The driver's energy ledger also reads populations on the host between `collide()` and `AndStream()` every step. Porting either would mean new numerical code to qualify. |
+| Retained cooling (`openlb_retained_cooling`) | CPU only; the plan cannot request a GPU | Same total-enthalpy stack, plus Bouzidi half-link post-processors applied to host cells after every stream. |
+| FEM (CalculiX) | CPU | No HIP sparse direct solver is integrated. SPOOLES is CPU-only, and the CUDA PaStiX/PaRSEC candidates are inspection-only. |
+| Spectral (Mitsuba/Dr.Jit) | CPU | Dr.Jit has no HIP backend. |
+
+The HIP wetting driver follows the airflow driver. It selects and verifies the
+PCI/UUID card before allocating anything and rejects a silent CPU block. Its
+receipt carries the same device, compiled-runtime and kernel-completion fields,
+which the worker checks with `HipIdentity::verify_receipt`. Two GPU-specific
+corrections keep the CPU numerics unchanged:
+
+- Upstream initialization mixes host and device stages, so the driver replays
+  them in the CPU order with explicit transfers.
+- The Simulation context, which uploads host state, is re-entered only after
+  retained observations, never on every step.
+
+Plans put the selection both in the descriptor and on the stage
+(`GpuRequirement::Required`). They reserve VRAM equal to the host allowance, as
+airflow does. A packaged backend that differs from the plan is refused, and
+there is no CPU fallback. CPU descriptors omit `selection`, so their digests
+are unchanged.
+
+Phase-B qualification for wetting, after the security hold:
+
+1. Build `.#wetting-native-cpu`, `.#wetting-native-hip` and
+   `.#runtime-wetting-worker-hip` through `canix cache binary build`.
+2. Run `scripts/verify_wetting_hip.py --cpu-native … --hip-native … --pci
+   0000:03:00.0 --uuid GPU-… --output …` inside the bounded service. It
+   requires phase relative L2 ≤ 1e-10 against CPU, exact coordinates and
+   material IDs, the unchanged mass and angle gates, and six identity or
+   fallback rejections that must happen before any output. Velocity is a
+   diagnostic.
+3. Run the worker B1-style gate with the HIP runtime.
+
+**Routing.** Each role names its own PCI, and reservations are per physical
+card, so Render (EGL) and Media (VAAPI) can name a different card from
+Compute. The Granite Ridge iGPU (`0000:7d:00.0`) is bound to `vfio-pci`, so it
+has no render node today. Binding it to `amdgpu` would add a second KFD GPU
+node, and the qualified single-KFD-GPU HIP policy would then refuse every HIP
+compute stage. Concurrent iGPU render/media with dGPU HIP compute therefore
+needs the multi-GPU KFD exclusion gate first. Until then, the iGPU can serve
+Render/Media only on a host with no HIP compute.
