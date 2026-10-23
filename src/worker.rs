@@ -1048,6 +1048,10 @@ fn dispatch(
                 "artifacts":store.artifact_page(&job_id, None, default_artifact_limit())?,"arrays":"retained in artifacts; not embedded in responses"}),
             )
         }
+        Operation::MaterialsList {} => Ok(crate::manufacturing::Library::builtin()?.summary()),
+        Operation::CostEstimate { request } => Ok(serde_json::to_value(
+            crate::manufacturing::evaluate(&crate::manufacturing::Library::builtin()?, &request)?,
+        )?),
     }
 }
 pub fn serve(state: &Path, socket: &Path, profile_path: &Path) -> Result<()> {

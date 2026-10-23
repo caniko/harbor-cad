@@ -2479,6 +2479,10 @@ pub enum Operation {
     ResultsCorrelate {
         request: Box<crate::correlation::CorrelationRequest>,
     },
+    MaterialsList {},
+    CostEstimate {
+        request: Box<crate::manufacturing::CostRequest>,
+    },
 }
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -2652,5 +2656,9 @@ pub fn schemas() -> serde_json::Value {
     ));
     schemas["CorrelationReport"] =
         serde_json::json!(schemars::schema_for!(crate::correlation::CorrelationReport));
+    schemas["CostRequest"] =
+        serde_json::json!(schemars::schema_for!(crate::manufacturing::CostRequest));
+    schemas["CostReport"] =
+        serde_json::json!(schemars::schema_for!(crate::manufacturing::CostReport));
     schemas
 }

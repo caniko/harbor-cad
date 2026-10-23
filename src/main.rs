@@ -90,6 +90,28 @@ enum Commands {
         #[arg(long)]
         job: Option<String>,
     },
+    /// Sourced material and process data (typical ranges, not qualified properties).
+    Materials {
+        #[command(subcommand)]
+        command: Materials,
+    },
+    /// Local estimate-only unit cost and manufacturability screen; not a quote.
+    Cost {
+        #[command(subcommand)]
+        command: Cost,
+    },
+}
+#[derive(Subcommand)]
+enum Materials {
+    List,
+    /// Show the full sourced record of a material or process id.
+    Show {
+        id: String,
+    },
+}
+#[derive(Subcommand)]
+enum Cost {
+    Estimate { request: PathBuf },
 }
 #[derive(Subcommand)]
 enum Authority {
@@ -718,6 +740,29 @@ fn run(cli: Cli) -> Result<()> {
                 );
             }
         },
+        Commands::Materials { command } => {
+            let library = harbor_cad::manufacturing::Library::builtin()?;
+            return match command {
+                Materials::List => print(&library.summary()),
+                Materials::Show { id } => match library.material(&id) {
+                    Ok(material) => print(material),
+                    Err(_) => print(
+                        library
+                            .process(&id)
+                            .map_err(|_| invalid(format!("unknown material or process {id}")))?,
+                    ),
+                },
+            };
+        }
+        Commands::Cost {
+            command: Cost::Estimate { request },
+        } => {
+            let library = harbor_cad::manufacturing::Library::builtin()?;
+            return print(&harbor_cad::manufacturing::evaluate(
+                &library,
+                &read(&request)?,
+            )?);
+        }
     };
     let socket = cli
         .socket

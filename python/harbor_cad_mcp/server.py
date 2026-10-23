@@ -462,6 +462,18 @@ def build_server(profile: str) -> MCPServer:
             """Score a bounded measured CSV (relative to the worker input root) against one registered thermal history: per-probe bias/MAE/RMSE/max error and tolerance pass, sensor accuracy reported separately. Linear interpolation inside the overlap only; correlation is not validation of untested conditions."""
             return await request("results_correlate", request=request_spec)
 
+    if profile in {"simulation", "all"}:
+
+        @server.tool()
+        async def materials_list() -> dict[str, Any]:
+            """List sourced material/process ids and process rate bases; typical published ranges, not qualified properties."""
+            return await request("materials_list")
+
+        @server.tool()
+        async def cost_estimate(request_spec: dict[str, Any]) -> dict[str, Any]:
+            """Estimate per-unit USD low/high with breakdown and manufacturability screen; missing inputs stay missing. Not a supplier quote."""
+            return await request("cost_estimate", request=request_spec)
+
     return server
 
 
