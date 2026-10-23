@@ -9,7 +9,8 @@
     {"profiles": ["cad", "results", "all"], "tools": ["cad_prepare_spectral_scene", "cad_regions"]},
     {"profiles": ["simulation", "all"], "tools": ["cad_plan_spectral_transport", "study_prepare", "study_submit", "study_status", "snow_openings_validate", "freezing_reference_validate", "case_plan_freezing_reference", "case_plan_fem_reference", "fem_plan_imported", "case_plan_thermal_reference", "snow_reference_validate", "spectral_reference_validate", "spectral_reference_plan", "atmospheric_reference_validate", "atmospheric_reference_plan", "spectral_reflection_reference_validate", "case_plan_snow_reference", "case_plan_wetting_reference", "case_plan_contact_reference", "case_plan_thermal_contact", "filter_plan", "cold_restart_validate", "job_submit", "job_cancel"]},
     {"profiles": ["results", "all"], "tools": ["results_cad_optical", "render_plan", "video_plan", "presentation_submit", "results_describe", "results_sample", "results_compare", "results_sample_thermal", "results_compare_thermal", "results_sample_freezing", "results_retain_wetting", "results_prepare_retained_cooling", "results_sample_retained_cooling", "results_transfer_atmosphere", "atmospheric_transport_plan", "results_compare_freezing", "results_moisture", "results_transfer_temperature", "qualification_report", "artifact_list", "results_correlate"]},
-    {"profiles": ["simulation", "all"], "tools": ["materials_list", "cost_estimate"]}
+    {"profiles": ["simulation", "all"], "tools": ["materials_list", "cost_estimate"]},
+    {"profiles": ["simulation", "all"], "tools": ["design_plan", "design_submit", "design_propose", "design_status", "design_export"]}
   ],
   "forbidden_tools": ["shell", "python_eval", "nix_eval", "native_execute", "solver_resume"],
   "refusal_probes": {
@@ -23,11 +24,12 @@
     "filter_plan": {"request_spec": {}},
     "render_plan": {"request_spec": {}},
     "video_plan": {"request_spec": {}},
-    "results_correlate": {"request_spec": {}}
+    "results_correlate": {"request_spec": {}},
+    "design_plan": {"envelope": {}}
   },
   "frameworks": [
     {"framework": "Fleetix", "coverage": "inspection", "inspection": ["fleetix_contract_digest"], "tools": ["doctor", "backend_list", "case_plan_b1", "execution_preflight"], "scope": "Compiled route contract and exact requested compute/render/media binding; inventory is not execution evidence."},
-    {"framework": "SQLite", "coverage": "inspection", "inspection": ["build_provenance", "sqlite_version"], "tools": ["doctor", "job_submit", "job_status", "job_logs", "job_cancel", "study_prepare", "study_submit", "study_status", "results_describe", "artifact_list", "qualification_report"], "scope": "Linked version and bounded durable jobs/events/artifacts/studies through the same Rust worker; no SQL interface."},
+    {"framework": "SQLite", "coverage": "inspection", "inspection": ["build_provenance", "sqlite_version"], "tools": ["doctor", "job_submit", "job_status", "job_logs", "job_cancel", "study_prepare", "study_submit", "study_status", "design_plan", "design_submit", "design_propose", "design_status", "design_export", "results_describe", "artifact_list", "qualification_report"], "scope": "Linked version and bounded durable jobs/events/artifacts/studies/designs through the same Rust worker; no SQL interface."},
     {"framework": "systemd", "coverage": "inspection", "inspection": ["service_guarantees", "systemd"], "tools": ["doctor", "execution_preflight", "job_status", "job_logs", "job_cancel"], "scope": "Declared service guarantees and exact-plan checks; actual invocation/cgroup and cancellation evidence remain job-scoped; logout/reboot/resume unqualified."},
     {"framework": "Bubblewrap", "coverage": "bounded_workflow", "refusal_probe": "execution_preflight", "tools": ["execution_preflight"], "scope": "Exact native runner/closure preflight only; does not execute or qualify importer/solver/JIT/device isolation."},
     {"framework": "Official MCP SDK", "coverage": "inspection", "inspection": ["schema_version"], "tools": ["doctor", "backend_list", "case_validate", "materials_list", "cost_estimate"], "scope": "Real stdio discovery, JSON schemas and typed worker errors; the Rust doctor's locks do not identify the MCP interpreter or installed SDK."},

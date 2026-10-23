@@ -474,6 +474,44 @@ def build_server(profile: str) -> MCPServer:
             """Estimate per-unit USD low/high with breakdown and manufacturability screen; missing inputs stay missing. Not a supplier quote."""
             return await request("cost_estimate", request=request_spec)
 
+    if profile in {"simulation", "all"}:
+
+        @server.tool()
+        async def design_plan(envelope: dict[str, Any]) -> dict[str, Any]:
+            """Validate a bounded design envelope and strict template substitution under the worker policy; return its approval digest. No job is created."""
+            return await request("design_plan", envelope=envelope)
+
+        @server.tool()
+        async def design_submit(
+            envelope: dict[str, Any], approved_digest: str, idempotency_key: str
+        ) -> dict[str, Any]:
+            """Persist an approved design intent; candidates run as ordinary worker jobs and the worker advances the bounded loop."""
+            return await request(
+                "design_submit",
+                envelope=envelope,
+                approved_digest=approved_digest,
+                idempotency_key=idempotency_key,
+            )
+
+        @server.tool()
+        async def design_propose(
+            design_id: str, candidate: dict[str, Any]
+        ) -> dict[str, Any]:
+            """Evaluate one on-grid in-bounds candidate exactly like a proposal; it consumes the approved evaluation budget."""
+            return await request(
+                "design_propose", design_id=design_id, candidate=candidate
+            )
+
+        @server.tool()
+        async def design_status(design_id: str) -> dict[str, Any]:
+            """Read iterations, metrics, feasibility, incumbent, Pareto set and budget use; completion is not physical validation."""
+            return await request("design_status", design_id=design_id)
+
+        @server.tool()
+        async def design_export(design_id: str) -> dict[str, Any]:
+            """Report the winner, its child job IDs and simulated/unknown/calibrated constraint evidence; never promotes qualification."""
+            return await request("design_export", design_id=design_id)
+
     return server
 
 

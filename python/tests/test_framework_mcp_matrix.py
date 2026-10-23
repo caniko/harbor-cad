@@ -188,6 +188,8 @@ def test_framework_matrix_matches_real_profiles_and_shared_worker(tmp_path):
                 "job_executions",
                 "job_authorizations",
                 "studies",
+                "designs",
+                "design_candidates",
             ):
                 assert (
                     connection.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
