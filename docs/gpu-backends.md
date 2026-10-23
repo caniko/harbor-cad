@@ -155,3 +155,19 @@ node, and the qualified single-KFD-GPU HIP policy would then refuse every HIP
 compute stage. Concurrent iGPU render/media with dGPU HIP compute therefore
 needs the multi-GPU KFD exclusion gate first. Until then, the iGPU can serve
 Render/Media only on a host with no HIP compute.
+
+**Render/media sandbox.** EGL and VAAPI stages run under
+`harbor-cad-render-drm-single-node-v1` and
+`harbor-cad-media-drm-single-node-v1` (`DrmSandbox::apply` in
+`src/devices.rs`). Bubblewrap's fresh `/dev` receives only the selected
+`/dev/dri/renderD*` node and its `by-path` alias, the selected PCI/DRM sysfs
+attributes and `/run/opengl-driver`. They never get `/dev/kfd` or another
+card. The adapter reads the policy from `HARBOR_CAD_DRM_POLICY` and lists
+`/dev/dri`. It refuses unless it sees exactly that node and no KFD, and
+records the result as `sandbox` in its receipt. The worker refuses a receipt
+whose policy, node or listing differs. With one visible node, ParaView's EGL
+device index can map only to that node. The current display is still checked
+after every render. There is no CPU or other-GPU fallback. The policy has
+not yet been run natively: `scripts/verify_egl_fields.py` and
+`scripts/verify_vaapi.py` assert it. Single-node visibility is one precondition
+for the iGPU routing above. The KFD exclusion gate is still required.

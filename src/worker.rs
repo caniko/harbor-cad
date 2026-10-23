@@ -1810,15 +1810,17 @@ fn native_stage(
         ]);
     }
     let mut hip_identity = None;
+    let mut drm_binding = None;
     if let Some(selection) = &stage.selection {
         if selection.role != Role::Compute {
             let binding = devices::DrmSandbox::resolve(&selection.pci)?;
-            binding.apply(&mut command);
+            let policy = binding.apply(selection.role, &selection.backend, &mut command)?;
             store.event(
                 id,
                 "dri_binding_verified",
-                &serde_json::to_string(&binding)?,
+                &serde_json::to_string(&serde_json::json!({"policy": policy, "binding": binding}))?,
             )?;
+            drm_binding = Some((binding, policy));
         } else if selection.backend == "hip" {
             if store.execution_authorization(id)?.is_none() {
                 return Err(Error::Unqualified(
@@ -2045,6 +2047,9 @@ fn native_stage(
             read_native_receipt(&receipt)?
         };
     validate_native_receipt(stage, &evidence)?;
+    if let Some((binding, policy)) = &drm_binding {
+        binding.verify_receipt(policy, &evidence)?;
+    }
     if stage.operation == StageOperation::SpectralReference && plan.cad_transport.is_some() {
         let source = crate::cad_transport::registered(store, id, plan)?;
         crate::cad_transport_fields::verify_receipt(

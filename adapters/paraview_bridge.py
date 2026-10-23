@@ -7,6 +7,33 @@ import os
 import sys
 from pathlib import Path
 
+POLICY = "harbor-cad-render-drm-single-node-v1"
+
+
+def drm_sandbox(pci, dev=Path("/dev")):
+    """Worker DRM sandbox: only the selected render node, no KFD, no other card."""
+    if os.environ.get("HARBOR_CAD_DRM_POLICY") != POLICY:
+        raise RuntimeError("exact single-node DRM sandbox policy required")
+    alias = dev / "dri/by-path" / f"pci-{pci}-render"
+    node = alias.resolve() if alias.is_symlink() else None
+    visible = sorted(p.name for p in (dev / "dri").iterdir())
+    by_path = sorted(p.name for p in (dev / "dri/by-path").iterdir())
+    if (
+        node is None
+        or not node.is_char_device()
+        or visible != sorted(["by-path", node.name])
+        or by_path != [alias.name]
+        or (dev / "kfd").exists()
+    ):
+        raise RuntimeError("sandbox must expose only the selected DRM render node")
+    return {
+        "policy": POLICY,
+        "render_node": str(node),
+        "visible_dri": visible,
+        "visible_by_path": by_path,
+        "kfd_visible": False,
+    }
+
 
 def egl_library():
     egl = c.CDLL("@libegl@")
@@ -110,6 +137,9 @@ def main():
     stage = next(s for s in plan["stages"] if s["operation"] == "render")
     pci = stage["selection"]["pci"]
     node = f"/dev/dri/by-path/pci-{pci}-render"
+    sandbox = drm_sandbox(pci)
+    # With one visible node the EGL index can map only to it; the current
+    # display is still checked against the node after every render.
     index = egl_device(node)
     os.environ["VTK_EGL_DEVICE_INDEX"] = str(index)
     os.environ["VTK_DEFAULT_OPENGL_WINDOW"] = "vtkEGLRenderWindow"
@@ -208,6 +238,7 @@ def main():
         "backend": "egl",
         "pci": pci,
         "egl_device_index": index,
+        "sandbox": sandbox,
         "observed_render_node": observed_node,
         "device_evidence": "EGL_DEVICE_EXT queried from current initialized EGL display",
         "context": capabilities,

@@ -95,6 +95,8 @@ def run_video(monkeypatch, tmp_path, times=(0, 10, 20)):
         ).encode()
 
     monkeypatch.setattr(module.subprocess, "check_output", metadata)
+    # The in-sandbox device view is a separate unit (test_render_contract.py).
+    monkeypatch.setattr(module, "drm_sandbox", lambda pci: {"policy": module.POLICY})
     return module, encoded
 
 
@@ -148,6 +150,7 @@ def test_video_preserves_selected_physical_times_and_independent_playback_clock(
     module.main()
     receipt = json.loads((tmp_path / "video-receipt.json").read_text())
     assert encoded and receipt["frames"] == 2
+    assert receipt["sandbox"]["policy"] == "harbor-cad-media-drm-single-node-v1"
     assert receipt["physical_times_s"] == [0, 20]
     assert receipt["presentation_timestamps_s"] == [0, 1 / 24]
     assert (

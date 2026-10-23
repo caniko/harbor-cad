@@ -17,6 +17,8 @@ import uuid
 import zlib
 from pathlib import Path
 
+MEDIA_POLICY = "harbor-cad-media-drm-single-node-v1"
+
 
 def packaged(path):
     if ".." in path.parts or not path.is_relative_to("/nix/store"):
@@ -182,6 +184,10 @@ def main():
         "--setenv",
         "PATH",
         "/nonexistent",
+        # Mirrors DrmSandbox::apply for the media role.
+        "--setenv",
+        "HARBOR_CAD_DRM_POLICY",
+        MEDIA_POLICY,
         "--bind",
         str(work),
         "/work",
@@ -242,6 +248,14 @@ def main():
                 receipt["frames"] == 3 and receipt["metadata"]["codec_name"] == "h264"
             )
             assert receipt["physical_times_s"] == [0, 10, 20]
+            # Only the selected node was visible: no other card, no KFD.
+            assert receipt["sandbox"] == {
+                "policy": MEDIA_POLICY,
+                "render_node": str(node),
+                "visible_dri": ["by-path", node.name],
+                "visible_by_path": [alias.name],
+                "kfd_visible": False,
+            }
             assert (
                 receipt["frame_sequence_sha256"]
                 == hashlib.sha256(

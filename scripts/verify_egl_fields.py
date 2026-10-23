@@ -18,6 +18,23 @@ from pathlib import Path
 from verify_native_cpu import verify_manifest
 from verify_vaapi import packaged
 
+POLICIES = {
+    "render": "harbor-cad-render-drm-single-node-v1",
+    "video": "harbor-cad-media-drm-single-node-v1",
+}
+
+
+def single_node(receipt, policy, pci):
+    """The adapter saw only the selected render node and no KFD."""
+    node = Path(f"/dev/dri/by-path/pci-{pci}-render").resolve(strict=True)
+    assert receipt["sandbox"] == {
+        "policy": policy,
+        "render_node": str(node),
+        "visible_dri": ["by-path", node.name],
+        "visible_by_path": [f"pci-{pci}-render"],
+        "kfd_visible": False,
+    }
+
 
 def records(root):
     return {
@@ -133,6 +150,7 @@ def main():
             )
             assert resource["memory_peak_bytes"] > 0 and resource["cpu_usage_usec"] > 0
             assert resource["binding"]["pci"] == args.pci
+            assert resource["sandbox_policy"] == POLICIES[stage]
             assert resource["cgroup"].endswith("/" + unit)
             services.append(
                 {
@@ -158,9 +176,10 @@ def main():
         }
     egl = json.loads((work / "render-receipt.json").read_text())
     video = json.loads((work / "video-receipt.json").read_text())
-    for receipt, backend in ((egl, "egl"), (video, "vaapi")):
+    for receipt, backend, stage in ((egl, "egl", "render"), (video, "vaapi", "video")):
         assert receipt["executed"] and not receipt["software_fallback"]
         assert receipt["backend"] == backend and receipt["pci"] == args.pci
+        single_node(receipt, POLICIES[stage], args.pci)
     assert egl["observed_render_node"] == str(
         Path(f"/dev/dri/by-path/pci-{args.pci}-render").resolve(strict=True)
     )
