@@ -213,7 +213,13 @@ pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
                 // Two Float64 D2Q9 lattices, halos and phase/coupling fields;
                 // Python contour verification retains its own closed CSV copy.
                 output = add(output, multiply(multiply(cells, 256)?, snapshots)?)?;
-                add(512 * MIB, multiply(cells, 4096)?)?
+                let ram = add(512 * MIB, multiply(cells, 4096)?)?;
+                // HIP keeps both lattices, fields and halos device-resident with
+                // host mirrors; reuse the host allowance, as for airflow OpenLB.
+                if stage.gpu != GpuRequirement::CpuOnly {
+                    vram = ram;
+                }
+                ram
             }
             StageOperation::Bundle => 16 * MIB,
             StageOperation::AtmosphericTransport => {

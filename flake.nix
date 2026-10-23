@@ -152,6 +152,10 @@
     cadMesh = import ./nix/cad-mesh.nix {inherit pkgs fem;};
     femImported = import ./nix/fem-imported.nix {inherit pkgs fem cadMesh;};
     wetting = import ./nix/wetting.nix {inherit pkgs inputs cudaPkgs;};
+    wettingHip = import ./nix/wetting.nix {
+      inherit pkgs inputs cudaPkgs;
+      backend = "hip";
+    };
     contact = import ./nix/contact.nix {inherit pkgs fem;};
     freezing = import ./nix/freezing.nix {inherit pkgs inputs cudaPkgs;};
     retainedCooling = import ./nix/retained-cooling.nix {inherit pkgs inputs cudaPkgs;};
@@ -190,7 +194,8 @@
       inherit (thermal) thermal-cpu runtime-thermal-cpu runtime-thermal-worker;
       inherit (cadMesh) cad-mesh-cpu runtime-cad-mesh-cpu runtime-cad-mesh-worker;
       inherit (femImported) fem-imported-cpu runtime-fem-imported-cpu runtime-fem-imported-worker;
-      inherit (wetting) wetting-reference-cpu runtime-wetting-reference-cpu runtime-wetting-worker;
+      inherit (wetting) wetting-native-cpu wetting-reference-cpu runtime-wetting-reference-cpu runtime-wetting-worker;
+      inherit (wettingHip) wetting-native-hip wetting-reference-hip runtime-wetting-reference-hip runtime-wetting-worker-hip;
       inherit (contact) contact-reference-cpu runtime-contact-reference-cpu runtime-contact-worker;
       inherit (freezing) freezing-native-cpu freezing-reference-cpu runtime-freezing-reference-cpu runtime-freezing-worker;
       inherit (retainedCooling) retained-cooling-native-cpu retained-cooling-reference-cpu runtime-retained-cooling-reference-cpu runtime-retained-cooling-worker;

@@ -169,7 +169,10 @@ fn check_plan(plan: &ExecutionPlan, profile: &HostExecutionProfile) -> Result<()
             ) {
                 crate::sandbox::importer_mounts(native.importer_closure()?, Path::new(executable))?;
             }
-            if matches!(stage.operation, StageOperation::Openlb) {
+            if matches!(
+                stage.operation,
+                StageOperation::Openlb | StageOperation::WettingReference
+            ) {
                 let backend = stage
                     .selection
                     .as_ref()
@@ -1280,7 +1283,10 @@ pub fn backends() -> serde_json::Value {
         {"adapter":"calculix_contact","backend":"cpu","runtime":"unqualified","precision":"float64","formulation":"planar_linear_penalty_contact","plan_schema_version":10,"scope":"synthetic zero-Poisson two-block preload and uniform thermal expansion/opening; independent original DAT force/stress/displacement and gap checks","reference_evidence":"docs/contact-reference.md"},
         {"adapter":"thermal_contact","backend":"cpu","runtime":"unqualified","precision":"float64","formulation":"one_way_native_capacitance_projection_to_planar_contact","plan_schema_version":11,"scope":"independent native thermal histories; complete C3D8 capacitance projection with explicit pointwise loss; derived uniform contact temperatures and original six-surface moisture; exact job qualification required","reference_evidence":"docs/contact-reference.md"},
         {"adapter":"paraview","backend":"egl","runtime":"unqualified"},
-        {"adapter":"ffmpeg","backend":"vaapi","runtime":"unqualified"}
+        {"adapter":"ffmpeg","backend":"vaapi","runtime":"unqualified"},
+        {"adapter":"openlb_wetting","backend":"hip","runtime":"unqualified","precision":"float64","formulation":"well_balanced_contact_angle_2d","plan_schema_version":9,"scope":"same synthetic recipe on one explicit PCI/UUID card; CPU/HIP Float64 phase parity and worker KFD gates pending","reference_evidence":"docs/gpu-backends.md"},
+        {"adapter":"openlb_freezing","backend":"hip","runtime":"unsupported","reason":crate::freezing::GPU_REFUSAL,"decision_evidence":"docs/gpu-backends.md"},
+        {"adapter":"openlb_retained_cooling","backend":"hip","runtime":"unsupported","reason":"host-applied per-step half-link boundaries and energy ledger over total-enthalpy dynamics absent from pinned OpenLB GPU CI","decision_evidence":"docs/gpu-backends.md"}
     ])
 }
 pub fn doctor() -> Result<serde_json::Value> {
@@ -1594,7 +1600,10 @@ fn native_stage(
             StageOperation::WettingReference => (
                 "/wetting-runtime-closure.txt",
                 "HARBOR_CAD_WETTING_POLICY",
-                crate::execution::WETTING_SANDBOX_POLICY,
+                plan.wetting
+                    .as_ref()
+                    .ok_or_else(|| invalid("wetting recipe required"))?
+                    .sandbox_policy(),
             ),
             StageOperation::FreezingReference if plan.retained_cooling.is_some() => (
                 "/retained-cooling-runtime-closure.txt",

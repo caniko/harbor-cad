@@ -68,6 +68,65 @@ fn explicit_long_settling_budget_preserves_fields_materials_and_memory_admission
     assert!(long_spec.validate().is_err());
 }
 
+fn hip() -> serde_json::Value {
+    let mut raw = reference();
+    raw["backend"] = "hip".into();
+    raw["selection"] = serde_json::json!({"role":"compute","backend":"hip","pci":"0000:03:00.0","backend_uuid":format!("GPU-{}", "ab".repeat(16))});
+    raw
+}
+
+#[test]
+fn hip_wetting_binds_exact_compute_card_vram_and_no_fallback() {
+    let cpu: WettingReferenceSpec = serde_json::from_value(reference()).unwrap();
+    // CPU descriptors keep their historical serialization and science identity.
+    assert!(
+        serde_json::to_value(&cpu)
+            .unwrap()
+            .get("selection")
+            .is_none()
+    );
+    let cpu_plan = ExecutionPlan::wetting_reference(cpu, "research".into()).unwrap();
+    assert_eq!(cpu_plan.stages[0].gpu, GpuRequirement::CpuOnly);
+    assert_eq!(cpu_plan.stages[0].vram_bytes, 0);
+    let spec: WettingReferenceSpec = serde_json::from_value(hip()).unwrap();
+    let plan = ExecutionPlan::wetting_reference(spec.clone(), "research".into()).unwrap();
+    let stage = &plan.stages[0];
+    assert_eq!(stage.gpu, GpuRequirement::Required);
+    assert_eq!(stage.selection.as_ref().unwrap().pci, "0000:03:00.0");
+    assert_eq!(stage.vram_bytes, stage.ram_bytes);
+    assert_eq!(stage.ram_bytes, cpu_plan.stages[0].ram_bytes);
+    assert_eq!(plan.stages[1].gpu, GpuRequirement::CpuOnly);
+    for (key, value) in [
+        ("role", serde_json::json!("render")),
+        ("backend", serde_json::json!("cuda")),
+        ("pci", serde_json::json!("0000:03:00")),
+        ("backend_uuid", serde_json::Value::Null),
+    ] {
+        let mut raw = hip();
+        raw["selection"][key] = value;
+        let spec: WettingReferenceSpec = serde_json::from_value(raw).unwrap();
+        assert!(spec.validate().is_err(), "{key}");
+    }
+    for (backend, selection) in [("hip", false), ("cpu", true), ("cuda", true)] {
+        let mut raw = hip();
+        raw["backend"] = backend.into();
+        if !selection {
+            raw.as_object_mut().unwrap().remove("selection");
+        }
+        let spec: WettingReferenceSpec = serde_json::from_value(raw).unwrap();
+        assert!(spec.validate().is_err(), "{backend}");
+    }
+    for key in ["dropped", "card", "cpu"] {
+        let mut changed = plan.clone();
+        match key {
+            "dropped" => changed.stages[0].selection = None,
+            "card" => changed.stages[0].selection.as_mut().unwrap().pci = "0000:04:00.0".into(),
+            _ => changed.stages[0].gpu = GpuRequirement::CpuOnly,
+        }
+        assert!(changed.validate().is_err(), "{key}");
+    }
+}
+
 #[test]
 fn version_nine_wetting_plan_retains_independent_native_times_and_closed_cpu_dag() {
     let spec: WettingReferenceSpec = serde_json::from_value(reference()).unwrap();

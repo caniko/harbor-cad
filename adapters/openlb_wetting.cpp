@@ -14,6 +14,14 @@
 #include <set>
 #include <stdexcept>
 #include "wetting_output.hpp"
+#ifdef PLATFORM_GPU_HIP
+#include "hip_identity.hpp"
+constexpr Platform driver_platform = Platform::GPU_HIP;
+constexpr const char* driver_backend = "hip";
+#else
+constexpr Platform driver_platform = Platform::CPU_SISD;
+constexpr const char* driver_backend = "cpu";
+#endif
 
 using Json = nlohmann::json;
 
@@ -35,7 +43,7 @@ static Json snapshot(MyCase& experiment, std::size_t step, double dx, double dt)
   SuperLatticeDensity2D<double,PhaseD> phi(phase);
   SuperLatticeVelocity2D<double,FlowD> velocity(flow);
   const auto& load = phase.getLoadBalancer();
-  if (load.size() != 1 || load.platform(0) != Platform::CPU_SISD) throw std::runtime_error("one explicit CPU block required");
+  if (load.size() != 1 || load.platform(0) != driver_platform || flow.getLoadBalancer().size() != 1 || flow.getLoadBalancer().platform(0) != driver_platform) throw std::runtime_error("one explicit block on the compiled platform required; silent CPU block assignment rejected");
   const auto& cuboid = geometry.getBlockGeometry(0).getCuboid();
   const int nx = cuboid.getNx(), ny = cuboid.getNy(), global = load.glob(0);
   std::string name = "wetting-" + std::to_string(step) + ".csv";
@@ -70,9 +78,11 @@ int main(int argc, char** argv) {
     if (argc!=3 || std::string(argv[1])!="reference") throw std::runtime_error("usage: harbor-cad-openlb-wetting reference request.json");
     if (std::filesystem::file_size(argv[2])>65536) throw std::runtime_error("bounded wetting descriptor required");
     Json spec; std::ifstream(argv[2]) >> spec;
-    const std::set<std::string> names={"schema_version","synthetic","backend","formulation","diameter_m","initial_center_above_wall_m","resolution","interface_width_m","density_liquid_kg_m3","density_vapor_kg_m3","viscosity_liquid_m2_s","viscosity_vapor_m2_s","surface_tension_n_m","contact_angle_deg","phase_relaxation_time","steps","observation_steps","mass_tolerance","angle_tolerance_deg","material_provenance","boundary_provenance"};
+    std::set<std::string> names={"schema_version","synthetic","backend","formulation","diameter_m","initial_center_above_wall_m","resolution","interface_width_m","density_liquid_kg_m3","density_vapor_kg_m3","viscosity_liquid_m2_s","viscosity_vapor_m2_s","surface_tension_n_m","contact_angle_deg","phase_relaxation_time","steps","observation_steps","mass_tolerance","angle_tolerance_deg","material_provenance","boundary_provenance"};
+    // HIP descriptors carry their explicit PCI/UUID compute selection; CPU descriptors never do.
+    if (std::string(driver_backend)=="hip") names.insert("selection");
     std::set<std::string> observed; for (auto it=spec.begin(); it!=spec.end(); ++it) observed.insert(it.key());
-    if (observed!=names || spec.at("schema_version")!=1 || spec.at("synthetic")!=true || spec.at("backend")!="cpu" || spec.at("formulation")!="well_balanced_contact_angle_2d") throw std::runtime_error("explicit synthetic CPU 2D wetting reference descriptor required");
+    if (observed!=names || spec.at("schema_version")!=1 || spec.at("synthetic")!=true || spec.at("backend")!=driver_backend || spec.at("formulation")!="well_balanced_contact_angle_2d") throw std::runtime_error(std::string("explicit synthetic 2D wetting reference descriptor for the compiled backend required: ")+driver_backend);
     if (number(spec,"initial_center_above_wall_m")!=0.) throw std::runtime_error("explicit wall-centered initial half-circle required; initial geometry must be invariant under refinement");
     const double diameter=number(spec,"diameter_m"), width=number(spec,"interface_width_m"), liquid=number(spec,"density_liquid_kg_m3"), vapor=number(spec,"density_vapor_kg_m3"), nu=number(spec,"viscosity_liquid_m2_s"), gas_nu=number(spec,"viscosity_vapor_m2_s"), sigma=number(spec,"surface_tension_n_m"), angle=number(spec,"contact_angle_deg"), mobility=number(spec,"phase_relaxation_time"), mass_gate=number(spec,"mass_tolerance"), angle_gate=number(spec,"angle_tolerance_deg");
     if (!spec.at("resolution").is_number_unsigned() || !spec.at("steps").is_number_unsigned()) throw std::runtime_error("integer refinement/step limits required");
@@ -84,6 +94,16 @@ int main(int argc, char** argv) {
     auto retained=spec.at("observation_steps").get<std::vector<std::size_t>>();
     if (retained.size()<2 || retained.size()>32 || retained.front()!=0 || retained.back()!=steps || !std::is_sorted(retained.begin(),retained.end()) || std::adjacent_find(retained.begin(),retained.end())!=retained.end()) throw std::runtime_error("ordered distinct initial/final bounded native observations required");
     verify_wetting_output_directory(".");
+    Json receipt={{"schema_version",1},{"adapter","OpenLB"},{"backend",driver_backend}};
+#ifdef PLATFORM_GPU_HIP
+    // Select and verify the card before any device allocation or scientific output.
+    receipt.update(hip_select_device(spec.at("selection")));
+    receipt["compiled_architecture"]="@hip_architecture@";
+    receipt["uuid_source"]="hipDeviceGetUuid; GPU- followed by 16 bytes in lowercase hex";
+    int runtimeVersion=0, driverVersion=0;
+    hip_check(hipRuntimeGetVersion(&runtimeVersion)); hip_check(hipDriverGetVersion(&driverVersion));
+    receipt["hip_runtime_version"]=runtimeVersion; receipt["hip_driver_version"]=driverVersion; receipt["compiled_hip_version"]=HIP_VERSION;
+#endif
     initialize(&argc,&argv); singleton::directories().setOutputDir("./tmp/");
     MyCase::ParametersD params;
     using namespace olb::parameters;
@@ -94,13 +114,30 @@ int main(int argc, char** argv) {
     Mesh mesh=createMesh(params); MyCase experiment(params,mesh);
     prepareGeometry(experiment); prepareLattice(experiment); setInitialValues(experiment);
     auto& flow=experiment.getLattice(NavierStokes{}); auto& phase=experiment.getLattice(Component1{});
+#ifdef PLATFORM_GPU_HIP
+    // Upstream setInitialValues runs PreCoupling/ChemPotCalc before initialize()
+    // uploads host state, then re-equilibrates phase populations on the host. On
+    // a device lattice that never reaches the CPU initial state. Replay the CPU
+    // order explicitly: upload host state, run the same device stages and the
+    // PostStream pass of initialize(), then upload the host equilibrium populations.
+    flow.setProcessingContext(ProcessingContext::Simulation); phase.setProcessingContext(ProcessingContext::Simulation);
+    phase.executePostProcessors(stage::PreCoupling()); phase.getCommunicator(stage::PreCoupling()).communicate();
+    phase.executePostProcessors(stage::ChemPotCalc()); phase.getCommunicator(stage::PreCoupling()).communicate();
+    flow.getBlock(0).postProcess(); phase.getBlock(0).postProcess();
+    phase.setProcessingContext<Array<descriptors::POPULATION>>(ProcessingContext::Simulation);
+    phase.getCommunicator(stage::PreCoupling()).communicate();
+#endif
     const auto& converter=flow.getUnitConverter();
     if (std::abs(converter.getPhysDeltaT()/dt-1.)>1e-12 || std::abs(converter.getPhysDeltaX()/dx-1.)>1e-12) throw std::runtime_error("independent SI conversion differs from pinned converter");
     Json snapshots=Json::array();
     for (std::size_t i=0; i<=steps; ++i) {
-      if (std::binary_search(retained.begin(),retained.end(),i)) snapshots.push_back(snapshot(experiment,i,dx,dt));
+      if (std::binary_search(retained.begin(),retained.end(),i)) {
+        snapshots.push_back(snapshot(experiment,i,dx,dt));
+        // Device Simulation context uploads host mirrors. Re-enter only after an
+        // observation, never each step: repeated uploads erase evolving device state.
+        if (i<steps) {flow.setProcessingContext(ProcessingContext::Simulation); phase.setProcessingContext(ProcessingContext::Simulation);}
+      }
       if (i==steps) break;
-      flow.setProcessingContext(ProcessingContext::Simulation); phase.setProcessingContext(ProcessingContext::Simulation);
       flow.collideAndStream(); phase.collideAndStream();
       phase.getCommunicator(stage::PreCoupling()).communicate(); phase.executePostProcessors(stage::PreCoupling());
       phase.getCommunicator(stage::PreCoupling()).communicate(); phase.executePostProcessors(stage::ChemPotCalc());
@@ -108,7 +145,15 @@ int main(int argc, char** argv) {
     }
     double mass_error=0.; const double initial=snapshots.front().at("droplet_area_m2");
     for (const auto& item:snapshots) mass_error=std::max(mass_error,std::abs(item.at("droplet_area_m2").get<double>()/initial-1.));
-    Json receipt={{"schema_version",1},{"adapter","OpenLB"},{"backend","cpu"},{"executed",true},{"software_fallback",false},{"source_revision","145cd54810b468f4b6fd3ed86b10644264841578"},{"formulation",spec.at("formulation")},{"dimensionality",2},{"precision","float64"},{"synthetic",true},{"request",spec},{"spacing_m",dx},{"physical_step_s",dt},{"interface_width_lattice",lattice_width},{"surface_tension_lattice",lattice_sigma},{"wall_y_m",0.5*dx},{"snapshots",snapshots},{"mass_relative_error",mass_error},{"mass_tolerance",mass_gate},{"numerical_verification","mass checked; independent contact-angle/refinement gate required"},{"physical_validation","unqualified"},{"scope","static synthetic diffuse-interface planar wetting; no water-air ratio, inlet splash, ingress, evaporation or retention conclusion"}};
+#ifdef PLATFORM_GPU_HIP
+    hip_check(hipDeviceSynchronize()); hip_check(hipGetLastError());
+    int current=-1; hip_check(hipGetDevice(&current));
+    if (current!=receipt.at("ordinal_diagnostic_only")) throw std::runtime_error("HIP execution device changed");
+    receipt["gpu_blocks"]=phase.getLoadBalancer().size();
+    receipt["gpu_kernel_completion_verified"]=true;
+    receipt["processing_context_policy"]="device-resident stepping; host synchronization at retained observations";
+#endif
+    receipt.update(Json{{"executed",true},{"software_fallback",false},{"source_revision","145cd54810b468f4b6fd3ed86b10644264841578"},{"formulation",spec.at("formulation")},{"dimensionality",2},{"precision","float64"},{"synthetic",true},{"request",spec},{"spacing_m",dx},{"physical_step_s",dt},{"interface_width_lattice",lattice_width},{"surface_tension_lattice",lattice_sigma},{"wall_y_m",0.5*dx},{"snapshots",snapshots},{"mass_relative_error",mass_error},{"mass_tolerance",mass_gate},{"numerical_verification","mass checked; independent contact-angle/refinement gate required"},{"physical_validation","unqualified"},{"scope","static synthetic diffuse-interface planar wetting; no water-air ratio, inlet splash, ingress, evaporation or retention conclusion"}});
     std::ofstream output("wetting-receipt.json.partial"); output<<receipt.dump(2); output.flush(); if (!output) throw std::runtime_error("receipt write failed"); output.close(); std::filesystem::rename("wetting-receipt.json.partial","wetting-receipt.json");
     if (mass_error>mass_gate) throw std::runtime_error("approved phase-mass gate failed; original fields retained");
     return 0;

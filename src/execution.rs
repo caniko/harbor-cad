@@ -39,8 +39,8 @@ fn sandbox_policy(plan: &ExecutionPlan) -> &'static str {
         crate::freezing::SANDBOX_POLICY
     } else if plan.contact.is_some() {
         CONTACT_SANDBOX_POLICY
-    } else if plan.wetting.is_some() {
-        WETTING_SANDBOX_POLICY
+    } else if let Some(spec) = &plan.wetting {
+        spec.sandbox_policy()
     } else if plan.imported_fem.is_some() {
         FEM_IMPORTED_SANDBOX_POLICY
     } else if plan.cad_source.is_some() {

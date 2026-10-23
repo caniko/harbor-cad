@@ -1839,9 +1839,11 @@ impl ExecutionPlan {
                 || !self.observation.checkpoint_times_s.is_empty()
                 || !self.observation.preview_times_s.is_empty()
                 || self.observation.preview_may_drop
+                || serde_json::to_value(&self.stages[0].selection)?
+                    != serde_json::to_value(&wetting.selection)?
             {
                 return Err(invalid(
-                    "exact independent CPU planar wetting DAG and retained native observations required",
+                    "exact independent planar wetting DAG, approved compute selection and retained native observations required",
                 ));
             }
         }
@@ -2139,6 +2141,9 @@ impl ExecutionPlan {
                 StageOperation::Render => Some(Role::Render),
                 StageOperation::Video => Some(Role::Media),
                 StageOperation::NumericalFilter => Some(Role::Compute),
+                StageOperation::WettingReference if stage.gpu != GpuRequirement::CpuOnly => {
+                    Some(Role::Compute)
+                }
                 _ => None,
             };
             if let Some(role) = expected_role {
