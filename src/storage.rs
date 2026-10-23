@@ -570,6 +570,7 @@ impl Store {
         if (plan.source.is_some()
             || plan.retained_cooling.is_some()
             || plan.cad_variant.is_some()
+            || plan.cad_sheet_variant.is_some()
             || plan.cad_source.is_some()
             || plan.atmospheric_transport.is_some())
             && (profile.is_none() || binding.is_none() || authorization.is_none())

@@ -1,0 +1,13 @@
+{
+  "schema_version": 2,
+  "source_job": "00000000-0000-0000-0000-000000000000",
+  "sheet_name": "Params",
+  "parameters": {
+    "wall": {"value": 3.0, "unit": "mm"},
+    "fin_count": {"value": 10, "unit": "1"},
+    "fin_height": {"value": 20.0, "unit": "mm"}
+  },
+  "regions": ["housing", "lid", "gasket", "window", "pcb", "mount"],
+  "geometry_tolerance": {"value": 1e-5, "unit": "m"},
+  "provenance": "explicit synthetic enclosure sheet-copy example; replace source_job with an authorized enclosure_fixture (or sheet-bearing inspection) job"
+}

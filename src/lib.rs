@@ -10,6 +10,7 @@ mod atmospheric_transport_tests;
 pub mod authority;
 pub mod cad;
 pub mod cad_mesh;
+pub mod cad_sheet_variant;
 pub mod cad_source;
 pub mod cad_spectral;
 pub mod cad_transport;

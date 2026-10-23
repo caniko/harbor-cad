@@ -162,7 +162,7 @@ def build_server(profile: str) -> MCPServer:
 
         @server.tool()
         async def cad_plan_variant(variant: dict[str, Any]) -> dict[str, Any]:
-            """Approve one registered native box copy with explicit dimensions and preserved placement; no source document is opened while planning."""
+            """Approve one registered CAD copy: a native box with explicit dimensions (schema 1) or existing spreadsheet aliases with explicit units (schema 2); no source document is opened while planning."""
             return await request("plan_cad_variant", request=variant)
 
     if profile in {"cad", "results", "all"}:

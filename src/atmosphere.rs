@@ -199,6 +199,7 @@ impl crate::contracts::ExecutionPlan {
             atmosphere: Some(spec),
             atmospheric_transport: None,
             cad_variant: None,
+            cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
             stages: vec![

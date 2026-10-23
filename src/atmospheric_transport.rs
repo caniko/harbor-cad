@@ -153,6 +153,7 @@ impl ExecutionPlan {
             atmosphere: None,
             atmospheric_transport: Some(spec),
             cad_variant: None,
+            cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
             stages: vec![

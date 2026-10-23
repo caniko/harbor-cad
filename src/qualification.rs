@@ -229,6 +229,7 @@ pub fn inspect(store: &Store, id: &str) -> Result<JobEvidenceReport> {
             StageOperation::ChannelReference => ("validation.json", None),
             StageOperation::CadFixture => ("cad_fixture-receipt.json", Some("FreeCAD")),
             StageOperation::CadInspect => ("cad_inspect-receipt.json", Some("FreeCAD")),
+            StageOperation::EnclosureFixture => ("enclosure_fixture-receipt.json", Some("FreeCAD")),
             StageOperation::CadMesh => ("stages/mesh/cad-mesh-receipt.json", Some("Gmsh")),
             StageOperation::FemImported => (
                 "stages/fem-imported/fem-imported-receipt.json",
@@ -459,6 +460,11 @@ pub fn inspect(store: &Store, id: &str) -> Result<JobEvidenceReport> {
                 if plan.cad_variant.is_some() && stage.operation == StageOperation::CadInspect {
                     crate::cad_variant::verify_registered_outputs(store, id, &plan, &value)?;
                     capability.formulation = "source_bound_controlled_box_variant".into();
+                }
+                if plan.cad_sheet_variant.is_some() && stage.operation == StageOperation::CadInspect
+                {
+                    crate::cad_sheet_variant::verify_registered_outputs(store, id, &plan, &value)?;
+                    capability.formulation = "source_bound_spreadsheet_variant".into();
                 }
                 if matches!(stage.operation, StageOperation::FemImported) {
                     for path in [

@@ -48,15 +48,18 @@ pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
         )
     });
     let mut output = if native { 16 * MIB } else { MIB };
-    if let Some(variant) = &plan.cad_variant {
-        variant.validate()?;
+    if let Some(variant) = crate::cad_variant::original(plan)? {
         // Original document/region copies plus bounded closed new FCStd, BREP
         // and STL outputs; native document compression ratios are not assumed.
+        let extra = plan
+            .cad_sheet_variant
+            .as_ref()
+            .map_or(0, |s| s.request.regions.len() as u64 - 1);
         output = add(
             output,
             add(
-                add(variant.document.bytes, variant.source.region_evidence.bytes)?,
-                192 * MIB,
+                add(variant.document.bytes, variant.regions.bytes)?,
+                add(192 * MIB, multiply(extra, 64 * MIB)?)?,
             )?,
         )?;
     }
@@ -86,7 +89,9 @@ pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
                     multiply(u64::from(plan.channel_case()?.resolution), 160)?,
                 )?
             }
-            StageOperation::CadFixture | StageOperation::CadInspect => 1024 * MIB,
+            StageOperation::CadFixture
+            | StageOperation::CadInspect
+            | StageOperation::EnclosureFixture => 1024 * MIB,
             StageOperation::Openlb => {
                 let cells = lattice_cells(plan.channel_case()?)?;
                 // Two D3Q19 Float64 distribution sets, fields, geometry, halo

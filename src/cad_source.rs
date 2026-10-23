@@ -38,6 +38,7 @@ impl ExecutionPlan {
             atmosphere: None,
             atmospheric_transport: None,
             cad_variant: None,
+            cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
             source: None,
@@ -119,7 +120,7 @@ pub struct CadMeshDescriptor {
     pub volume_relative_tolerance: f64,
 }
 
-fn hash(value: &str) -> bool {
+pub(crate) fn hash(value: &str) -> bool {
     value.len() == 64
         && value
             .bytes()
@@ -330,17 +331,19 @@ pub(crate) fn verify_brep_outputs(
     Ok(())
 }
 
-/// Resolve only a completed, originally authorized CAD job and registered solid.
-/// Bounds and placement come from verified importer evidence, never caller overrides.
-pub fn source(
+/// A completed, originally authorized patched-importer CAD job and its verified
+/// registered regions. Shared by every recipe that binds an original CAD job.
+pub(crate) fn authorized(
     store: &Store,
     id: &str,
-    region: &str,
-    resolution: u32,
-    geometry_tolerance_m: f64,
-) -> Result<(PathBuf, CadSource)> {
+) -> Result<(
+    ExecutionPlan,
+    crate::cad::RegionReport,
+    crate::execution::ExecutionBinding,
+    crate::authority::ExecutionAuthorization,
+)> {
     let job = store.job(id)?;
-    if job.state != "succeeded" || job.exit_code != Some(0) || !token(region) {
+    if job.state != "succeeded" || job.exit_code != Some(0) {
         return Err(invalid("completed committed named CAD source required"));
     }
     let plan = store.recorded_plan(id)?;
@@ -353,9 +356,15 @@ pub fn source(
     let receipt_path = if plan
         .stages
         .iter()
-        .any(|s| matches!(s.operation, crate::contracts::StageOperation::CadInspect))
+        .any(|s| s.operation == StageOperation::CadInspect)
     {
         "cad_inspect-receipt.json"
+    } else if plan
+        .stages
+        .iter()
+        .any(|s| s.operation == StageOperation::EnclosureFixture)
+    {
+        "enclosure_fixture-receipt.json"
     } else {
         "cad_fixture-receipt.json"
     };
@@ -370,6 +379,22 @@ pub fn source(
             "original patched importer and closure-specific CAD policy required",
         ));
     }
+    Ok((plan, report, binding, authorization))
+}
+
+/// Resolve only a completed, originally authorized CAD job and registered solid.
+/// Bounds and placement come from verified importer evidence, never caller overrides.
+pub fn source(
+    store: &Store,
+    id: &str,
+    region: &str,
+    resolution: u32,
+    geometry_tolerance_m: f64,
+) -> Result<(PathBuf, CadSource)> {
+    if !token(region) {
+        return Err(invalid("completed committed named CAD source required"));
+    }
+    let (plan, report, binding, authorization) = authorized(store, id)?;
     let (manifest, value) = qualification::registered_json(store, id, "brep-manifest.json")?
         .ok_or_else(|| invalid("registered closed BREP manifest required"))?;
     let decoded: BrepManifest = serde_json::from_value(value)?;

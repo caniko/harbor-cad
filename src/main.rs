@@ -319,6 +319,11 @@ enum Cad {
         id: String,
         destination: PathBuf,
     },
+    /// Plan the fixed synthetic enclosure seed (Params sheet + named solids); submit with job submit.
+    EnclosureFixture {
+        #[arg(long, default_value = "research")]
+        policy: String,
+    },
 }
 #[derive(Subcommand)]
 enum Results {
@@ -677,6 +682,10 @@ fn run(cli: Cli) -> Result<()> {
                 return print(
                     &serde_json::json!({"exported":destination,"artifacts":count,"uploads":false}),
                 );
+            }
+            Cad::EnclosureFixture { policy } => {
+                let plan = ExecutionPlan::enclosure_fixture(policy)?;
+                return print(&serde_json::json!({"approval_digest":plan.id()?,"plan":plan}));
             }
         },
         Commands::Job { command } => match command {

@@ -49,9 +49,16 @@ def main():
         fluid.Height = case["channel_height"]["value"] * 1000
         doc.recompute()
         doc.saveAs("/work/source.FCStd")
+    elif op == "enclosure_fixture":
+        if not case["geometry"]["synthetic"]:
+            raise ValueError("fixture must be explicitly synthetic")
+        doc = App.newDocument("HarborSyntheticEnclosure")
+        importlib.import_module("harbor_cad_enclosure_fixture").build(doc)
+        doc.saveAs("/work/source.FCStd")
     elif op == "cad_inspect":
         # No inspection outside sandbox precedes this open.
-        variant = plan.get("cad_variant")
+        sheet_variant = "cad_sheet_variant" in plan
+        variant = plan.get("cad_sheet_variant" if sheet_variant else "cad_variant")
         if variant is not None:
             raw = Path("/input.FCStd").read_bytes()
             if (
@@ -63,8 +70,14 @@ def main():
         if variant is not None:
             if plan["schema_version"] != 16:
                 raise ValueError("distinct approved variant recipe required")
-            result = importlib.import_module("harbor_cad_cad_variant").apply(
-                doc, variant, case["geometry_tolerance"]["value"]
+            native = importlib.import_module("harbor_cad_cad_variant")
+            tolerance = case["geometry_tolerance"]["value"]
+            result = (
+                native.apply_sheet(
+                    doc, variant, tolerance, importlib.import_module("Part")
+                )
+                if sheet_variant
+                else native.apply(doc, variant, tolerance)
             )
             doc.saveAs("/work/variant.FCStd")
             output = Path("/work/variant.FCStd")
@@ -80,7 +93,7 @@ def main():
             atomic_json(
                 "/work/cad-variant-recompute.json",
                 {
-                    "schema_version": 1,
+                    "schema_version": 2 if sheet_variant else 1,
                     "approved_variant": variant,
                     "source_preserved": True,
                     **result,
@@ -95,6 +108,13 @@ def main():
             doc.recompute()
     else:
         raise ValueError("allowlisted CAD operation required")
+    if any(obj.TypeId == "Spreadsheet::Sheet" for obj in doc.Objects):
+        # Registered alias evidence lets version-2 planning refuse unknown
+        # sheets/aliases before any document is opened again.
+        atomic_json(
+            "/work/sheets.json",
+            importlib.import_module("harbor_cad_cad_variant").sheets(doc),
+        )
     regions = []
     breps = []
     required = set(case["regions"])

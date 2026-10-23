@@ -163,7 +163,9 @@ fn check_plan(plan: &ExecutionPlan, profile: &HostExecutionProfile) -> Result<()
             let executable = native.executable_for(&stage.operation, plan)?;
             if matches!(
                 stage.operation,
-                StageOperation::CadInspect | StageOperation::CadFixture
+                StageOperation::CadInspect
+                    | StageOperation::CadFixture
+                    | StageOperation::EnclosureFixture
             ) {
                 crate::sandbox::importer_mounts(native.importer_closure()?, Path::new(executable))?;
             }
@@ -465,6 +467,7 @@ fn submission_binding(
         || plan.retained_cooling.is_some()
         || plan.cad_transport.is_some()
         || plan.cad_variant.is_some()
+        || plan.cad_sheet_variant.is_some()
         || plan.thermal.is_some()
         || plan.cad_source.is_some()
         || plan.wetting.is_some()
@@ -505,6 +508,9 @@ fn submission_binding(
     if let Some(spec) = &plan.cad_variant {
         crate::cad_variant::source(store, spec)?;
     }
+    if let Some(spec) = &plan.cad_sheet_variant {
+        crate::cad_sheet_variant::source(store, spec)?;
+    }
     if let Some(authority) = authority {
         authority.authorize(plan, profile)?;
     }
@@ -527,7 +533,9 @@ fn submission_binding(
             );
             if matches!(
                 stage.operation,
-                StageOperation::CadInspect | StageOperation::CadFixture
+                StageOperation::CadInspect
+                    | StageOperation::CadFixture
+                    | StageOperation::EnclosureFixture
             ) {
                 files.insert(
                     "cad_closure".into(),
@@ -749,7 +757,14 @@ fn dispatch(
                     "controlled CAD variants require authoritative admission".into(),
                 ));
             }
-            let plan = crate::cad_variant::plan(store, *request, profile.policy.clone())?;
+            let plan = match *request {
+                crate::cad_sheet_variant::AnyCadVariantRequest::Box(request) => {
+                    crate::cad_variant::plan(store, request, profile.policy.clone())?
+                }
+                crate::cad_sheet_variant::AnyCadVariantRequest::Sheet(request) => {
+                    crate::cad_sheet_variant::plan(store, request, profile.policy.clone())?
+                }
+            };
             Ok(serde_json::json!({"approval_digest":plan.id()?,"plan":plan}))
         }
         Operation::PlanFemImported { request } => {
@@ -838,11 +853,11 @@ fn dispatch(
                     }
                     Admission::open(&crate::admission::shared_root()?, authority)?
                         .retain_inputs(store, bytes, submit)?
-                } else if let Some(spec) = &plan.cad_variant {
+                } else if let Some(spec) = crate::cad_variant::original(&plan)? {
                     let bytes = spec
                         .document
                         .bytes
-                        .checked_add(spec.source.region_evidence.bytes)
+                        .checked_add(spec.regions.bytes)
                         .and_then(|b| b.checked_add(16 * 1024 * 1024))
                         .ok_or_else(|| invalid("CAD variant staging budget overflow"))?;
                     if bytes
@@ -1398,11 +1413,11 @@ impl NativeRuntime {
     }
     fn executable(&self, operation: &StageOperation) -> Result<&str> {
         let path = match operation {
-            StageOperation::CadFixture | StageOperation::CadInspect => {
-                self.cad.as_deref().ok_or_else(|| {
-                    Error::Unqualified("CAD importer absent from selected runtime".into())
-                })?
-            }
+            StageOperation::CadFixture
+            | StageOperation::CadInspect
+            | StageOperation::EnclosureFixture => self.cad.as_deref().ok_or_else(|| {
+                Error::Unqualified("CAD importer absent from selected runtime".into())
+            })?,
             StageOperation::Openlb => self
                 .openlb
                 .as_deref()
@@ -1549,7 +1564,7 @@ fn native_stage(
         .args(["--chdir", "/work"]);
     if matches!(
         stage.operation,
-        StageOperation::CadInspect | StageOperation::CadFixture
+        StageOperation::CadInspect | StageOperation::CadFixture | StageOperation::EnclosureFixture
     ) {
         crate::sandbox::mount_importer(&mut command, runtime.importer_closure()?, Path::new(exe))?;
     } else if matches!(
@@ -1776,8 +1791,7 @@ fn native_stage(
         }
     }
     if matches!(stage.operation, StageOperation::CadInspect) {
-        if let Some(spec) = &plan.cad_variant {
-            spec.validate()?;
+        if crate::cad_variant::original(plan)?.is_some() {
             command
                 .args(["--ro-bind"])
                 .arg(crate::cad_variant::registered(store, id, plan)?)
@@ -2101,6 +2115,10 @@ fn native_stage(
         crate::cad_variant::registered(store, id, plan)?;
         crate::cad_variant::verify_outputs(plan, dir, &evidence)?;
     }
+    if plan.cad_sheet_variant.is_some() && stage.operation == StageOperation::CadInspect {
+        crate::cad_variant::registered(store, id, plan)?;
+        crate::cad_sheet_variant::verify_outputs(plan, dir, &evidence)?;
+    }
     if matches!(stage.operation, StageOperation::FemImported) {
         crate::cad_source::registered(store, id, plan)?;
         crate::fem_imported::verify_receipt(plan, dir, &evidence)?;
@@ -2168,7 +2186,9 @@ fn read_native_receipt(path: &Path) -> Result<serde_json::Value> {
 
 fn validate_native_receipt(stage: &Stage, evidence: &serde_json::Value) -> Result<()> {
     let adapter = match stage.operation {
-        StageOperation::CadFixture | StageOperation::CadInspect => "FreeCAD",
+        StageOperation::CadFixture
+        | StageOperation::CadInspect
+        | StageOperation::EnclosureFixture => "FreeCAD",
         StageOperation::Openlb => "OpenLB",
         StageOperation::Render => "ParaView",
         StageOperation::Video => "FFmpeg",
@@ -2195,7 +2215,9 @@ fn validate_native_receipt(stage: &Stage, evidence: &serde_json::Value) -> Resul
         || evidence["software_fallback"] != false
         || (matches!(
             stage.operation,
-            StageOperation::CadFixture | StageOperation::CadInspect
+            StageOperation::CadFixture
+                | StageOperation::CadInspect
+                | StageOperation::EnclosureFixture
         ) && evidence["import_policy"] != crate::sandbox::IMPORT_POLICY)
         || (stage.gpu == GpuRequirement::Required
             && evidence["pci"].as_str() != stage.selection.as_ref().map(|s| s.pci.as_str()))
