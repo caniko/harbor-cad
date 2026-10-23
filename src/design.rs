@@ -32,12 +32,14 @@ const MAX_METRICS: usize = 8;
 const MAX_METRIC_SOURCES: usize = 24;
 /// Planning operations a chained template may request. Each is resolved by the
 /// worker's own dispatch, exactly as the CLI/MCP planning call would be.
-pub const CHAIN_OPERATIONS: [&str; 5] = [
+pub const CHAIN_OPERATIONS: [&str; 7] = [
     "plan",
     "plan_thermal_reference",
     "plan_cad_variant",
     "plan_cad_mesh",
     "plan_fem_imported",
+    "plan_cad_solid_mesh",
+    "plan_enclosure_thermal",
 ];
 fn chain_allowed(op: &Operation) -> bool {
     matches!(
@@ -47,6 +49,8 @@ fn chain_allowed(op: &Operation) -> bool {
             | Operation::PlanCadVariant { .. }
             | Operation::PlanCadMesh { .. }
             | Operation::PlanFemImported { .. }
+            | Operation::PlanCadSolidMesh { .. }
+            | Operation::PlanEnclosureThermal { .. }
     )
 }
 const MAX_WALL_SECONDS: u64 = 7 * 24 * 3600;
@@ -2179,6 +2183,17 @@ pub struct DesignStatus {
     /// Non-dominated in (minimize objective, maximize minimum constraint margin).
     pub pareto: Vec<u32>,
     pub physical_validation: String,
+    /// Declared metric inputs labelled synthetic; nonempty means every
+    /// result derived from them is synthetic demonstration output.
+    pub synthetic_inputs: Vec<String>,
+}
+
+fn synthetic_inputs(env: &DesignEnvelope) -> Vec<String> {
+    env.metric_sources
+        .iter()
+        .filter(|m| matches!(&m.source, MetricSource::Declared { input } if input.is_synthetic()))
+        .map(|m| m.metric.clone())
+        .collect()
 }
 
 fn jobs(store: &Store, candidate: &Candidate) -> Result<Vec<JobRef>> {
@@ -2275,6 +2290,7 @@ pub fn status(store: &Store, id: &str) -> Result<DesignStatus> {
         pareto,
         iterations,
         physical_validation: "unqualified".into(),
+        synthetic_inputs: synthetic_inputs(env),
     })
 }
 
@@ -2329,6 +2345,7 @@ pub struct DesignReport {
     pub winner: Option<Winner>,
     pub statement: String,
     pub physical_validation: String,
+    pub synthetic_inputs: Vec<String>,
 }
 
 pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
@@ -2407,11 +2424,20 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
         evaluations: status.budget.evaluations,
         feasible: status.feasible.len() as u32,
         statement: format!(
-            "Design state {}: winner is the best feasible evaluated candidate under the approved envelope. Process success is not physical validation; simulated constraints carry only their child jobs' numerical scope, and unknown constraints never pass.",
+            "{}Design state {}: winner is the best feasible evaluated candidate under the approved envelope. Process success is not physical validation; simulated constraints carry only their child jobs' numerical scope, and unknown constraints never pass.",
+            if status.synthetic_inputs.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    "SYNTHETIC: declared inputs {} are synthetic demonstration values, so every result derived from them is synthetic and is not design evidence. ",
+                    status.synthetic_inputs.join(", ")
+                )
+            },
             status.state
         ),
         state: status.state,
         winner,
         physical_validation: "unqualified".into(),
+        synthetic_inputs: status.synthetic_inputs,
     })
 }

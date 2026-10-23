@@ -719,3 +719,60 @@ fn final_temperature_block_is_the_steady_result() {
     );
 }
 
+#[test]
+fn enclosure_examples_chain_variant_general_mesh_and_enclosure_thermal() {
+    use harbor_cad::design::{DesignEnvelope, prepare};
+    let read = |name: &str| -> (Value, DesignEnvelope) {
+        let raw = std::fs::read_to_string(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("examples")
+                .join(name),
+        )
+        .unwrap();
+        (
+            serde_json::from_str(&raw).unwrap(),
+            serde_json::from_str(&raw).unwrap(),
+        )
+    };
+    for (name, synthetic) in [
+        ("design-enclosure.json", false),
+        ("design-enclosure-demo.json", true),
+    ] {
+        let (raw, env) = read(name);
+        prepare(&env, Some("research")).unwrap();
+        let operations: Vec<&str> = env.templates["screen"]
+            .iter()
+            .map(|t| {
+                t.plan_request.as_ref().unwrap()["operation"]
+                    .as_str()
+                    .unwrap()
+            })
+            .collect();
+        assert_eq!(
+            operations,
+            [
+                "plan_cad_variant",
+                "plan_cad_solid_mesh",
+                "plan_enclosure_thermal"
+            ]
+        );
+        let sources = raw["metric_sources"].as_array().unwrap();
+        let declared: Vec<&Value> = sources
+            .iter()
+            .filter(|m| m["source"]["kind"] == "declared" && m["metric"] != "quantity")
+            .map(|m| &m["source"]["input"])
+            .collect();
+        assert_eq!(declared.len(), 6, "{name}");
+        // The pilot leaves every physical boundary value missing; the demo labels all synthetic.
+        assert!(declared.iter().all(|input| if synthetic {
+            input["synthetic"] == true
+        } else {
+            input["availability"] == "missing"
+        }));
+        let housing = sources
+            .iter()
+            .find(|m| m["metric"] == "max_temperature_k")
+            .unwrap();
+        assert_eq!(housing["source"]["pointer"], "/regions/housing/max_k");
+    }
+}
