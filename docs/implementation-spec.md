@@ -105,6 +105,7 @@ Use whole-device flow/thermal models and local gap/wetting submodels. Estimate a
 | Snow | Prescribed coverage, insulation and blocked openings | Snow deposition or adhesion |
 | Retained water → freeze | Conservative state transfer; phase fractions, temperature, energy balance | Expansion pressure, fracture or freeze–thaw lifetime |
 | Solar / UV | Angular direct/diffuse inputs, surface irradiance and time-integrated dose | Material lifetime without calibration |
+| Enclosure steady thermal | Conformal Gmsh mesh of registered closed solids; CalculiX steady conduction with declared power, film, optional solar/radiation and a lumped internal-air node; recomputed energy balance | Transients, internal convection, condensation, contact resistance or product thermal acceptance |
 
 Start with one-way transfers. Record source/destination regions, units, orientation, interpolation and conservation losses. **Velocity alone does not supply a convection coefficient:** use documented measurements/correlations or validated thermal-flow data with heat flux and wall/reference temperatures; reject ill-conditioned conversions.
 
@@ -149,6 +150,9 @@ harbor-cad case init|validate|plan
 harbor-cad job submit|status|logs|cancel
 harbor-cad results describe|sample|compare
 harbor-cad render | video | artifact list|export
+harbor-cad cad solid-mesh|enclosure-fixture | enclosure-thermal
+harbor-cad results correlate | materials list|show | cost estimate
+harbor-cad design init|validate|plan|submit|propose|status|export
 harbor-cad-mcp --profile cad|simulation|results|all
 ```
 
@@ -172,3 +176,50 @@ Finish vertical slices, not placeholder adapters. One owner controls schemas/loc
 CI covers formatting/lints, builds, schemas, CPU references, applicability rejection, units, source immutability, paths and export round trips. Lifecycle tests cover idempotency, disconnect, worker crash, cancellation, partial writes and disk exhaustion. Hardware qualification independently tests mixed/ambiguous routes, actual execution, JIT/sandbox compatibility and rejected software fallback. Never run untrusted PR code on trusted GPU hosts carrying secrets/private models.
 
 Unavailable hardware is **unqualified**, not passed or a reason to stop unblocked work. Handoffs report changed files, immutable pins, exact commands/outcomes, artifact paths, device evidence, unsupported combinations and missing physical inputs. B1 completes integration, not environmental certification; engineering completion requires each recipe's evidence gates.
+
+## 10. Product design loop and realism
+
+The first product is an outdoor wall/pole-mounted electronics enclosure at pilot
+volume (10–100 units). The following extend §4–§9; they never relax them.
+
+**Design loop** ([design-loop.md](design-loop.md)). One approval digest over a
+canonical envelope bounds a whole search: at most 8 continuous grid parameters
+and 2 categorical choices, ≤32 evaluations, ≤3 refinements, explicit wall-time
+and artifact budgets. Every child is an ordinary immutable job through the normal
+submission, binding, staging and admission path; the loop never schedules or
+executes anything itself. Chained children are planning requests on a fixed
+allowlist, derived through the same dispatch as CLI/MCP planning, keyed
+idempotently by design, envelope digest, candidate, role and upstream job, and
+re-derived identically after restart. Failed upstreams or refused derivations
+block dependents. Template substitution is strict and unit-checked. Unknown
+metrics are unknown and unknown constraints never pass. Ranking is
+feasibility-first. Exports label each constraint `simulated`,
+`estimated`/`calibrated`, `prescribed`, `measured` or `unknown`; any synthetic
+input is listed and prefixes the export statement with `SYNTHETIC`.
+
+**Materials and cost** ([materials-and-cost.md](materials-and-cost.md)). Material
+and process data are sourced `PhysicalInput` ranges with URL, title and access
+date, or explicit `missing` with a reason; nothing is defaulted. Unit cost,
+manufacturability and service margins are estimate-only screens with stated
+assumptions and price years, not quotes or qualified properties. Any missing
+input yields a null total and an `unknown` check, never a pass.
+
+**Measured-data correlation and calibration** ([correlation.md](correlation.md)).
+Score a bounded measured CSV under the profile's input root against one
+succeeded, numerically verified thermal history: SI conversion, explicit probe
+mapping, time offset and inclusive window, interpolation without extrapolation,
+per-probe and pooled error metrics, and sensor accuracy reported, not absorbed.
+Calibration is an ordinary design envelope whose objective is that pooled RMSE.
+Agreement and calibrated values hold only for that rig, test and sensor placement;
+they never upgrade the source job's qualification.
+
+**Enclosure thermal recipe** ([enclosure-thermal.md](enclosure-thermal.md)).
+Mesh registered closed solids conformally with pinned single-thread Gmsh, reject
+overlaps and non-reproducing mesh bytes, and bind the thermal plan to the
+succeeded mesh job's digests. Every physical value is a declared or sourced
+input; library materials take the conservative range end. Rust recomputes
+per-region statistics and every energy term from the native field before
+publication; energy-balance error and air-node residual stay within the
+approved tolerance (≤1e-3). Exterior-face selection by ray escape is a labelled
+heuristic. Native CalculiX execution, mesh quality on real geometry and physical
+validation are separate gates.
