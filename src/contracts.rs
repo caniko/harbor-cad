@@ -2476,6 +2476,9 @@ pub enum Operation {
     CadRegions {
         job_id: String,
     },
+    ResultsCorrelate {
+        request: Box<crate::correlation::CorrelationRequest>,
+    },
 }
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -2644,5 +2647,10 @@ pub fn schemas() -> serde_json::Value {
         serde_json::json!(schemars::schema_for!(crate::cad_variant::CadVariantRequest));
     schemas["CadVariantSpec"] =
         serde_json::json!(schemars::schema_for!(crate::cad_variant::CadVariantSpec));
+    schemas["CorrelationRequest"] = serde_json::json!(schemars::schema_for!(
+        crate::correlation::CorrelationRequest
+    ));
+    schemas["CorrelationReport"] =
+        serde_json::json!(schemars::schema_for!(crate::correlation::CorrelationReport));
     schemas
 }

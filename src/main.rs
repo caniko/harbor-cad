@@ -358,6 +358,10 @@ enum Results {
     PlanAtmosphericTransport {
         request: PathBuf,
     },
+    /// Score measured test series (CSV under the worker input root) against a registered thermal history.
+    Correlate {
+        request: PathBuf,
+    },
 }
 #[derive(Subcommand)]
 enum Artifact {
@@ -681,6 +685,9 @@ fn run(cli: Cli) -> Result<()> {
                 request: Box::new(read(&request)?),
             },
             Results::PlanAtmosphericTransport { request } => Operation::PlanAtmosphericTransport {
+                request: Box::new(read(&request)?),
+            },
+            Results::Correlate { request } => Operation::ResultsCorrelate {
                 request: Box::new(read(&request)?),
             },
         },

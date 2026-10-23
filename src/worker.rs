@@ -1030,6 +1030,9 @@ fn dispatch(
         Operation::ResultsTransferAtmosphere { request } => Ok(serde_json::to_value(
             crate::atmosphere_transfer::prepare(store, &request)?,
         )?),
+        Operation::ResultsCorrelate { request } => Ok(serde_json::to_value(
+            crate::correlation::run(store, Path::new(&profile.allowed_input_root), &request)?,
+        )?),
         Operation::Describe { job_id } => {
             let plan = store.plan(&job_id)?;
             let binding = match store.execution_binding(&job_id) {
