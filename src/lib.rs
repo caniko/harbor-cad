@@ -39,6 +39,7 @@ pub mod freezing;
 mod freezing_fields;
 pub mod freezing_results;
 pub mod lifecycle;
+pub mod manufacturing;
 pub mod materials;
 mod measurements;
 pub mod moisture_results;

@@ -1,0 +1,628 @@
+{
+  "schema_version": 1,
+  "processes": [
+    {
+      "id": "cnc-3axis-al",
+      "name": "3-axis CNC milling (aluminium)",
+      "compatible_materials": [
+        "al-6061-t6",
+        "al-5052-h32"
+      ],
+      "min_wall_thickness": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.5,
+            "unit": "mm"
+          },
+          "high": {
+            "value": 0.8,
+            "unit": "mm"
+          }
+        },
+        "provenance": "https://hubs.com/knowledge-base/how-design-parts-cnc-machining | How to Design Parts for CNC Machining - Protolabs Network | accessed 2026-10-23 | metals: 0.8 mm recommended, 0.5 mm feasible",
+        "synthetic": false
+      },
+      "max_envelope": {
+        "availability": "known",
+        "value": [
+          {
+            "value": 558.8,
+            "unit": "mm"
+          },
+          {
+            "value": 355.6,
+            "unit": "mm"
+          },
+          {
+            "value": 95.3,
+            "unit": "mm"
+          }
+        ],
+        "provenance": "https://www.protolabs.com/services/cnc-machining/cnc-machining-maximum-extents/ | CNC Machining: Maximum Extents | accessed 2026-10-23 | aluminium 6061-T651 3-axis max extents 22 x 14 x 3.75 in (quick-turn automated milling); Xometry network lists milled parts up to 2032 x 1219 x 610 mm",
+        "synthetic": false
+      },
+      "typical_tolerance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.1,
+            "unit": "mm"
+          },
+          "high": {
+            "value": 0.127,
+            "unit": "mm"
+          }
+        },
+        "provenance": "https://hubs.com/knowledge-base/how-design-parts-cnc-machining | How to Design Parts for CNC Machining - Protolabs Network | accessed 2026-10-23 | typical +-0.1 mm (+-0.02 mm feasible) ;; https://www.xometry.com/capabilities/cnc-machining-service/ | Custom Online CNC Machining Services - Metal and Plastic Instant Quotes | accessed 2026-10-23 | metals held to +-0.005 in (+-0.127 mm) per ISO 2768",
+        "synthetic": false
+      },
+      "setup_cost": {
+        "availability": "known",
+        "value": {
+          "low": 160,
+          "high": 600,
+          "currency": "USD",
+          "basis": "per_order",
+          "year": 2026
+        },
+        "provenance": "https://www.rapid-protos.com/cnc-machining-cost/ | How Much Does CNC Machining Cost? A Complete Guide to Pricing, Factors, and Examples | accessed 2026-10-23 | derived: programming 2-4 h for moderate-complexity 3-axis part x $80-150/h => $160-600 per order; same guide shows setup amortized $15/unit at 10 pcs (~$150)",
+        "synthetic": false
+      },
+      "tooling_cost": null,
+      "tool_life_parts": null,
+      "rate": {
+        "availability": "known",
+        "value": {
+          "low": 35,
+          "high": 80,
+          "currency": "USD",
+          "basis": "per_hour",
+          "year": 2026
+        },
+        "provenance": "https://fabcon.com/articles/?p=302 | CNC Machining Hourly Rates 2026: Complete US Pricing Guide | accessed 2026-10-23 | US 3-axis mills $35-60/h ;; https://proleantech.com/cnc-machining-cost-guide/ | CNC Machining Cost Guide: Factors, Prices, and Savings Tips (2025-2026) | accessed 2026-10-23 | standard 3-axis mill $40-80/h",
+        "synthetic": false
+      },
+      "rate_includes_material": false,
+      "throughput": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 737,
+            "unit": "cm3/h"
+          },
+          "high": {
+            "value": 9832,
+            "unit": "cm3/h"
+          }
+        },
+        "provenance": "https://www.firgelliauto.com/blogs/engineering-calculators/material-removal-rate-calculator-mrr | Material Removal Rate Calculator - MRR | accessed 2026-10-23 | derived: low = worked 6061-T6 example 0.75 in3/min (0.5 in end mill, DOC 0.125, WOC 0.4, 15 ipm) = 12.29 cm3/min = 737 cm3/h; high = low end of stated aluminium roughing range 10-50+ in3/min => 10 in3/min = 9832 cm3/h",
+        "synthetic": false
+      },
+      "time_basis": "removed_volume",
+      "machine_time_model": "Machine hours = (stock bounding-box volume minus part volume) / material removal rate; cost = hours x hourly rate plus per-order setup and separately priced stock.",
+      "lead_time": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 3,
+            "unit": "d"
+          },
+          "high": {
+            "value": 14,
+            "unit": "d"
+          }
+        },
+        "provenance": "https://www.xometry.com/capabilities/cnc-machining-service/ | Custom Online CNC Machining Services - Metal and Plastic Instant Quotes | accessed 2026-10-23 | standard 3-7 business days ;; https://proleantech.com/cnc-machining-cost-guide/ | CNC Machining Cost Guide: Factors, Prices, and Savings Tips (2025-2026) | accessed 2026-10-23 | small aluminium parts 6 days (1 pc) to 14 days (100 pcs)",
+        "synthetic": false
+      },
+      "notes": "Rate excludes material and finishing (anodise). Throughput high end is a roughing MRR; finishing passes and tool changes lower effective MRR, so lean toward the low end for thin-walled enclosures. 10-100 unit regime: setup amortizes to ~$15-100/unit per rapid-protos guide."
+    },
+    {
+      "id": "sheet-metal-laser-brake",
+      "name": "Sheet metal: fiber laser cutting + press-brake forming",
+      "compatible_materials": [
+        "al-5052-h32",
+        "ss304"
+      ],
+      "min_wall_thickness": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.61,
+            "unit": "mm"
+          },
+          "high": {
+            "value": 0.61,
+            "unit": "mm"
+          }
+        },
+        "provenance": "https://www.protolabs.com/services/sheet-metal-fabrication/design-guidelines/ | Sheet Metal Fabrication | Design Guidelines (Protolabs) | accessed 2026-10-23 | minimum stock gauge 0.024 in (0.609 mm) for both Aluminum 5052-H32 and Stainless 304-2B (range to 0.250 in / 6.35 mm)",
+        "synthetic": false
+      },
+      "max_envelope": {
+        "availability": "missing",
+        "reason": "Only a flat-blank limit (990.6 x 1193.8 mm, 1193.8 mm max bend length, max gauge 6.35 mm; Protolabs design guidelines) is published; no formed-part 3D envelope found."
+      },
+      "typical_tolerance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.13,
+            "unit": "mm"
+          },
+          "high": {
+            "value": 0.38,
+            "unit": "mm"
+          }
+        },
+        "provenance": "https://www.protolabs.com/services/sheet-metal-fabrication/design-guidelines/ | Sheet Metal Fabrication | Design Guidelines (Protolabs) | accessed 2026-10-23 | edge/hole features +-0.005 in (0.13 mm) for material <0.13 in, +-0.015 in (0.38 mm) for thicker; bends +-1 deg",
+        "synthetic": false
+      },
+      "setup_cost": {
+        "availability": "known",
+        "value": {
+          "low": 65,
+          "high": 200,
+          "currency": "USD",
+          "basis": "per_order",
+          "year": 2026
+        },
+        "provenance": "https://fabcon.com/articles/?p=536 | Laser Cutting Prices in 2026: Reading a Quote Line by Line | accessed 2026-10-23 | typical 2026 laser setup and programming charges $65-200 per job; excludes press-brake tooling setup",
+        "synthetic": false
+      },
+      "tooling_cost": null,
+      "tool_life_parts": null,
+      "rate": {
+        "availability": "known",
+        "value": {
+          "low": 15,
+          "high": 150,
+          "currency": "USD",
+          "basis": "per_part",
+          "year": 2026
+        },
+        "provenance": "https://blog.fabcon.com/?p=284 | Best Methods for Rapid Metal Enclosure Prototyping | accessed 2026-10-23 | quote-guide estimate: sheet metal enclosure prototypes $15-150/unit at 5-10 units; volume pricing applies above ~10 pcs",
+        "synthetic": false
+      },
+      "rate_includes_material": true,
+      "throughput": null,
+      "time_basis": null,
+      "machine_time_model": "Per-part unit price covering cutting, forming and material (assumed, as quoted unit prices), plus a per-order laser setup/programming charge.",
+      "lead_time": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 3,
+            "unit": "d"
+          },
+          "high": {
+            "value": 7,
+            "unit": "d"
+          }
+        },
+        "provenance": "https://blog.fabcon.com/?p=284 | Best Methods for Rapid Metal Enclosure Prototyping | accessed 2026-10-23 | sheet metal prototype lead time 3-7 days ;; https://www.protolabs.com/services/sheet-metal-fabrication/ | Online Custom Sheet Metal Fabrication Service (Protolabs) | accessed 2026-10-23 | standard 3-day and 5-day options, as fast as 1 day",
+        "synthetic": false
+      },
+      "notes": "Per-part range is wide (geometry/complexity); excludes finishing (powder coat/anodise), PEM hardware and welding. Source does not explicitly say material is in the unit price (assumed). Shop fiber-laser time is $100-250/h per fabcon if a per-hour model is preferred."
+    },
+    {
+      "id": "mjf-pa12",
+      "name": "HP Multi Jet Fusion, PA 12",
+      "compatible_materials": [
+        "pa12-mjf"
+      ],
+      "min_wall_thickness": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.5,
+            "unit": "mm"
+          },
+          "high": {
+            "value": 0.8,
+            "unit": "mm"
+          }
+        },
+        "provenance": "https://www.protolabs.com/services/3d-printing/multi-jet-fusion/ | Multi Jet Fusion (MJF) 3D Printing Service | Protolabs | accessed 2026-10-23 | minimum wall 0.020 in (0.5 mm) ;; https://facfox.com/?p=99124 | MJF Nylon PA 12 - 3D Printing Materials - Manufacturing - FacFox | accessed 2026-10-23 | 0.6 mm supported / 0.8 mm unsupported",
+        "synthetic": false
+      },
+      "max_envelope": {
+        "availability": "known",
+        "value": [
+          {
+            "value": 380,
+            "unit": "mm"
+          },
+          {
+            "value": 284,
+            "unit": "mm"
+          },
+          {
+            "value": 380,
+            "unit": "mm"
+          }
+        ],
+        "provenance": "https://www.aniwaa.com/product/3d-printers/hp-jet-fusion-5200/ | HP Jet Fusion 5200 review - Industrial 3D printer | accessed 2026-10-23 | HP Jet Fusion 5200 build volume 380 x 284 x 380 mm (41.01 L); Protolabs lists max part 284 x 380 x 380 mm",
+        "synthetic": false
+      },
+      "typical_tolerance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.3,
+            "unit": "mm"
+          },
+          "high": {
+            "value": 0.3,
+            "unit": "mm"
+          }
+        },
+        "provenance": "https://www.protolabs.com/services/3d-printing/multi-jet-fusion/ | Multi Jet Fusion (MJF) 3D Printing Service | Protolabs | accessed 2026-10-23 | +-0.30 mm plus 0.1% of nominal length ;; https://facfox.com/?p=99124 | MJF Nylon PA 12 - 3D Printing Materials - Manufacturing - FacFox | accessed 2026-10-23 | +-0.3% with lower limit +-0.3 mm",
+        "synthetic": false
+      },
+      "setup_cost": {
+        "availability": "known",
+        "value": {
+          "low": 45,
+          "high": 45,
+          "currency": "USD",
+          "basis": "per_order",
+          "year": 2026
+        },
+        "provenance": "https://facfox.com/?p=99124 | MJF Nylon PA 12 - 3D Printing Materials - Manufacturing - FacFox | accessed 2026-10-23 | minimum order value $45",
+        "synthetic": false
+      },
+      "tooling_cost": null,
+      "tool_life_parts": null,
+      "rate": {
+        "availability": "known",
+        "value": {
+          "low": 0.224,
+          "high": 1.345,
+          "currency": "USD",
+          "basis": "per_cm3",
+          "year": 2026
+        },
+        "provenance": "https://ampower.eu/insights/additive-manufacturing-part-cost-and-pricing/ | Additive Manufacturing Part Cost and Pricing (AMPOWER Insights) | accessed 2026-10-23 | service-bureau market price for PA12 (MJF and SLS pooled) 0.20-1.20 EUR/cm3 (avg 1.00); converted at 1.1205 USD/EUR (ECB reference rate 2026-10-22 via api.frankfurter.dev/v1/2026-10-22); page undated, footer (c) 2026, year set to 2026",
+        "synthetic": false
+      },
+      "rate_includes_material": true,
+      "throughput": null,
+      "time_basis": null,
+      "machine_time_model": "Service price per cm3 of part volume (machine, powder, labour, depowdering included); per-order minimum applies.",
+      "lead_time": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 3,
+            "unit": "d"
+          },
+          "high": {
+            "value": 7,
+            "unit": "d"
+          }
+        },
+        "provenance": "https://stratasys.com/siteassets/abm-pages/aerospace/stratasys-direct-technology-comparison-draft.pdf | Stratasys Direct Manufacturing Technology Comparison | accessed 2026-10-23 | MJF average lead time 3-5 days for <100 qty ;; https://facfox.com/?p=99124 | MJF Nylon PA 12 - 3D Printing Materials - Manufacturing - FacFox | accessed 2026-10-23 | estimated 7 days ;; https://www.unionfab.com/blog/2025/04/mjf-3d-printing | MJF 3D Printing: The Ultimate Guide [+ Free Cost Calculator] | accessed 2026-10-23 | 3-day standard lead time",
+        "synthetic": false
+      },
+      "notes": "Per-cm3 range is not MJF-specific (AMPOWER pools PA12 MJF/SLS) and excludes dyeing, vapour smoothing and bead-blast extras ($3-10/part bead blasting per Unionfab). Bounding box and packing density move real quotes."
+    },
+    {
+      "id": "sls-pa12",
+      "name": "Selective laser sintering, PA 12",
+      "compatible_materials": [
+        "pa12-sls"
+      ],
+      "min_wall_thickness": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.762,
+            "unit": "mm"
+          },
+          "high": {
+            "value": 1.0,
+            "unit": "mm"
+          }
+        },
+        "provenance": "https://www.protolabs.com/services/3d-printing/selective-laser-sintering/ | SLS 3D Printing Service | Protolabs | accessed 2026-10-23 | minimum wall 0.030 in (0.762 mm) ;; https://facfox.com/?p=99167 | SLS Nylon PA 12 - 3D Printing Materials - Manufacturing - FacFox | accessed 2026-10-23 | minimum supported wall 1 mm",
+        "synthetic": false
+      },
+      "max_envelope": {
+        "availability": "known",
+        "value": [
+          {
+            "value": 340,
+            "unit": "mm"
+          },
+          {
+            "value": 340,
+            "unit": "mm"
+          },
+          {
+            "value": 600,
+            "unit": "mm"
+          }
+        ],
+        "provenance": "https://www.eos.info/en-us/polymer-solutions/polymer-printers/eos-p-396 | EOS P3 NEXT - Best ROI in its Category (EOS P 396 URL redirects here) | accessed 2026-10-23 | building volume 340 x 340 x 600 mm (EOS P 396 / P3 NEXT); FacFox lists 700 x 380 x 580 mm on EOS P770",
+        "synthetic": false
+      },
+      "typical_tolerance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.25,
+            "unit": "mm"
+          },
+          "high": {
+            "value": 0.3,
+            "unit": "mm"
+          }
+        },
+        "provenance": "https://www.protolabs.com/services/3d-printing/selective-laser-sintering/ | SLS 3D Printing Service | Protolabs | accessed 2026-10-23 | +-0.25 mm plus 0.1% of nominal length ;; https://facfox.com/?p=99167 | SLS Nylon PA 12 - 3D Printing Materials - Manufacturing - FacFox | accessed 2026-10-23 | +-0.3% with lower limit +-0.3 mm",
+        "synthetic": false
+      },
+      "setup_cost": {
+        "availability": "known",
+        "value": {
+          "low": 25,
+          "high": 25,
+          "currency": "USD",
+          "basis": "per_order",
+          "year": 2026
+        },
+        "provenance": "https://facfox.com/?p=99167 | SLS Nylon PA 12 - 3D Printing Materials - Manufacturing - FacFox | accessed 2026-10-23 | minimum order value $25",
+        "synthetic": false
+      },
+      "tooling_cost": null,
+      "tool_life_parts": null,
+      "rate": {
+        "availability": "known",
+        "value": {
+          "low": 0.224,
+          "high": 1.345,
+          "currency": "USD",
+          "basis": "per_cm3",
+          "year": 2026
+        },
+        "provenance": "https://ampower.eu/insights/additive-manufacturing-part-cost-and-pricing/ | Additive Manufacturing Part Cost and Pricing (AMPOWER Insights) | accessed 2026-10-23 | service-bureau market price for PA12 (MJF and SLS pooled) 0.20-1.20 EUR/cm3 (avg 1.00); converted at 1.1205 USD/EUR (ECB reference rate 2026-10-22 via api.frankfurter.dev/v1/2026-10-22); page undated, footer (c) 2026, year set to 2026",
+        "synthetic": false
+      },
+      "rate_includes_material": true,
+      "throughput": null,
+      "time_basis": null,
+      "machine_time_model": "Service price per cm3 of part volume (machine, powder, labour included); per-order minimum applies.",
+      "lead_time": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 3,
+            "unit": "d"
+          },
+          "high": {
+            "value": 6,
+            "unit": "d"
+          }
+        },
+        "provenance": "https://stratasys.com/siteassets/abm-pages/aerospace/stratasys-direct-technology-comparison-draft.pdf | Stratasys Direct Manufacturing Technology Comparison | accessed 2026-10-23 | SLS average lead time 3-6 days for <100 qty ;; https://facfox.com/?p=99167 | SLS Nylon PA 12 - 3D Printing Materials - Manufacturing - FacFox | accessed 2026-10-23 | estimated 3 days",
+        "synthetic": false
+      },
+      "notes": "Same pooled PA12 per-cm3 source as MJF (AMPOWER does not split SLS vs MJF); excludes dyeing/smoothing. Small parts often cheaper on SLS, large sparse parts on MJF."
+    },
+    {
+      "id": "urethane-casting",
+      "name": "Urethane (vacuum) casting in silicone moulds",
+      "compatible_materials": [
+        "pu-casting-resin"
+      ],
+      "min_wall_thickness": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.5,
+            "unit": "mm"
+          },
+          "high": {
+            "value": 1.0,
+            "unit": "mm"
+          }
+        },
+        "provenance": "https://facfox.com/docs/kb/the-process-and-design-tips-for-urethane-casting | Urethane Casting: Process & Design Guide (FacFox) | accessed 2026-10-23 | minimum 0.040 in (1 mm), down to 0.020 in (0.5 mm) on small parts ;; https://hlhrapid.com/knowledge/design-guide-vacuum-casting/ | Design Guide: Vacuum (Urethane) Casting (HLH Rapid) | accessed 2026-10-23 | at least 1.0 mm",
+        "synthetic": false
+      },
+      "max_envelope": {
+        "availability": "missing",
+        "reason": "Only a single max length is published (30 in / 762 mm per FacFox and Xometry; 'up to 3000 mm' per HLH); no X/Y/Z envelope found."
+      },
+      "typical_tolerance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.254,
+            "unit": "mm"
+          },
+          "high": {
+            "value": 0.381,
+            "unit": "mm"
+          }
+        },
+        "provenance": "https://facfox.com/docs/kb/the-process-and-design-tips-for-urethane-casting | Urethane Casting: Process & Design Guide (FacFox) | accessed 2026-10-23 | +-0.010 in or +-0.003 in/in whichever larger; +0.15% shrink ;; https://www.xometry.com/resources/casting/urethane-casting-vs-injection-molding/ | Urethane Casting vs. Injection Molding: Which One is Better? | accessed 2026-10-23 | usually +-0.015 in",
+        "synthetic": false
+      },
+      "setup_cost": {
+        "availability": "known",
+        "value": {
+          "low": 50,
+          "high": 100,
+          "currency": "USD",
+          "basis": "per_order",
+          "year": 2026
+        },
+        "provenance": "https://rjcmold.com/urethane-casting-cost/ | Urethane Casting Costs Explained: Mold, Material & Parts - RJC Mold | accessed 2026-10-23 | master pattern starts at $50 (3D printed) or $100 (CNC); starting prices, varies with size",
+        "synthetic": false
+      },
+      "tooling_cost": {
+        "availability": "known",
+        "value": {
+          "low": 200,
+          "high": 3000,
+          "currency": "USD",
+          "basis": "per_tool",
+          "year": 2026
+        },
+        "provenance": "https://rjcmold.com/urethane-casting-cost/ | Urethane Casting Costs Explained: Mold, Material & Parts - RJC Mold | accessed 2026-10-23 | silicone moulds $200-3,000: small parts $200-500, larger $1,200-3,000",
+        "synthetic": false
+      },
+      "tool_life_parts": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 10,
+            "unit": "1"
+          },
+          "high": {
+            "value": 30,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://rjcmold.com/urethane-casting-cost/ | Urethane Casting Costs Explained: Mold, Material & Parts - RJC Mold | accessed 2026-10-23 | silicone moulds last 20-30 copies / lifespan about 10-30 parts ;; https://hlhrapid.com/knowledge/design-guide-vacuum-casting/ | Design Guide: Vacuum (Urethane) Casting (HLH Rapid) | accessed 2026-10-23 | average mold life 10 runs",
+        "synthetic": false
+      },
+      "rate": {
+        "availability": "known",
+        "value": {
+          "low": 25,
+          "high": 25,
+          "currency": "USD",
+          "basis": "per_part",
+          "year": 2026
+        },
+        "provenance": "https://rjcmold.com/urethane-casting-cost/ | Urethane Casting Costs Explained: Mold, Material & Parts - RJC Mold | accessed 2026-10-23 | medium-sized part ~$25/unit = material ~$10 + labour ~$10 + post-processing ~$5",
+        "synthetic": false
+      },
+      "rate_includes_material": true,
+      "throughput": null,
+      "time_basis": null,
+      "machine_time_model": "Per-part casting price plus one silicone mould per ~10-30 shots plus a one-off master pattern per order.",
+      "lead_time": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 3,
+            "unit": "d"
+          },
+          "high": {
+            "value": 28,
+            "unit": "d"
+          }
+        },
+        "provenance": "https://rjcmold.com/urethane-casting-cost/ | Urethane Casting Costs Explained: Mold, Material & Parts - RJC Mold | accessed 2026-10-23 | silicone mould production cycle 3-7 days ;; https://www.xometry.com/resources/casting/urethane-casting-vs-injection-molding/ | Urethane Casting vs. Injection Molding: Which One is Better? | accessed 2026-10-23 | production lead times 3-4 weeks; master/mould 1-2 days",
+        "synthetic": false
+      },
+      "notes": "Single per-part data point (medium part); colour-matching, inserts and painting extra. Enclosure-sized parts sit toward the upper mould-cost band; mould count = ceil(qty / shots)."
+    },
+    {
+      "id": "fdm-asa",
+      "name": "Industrial FDM, ASA (prototype only)",
+      "compatible_materials": [
+        "asa"
+      ],
+      "min_wall_thickness": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.6,
+            "unit": "mm"
+          },
+          "high": {
+            "value": 0.8,
+            "unit": "mm"
+          }
+        },
+        "provenance": "https://facfox.com/materials/fdm-asa | FDM Stratasys ASA - 3D Printing Materials - Manufacturing - FacFox | accessed 2026-10-23 | 0.6 mm supported / 0.8 mm unsupported ;; https://hubs.com/3d-printing/plastic/asa | 3D printing in ASA (Protolabs Network/Hubs) | accessed 2026-10-23 | industrial FDM ASA min wall 0.8 mm",
+        "synthetic": false
+      },
+      "max_envelope": {
+        "availability": "known",
+        "value": [
+          {
+            "value": 914.4,
+            "unit": "mm"
+          },
+          {
+            "value": 609.6,
+            "unit": "mm"
+          },
+          {
+            "value": 914.4,
+            "unit": "mm"
+          }
+        ],
+        "provenance": "https://prod-cms.stratasys.com/siteassets/3d-printers/printer-catalog/fdm-printers/f900-printer/h2-model-updates/pss_fdm_f900_0924a.pdf | Stratasys F900 Specification Sheet (pss_fdm_f900_0924a) | accessed 2026-10-23 | build envelope 914.4 x 609.6 x 914.4 mm (36 x 24 x 36 in); ASA listed; F370 is 355 x 254 x 355 mm",
+        "synthetic": false
+      },
+      "typical_tolerance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.089,
+            "unit": "mm"
+          },
+          "high": {
+            "value": 0.3,
+            "unit": "mm"
+          }
+        },
+        "provenance": "https://prod-cms.stratasys.com/siteassets/3d-printers/printer-catalog/fdm-printers/f900-printer/h2-model-updates/pss_fdm_f900_0924a.pdf | Stratasys F900 Specification Sheet (pss_fdm_f900_0924a) | accessed 2026-10-23 | +-0.089 mm or +-0.0015 mm/mm whichever greater, 95% dimensional yield ;; https://hubs.com/3d-printing/plastic/asa | 3D printing in ASA (Protolabs Network/Hubs) | accessed 2026-10-23 | industrial FDM ASA +-0.3% with lower limit +-0.3 mm",
+        "synthetic": false
+      },
+      "setup_cost": {
+        "availability": "known",
+        "value": {
+          "low": 22,
+          "high": 150,
+          "currency": "USD",
+          "basis": "per_order",
+          "year": 2026
+        },
+        "provenance": "https://facfox.com/materials/fdm-asa | FDM Stratasys ASA - 3D Printing Materials - Manufacturing - FacFox | accessed 2026-10-23 | minimum order value $22 ;; https://fathommfg.com/?p=1980 | Fathom FDM 3D printing (fathommfg.com) | accessed 2026-10-23 | WebSearch snippet: Fathom minimum cost for 3D printing projects $150 per order (page not fetchable)",
+        "synthetic": false
+      },
+      "tooling_cost": null,
+      "tool_life_parts": null,
+      "rate": {
+        "availability": "known",
+        "value": {
+          "low": 0.151,
+          "high": 0.151,
+          "currency": "USD",
+          "basis": "per_cm3",
+          "year": 2026
+        },
+        "provenance": "https://cse.umn.edu/andersonlabs/3d-printing-service | 3D printing service (University of Minnesota Anderson Labs) | accessed 2026-10-23 | WebSearch snippet (page 403): F370 ASA $2.48 per in3 model material + $4.46/in3 support + $1.16/build; derived $2.48/16.387 = $0.151/cm3 model; university recharge rate, likely below commercial pricing",
+        "synthetic": false
+      },
+      "rate_includes_material": true,
+      "throughput": null,
+      "time_basis": null,
+      "machine_time_model": "Price per cm3 of model material (support billed separately at ~$0.27/cm3) plus per-order minimum.",
+      "lead_time": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 3,
+            "unit": "d"
+          },
+          "high": {
+            "value": 9,
+            "unit": "d"
+          }
+        },
+        "provenance": "https://stratasys.com/siteassets/abm-pages/aerospace/stratasys-direct-technology-comparison-draft.pdf | Stratasys Direct Manufacturing Technology Comparison | accessed 2026-10-23 | FDM minimum 3 days, average 3-9 days for <100 qty ;; https://facfox.com/materials/fdm-asa | FDM Stratasys ASA - 3D Printing Materials - Manufacturing - FacFox | accessed 2026-10-23 | estimated 4 days",
+        "synthetic": false
+      },
+      "notes": "Prototype/fit-check only. Rate is a single university recharge figure (no commercial per-cm3 FDM price found), so treat as a floor; commercial bureaus likely higher."
+    }
+  ]
+}

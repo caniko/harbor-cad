@@ -37,7 +37,9 @@ impl Quantity {
             | ("irradiance", "W/m2")
             | ("radiant_exposure", "J/m2")
             | ("spectral_irradiance", "W/(m2*m)")
-            | ("spectral_radiance", "W/(m2*sr*m)") => (1., 0.),
+            | ("spectral_radiance", "W/(m2*sr*m)")
+            | ("dimensionless", "1")
+            | ("volume_rate", "m3/s") => (1., 0.),
             ("length", "mm") => (0.001, 0.),
             ("length", "nm") => (1e-9, 0.),
             ("area", "mm2") => (1e-6, 0.),
@@ -45,6 +47,8 @@ impl Quantity {
             ("mass", "g") => (0.001, 0.),
             ("time", "min") => (60., 0.),
             ("time", "h") => (3600., 0.),
+            ("time", "d") => (86400., 0.),
+            ("volume_rate", "cm3/h") => (1e-6 / 3600., 0.),
             ("power", "kW") | ("energy", "kJ") | ("pressure", "kPa") => (1000., 0.),
             ("pressure", "MPa") => (1e6, 0.),
             ("radiant_exposure", "Wh/m2") => (3600., 0.),
