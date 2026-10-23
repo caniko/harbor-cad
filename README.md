@@ -229,7 +229,10 @@ Patched CAD inspection also exports checksummed named BREP solids with original
 units and placement. The independent [imported CAD mesh](docs/cad-mesh.md) and
 [origin-aware FEM references](docs/fem-imported.md) retain world coordinates
 through Gmsh/CalculiX; their exact native and durable-worker gates are tracked
-separately in the ledger.
+separately in the ledger. `cad solid-mesh` and `enclosure-thermal` extend this
+to conformal multi-region meshes of general closed solids and a steady
+enclosure conduction recipe with an energy-balance gate. This recipe is not yet
+qualified; see [enclosure thermal](docs/enclosure-thermal.md).
 
 Standalone `render REQUEST.json` plans presentation from a completed registered
 field snapshot. Its approved version-2 plan uses only render, optional video and

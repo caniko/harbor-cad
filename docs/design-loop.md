@@ -80,7 +80,8 @@ A chained child is a planning request instead of a plan:
 
 `plan_request` is a worker request whose `operation` is on the allowlist
 `design::CHAIN_OPERATIONS`: `plan`, `plan_thermal_reference`,
-`plan_cad_variant`, `plan_cad_mesh` and `plan_fem_imported`. Other operations
+`plan_cad_variant`, `plan_cad_mesh`, `plan_fem_imported`, `plan_cad_solid_mesh`
+and `plan_enclosure_thermal`. Other operations
 are refused when the envelope is validated. `after` names an earlier role in
 the same set; without it the request is planned as soon as the candidate is
 created. `{"$job": ROLE}` becomes the job id of an upstream role (`after` or its
@@ -189,25 +190,32 @@ continuous parameters are wall, fin count, fin height, length and height on
 manufacturing grids, and its `route` choices are the W1-compatible pairs
 `al-6061-t6__cnc-3axis-al`, `pa12-mjf__mjf-pa12` and
 `al-5052-h32__sheet-metal-laser-brake`. The chain is `variant`
-(`plan_cad_variant` of the enclosure fixture's `Params` sheet) → `mesh`
-(`plan_cad_mesh` of `housing`) → `thermal` (`plan_fem_imported`). The objective
-minimizes `unit_cost_high_usd` at a declared quantity of 50. The constraints are
-`temperature_margin_k ≥ 10 K` and `manufacturability_violations ≤ 0`; the minimum
-wall is checked against the conservative end of the process's minimum-wall
-range. Electronics power, site ambient, solar irradiance, internal air
-temperature, route-specific conductivity and the maximum component
-temperature are declared `missing`. `design validate` accepts it. It cannot
-produce a feasible design yet, for three reasons:
+(`plan_cad_variant` of the enclosure fixture's `Params` sheet, with all five
+thermal regions) → `mesh` (`plan_cad_solid_mesh`, a conformal tetrahedral mesh of
+`gasket`, `housing`, `lid`, `pcb` and `window`) → `thermal`
+(`plan_enclosure_thermal`, steady conduction; see
+[enclosure thermal](enclosure-thermal.md)). The objective minimizes
+`unit_cost_high_usd` at a declared quantity of 50. The constraints are
+`temperature_margin_k ≥ 10 K` and `manufacturability_violations ≤ 0`. The
+margin compares `max_temperature_k`, read from the thermal receipt
+(`/regions/housing/max_k`), with the route material's conservative service
+limit. `pcb_max_temperature_k` is reported. The minimum wall is checked against
+the conservative end of the process's minimum-wall range. Electronics power,
+site ambient, exterior and internal film coefficients, solar irradiance and
+board conductivity are declared `missing`. `design validate` accepts the
+envelope, but it cannot produce a feasible design yet:
 
 - Native FreeCAD/Gmsh/CalculiX runtime qualification waits on the security
   hold.
-- The mesh and imported-FEM allowlists accept only axis-aligned boxes whose
-  sizes match exactly, so the finned `housing` is refused and the dependent is
-  `blocked`.
-- The imported FEM is prescribed-temperature conduction with no heat source,
-  and its receipt publishes no temperature. The thermal constraint therefore
-  stays `unknown` and never passes. Cost, mass and manufacturability come from
-  the variant receipt alone.
+- The missing declared inputs refuse the thermal plan, so the child is
+  `blocked` and the thermal constraint stays `unknown`. The pc-uv window and
+  the PA12 route have no sourced solar absorptance, so their solar-loaded
+  solves refuse even after the inputs are declared.
+
+`examples/design-enclosure-demo.json` runs the same chain with explicitly
+`synthetic: true` inputs and a declared window. `design status` and
+`design export` list those inputs in `synthetic_inputs`, and the export
+statement starts with `SYNTHETIC`.
 
 Calibration needs no extra command. `examples/design-calibrate.json` is an
 envelope whose parameters are the uncertain inputs (film coefficient and
