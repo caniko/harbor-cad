@@ -114,6 +114,11 @@ def build_server(profile: str) -> MCPServer:
             return await request("plan_cad_mesh", request=request_spec)
 
         @server.tool()
+        async def cad_plan_solid_mesh(request_spec: dict[str, Any]) -> dict[str, Any]:
+            """Plan a CPU Gmsh conformal tetrahedral mesh of 1-8 registered closed solids of one authorized CAD job; returns {approval_digest, plan}. No job is created; touching regions share interfaces, overlaps refuse. Not qualified."""
+            return await request("plan_cad_solid_mesh", request=request_spec)
+
+        @server.tool()
         async def cad_mesh_submit(
             plan: dict[str, Any], approved_digest: str, idempotency_key: str
         ) -> dict[str, Any]:
@@ -205,6 +210,13 @@ def build_server(profile: str) -> MCPServer:
         async def fem_plan_imported(request_spec: dict[str, Any]) -> dict[str, Any]:
             """Plan a synthetic CPU static FEM reference from registered authorized world-space CAD."""
             return await request("plan_fem_imported", request=request_spec)
+
+        @server.tool()
+        async def enclosure_thermal_plan(
+            request_spec: dict[str, Any],
+        ) -> dict[str, Any]:
+            """Plan CPU CalculiX steady conduction on a succeeded general-solid mesh job; returns {approval_digest, plan}. No job is created. One effective well-mixed internal air node, no CFD or contact resistance; missing inputs refuse. Not validation."""
+            return await request("plan_enclosure_thermal", request=request_spec)
 
         @server.tool()
         async def case_plan_thermal_reference(spec: dict[str, Any]) -> dict[str, Any]:
