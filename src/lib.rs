@@ -29,6 +29,7 @@ pub mod cooling_results;
 mod cooling_vtk;
 pub mod correlation;
 pub mod design;
+pub mod design_providers;
 pub mod devices;
 pub mod estimates;
 pub mod execution;

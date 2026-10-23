@@ -2847,15 +2847,35 @@ fn design_child(
     )
     .map(|_| ())
 }
+/// Chained design children are planned by the same dispatch the CLI/MCP
+/// planning calls use; design only allowlists and binds the request.
+fn design_plan(
+    store: &Store,
+    profile: &HostExecutionProfile,
+    authority: Option<&HostAuthority>,
+    op: Operation,
+) -> Result<ExecutionPlan> {
+    let plan = match dispatch(store, profile, authority, op)? {
+        serde_json::Value::Object(mut planned) if planned.contains_key("plan") => {
+            planned.remove("plan").unwrap_or_default()
+        }
+        plan => plan,
+    };
+    serde_json::from_value(plan).map_err(|e| invalid(format!("planned design child: {e}")))
+}
 fn advance_design(
     store: &Store,
     profile: &HostExecutionProfile,
     authority: Option<&HostAuthority>,
     id: &str,
 ) -> Result<()> {
-    match crate::design::advance(store, id, profile, &mut |plan, key| {
-        design_child(store, profile, authority, plan, key)
-    }) {
+    match crate::design::advance(
+        store,
+        id,
+        profile,
+        &mut |plan, key| design_child(store, profile, authority, plan, key),
+        &mut |op| design_plan(store, profile, authority, op),
+    ) {
         // Transient state/IO errors retry on the next worker tick.
         Err(error @ (Error::Io(_) | Error::Sql(_))) => Err(error),
         Err(error) => crate::design::fail(store, id, &error.to_string()),

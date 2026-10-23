@@ -6,8 +6,11 @@
 use crate::{
     Error, Result,
     contracts::{
-        CaseSpec, ExecutionPlan, HostExecutionProfile, MAX_MESSAGE, digest, invalid, token,
+        CaseSpec, ExecutionPlan, HostExecutionProfile, MAX_MESSAGE, Operation, digest, invalid,
+        token,
     },
+    materials::PhysicalInput,
+    science::Quantity,
     storage::{Job, Store, now},
 };
 use rusqlite::{OptionalExtension, params};
@@ -26,6 +29,26 @@ pub const MAX_EVALUATIONS: u32 = 32;
 pub const MAX_REFINE: u32 = 3;
 const MAX_CHILDREN: usize = 4;
 const MAX_METRICS: usize = 8;
+const MAX_METRIC_SOURCES: usize = 24;
+/// Planning operations a chained template may request. Each is resolved by the
+/// worker's own dispatch, exactly as the CLI/MCP planning call would be.
+pub const CHAIN_OPERATIONS: [&str; 5] = [
+    "plan",
+    "plan_thermal_reference",
+    "plan_cad_variant",
+    "plan_cad_mesh",
+    "plan_fem_imported",
+];
+fn chain_allowed(op: &Operation) -> bool {
+    matches!(
+        op,
+        Operation::Plan { .. }
+            | Operation::PlanThermalReference { .. }
+            | Operation::PlanCadVariant { .. }
+            | Operation::PlanCadMesh { .. }
+            | Operation::PlanFemImported { .. }
+    )
+}
 const MAX_WALL_SECONDS: u64 = 7 * 24 * 3600;
 const MAX_TOTAL_ARTIFACT_BYTES: u64 = 64 * 1024 * 1024 * 1024;
 
@@ -153,13 +176,36 @@ pub struct Fidelity {
     pub refine: Option<String>,
 }
 
-/// An existing complete plan whose JSON may contain `{"$param": NAME}` or
-/// `{"$param": NAME, "unit": UNIT}` objects resolved per candidate.
+/// Either a complete existing `plan` or a chained `plan_request`. Plans may
+/// contain `$param`/`$input` placeholders; plan requests additionally `$job`
+/// placeholders naming an upstream role, resolved once `after` succeeded.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ChildTemplate {
     pub role: String,
+    #[serde(default, skip_serializing_if = "Value::is_null")]
     pub plan: Value,
+    /// An allowlisted planning operation (`CHAIN_OPERATIONS`) in worker request form.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan_request: Option<Value>,
+    /// Earlier role in the same set whose successful job this request waits for.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub after: Option<String>,
+    /// Approved output allowance bound for the derived plan.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_artifact_bytes: Option<u64>,
+}
+
+impl ChildTemplate {
+    pub fn complete(role: &str, plan: Value) -> Self {
+        Self {
+            role: role.into(),
+            plan,
+            plan_request: None,
+            after: None,
+            max_artifact_bytes: None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -175,6 +221,11 @@ pub enum MetricSource {
     Parameter { param: String },
     /// A registered local evaluator reading only the declared parameters.
     Provider { name: String, params: Vec<String> },
+    /// An explicitly declared input; `missing` stays unknown, never a default.
+    Declared { input: PhysicalInput<f64> },
+    /// Pooled RMSE (`correlation::objective`) of `results correlate` against
+    /// the role's succeeded job; `request` omits `job_id`.
+    Correlation { role: String, request: Value },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -228,8 +279,8 @@ pub trait MetricProvider: Sync {
     fn evaluate(&self, params: &Params, metrics: &BTreeMap<String, f64>) -> Result<Option<f64>>;
 }
 
-/// Registered local providers; append entries here (e.g. manufacturing models).
-pub static PROVIDERS: &[&dyn MetricProvider] = &[];
+/// Registered local providers (estimate-only W1 manufacturing screens).
+pub static PROVIDERS: &[&dyn MetricProvider] = crate::design_providers::ALL;
 
 fn provider(name: &str) -> Option<&'static dyn MetricProvider> {
     PROVIDERS.iter().copied().find(|p| p.name() == name)
@@ -306,28 +357,99 @@ impl DesignEnvelope {
     }
 }
 
-/// Strict placeholder substitution: every placeholder must name a declared
-/// parameter and match its unit; resolved continuous values become Quantities.
+/// How `$job` placeholders resolve during substitution.
+enum Bind<'a> {
+    /// Complete plan templates: no `$job` placeholders.
+    Static,
+    /// Validation of a chained request: names must be upstream roles; dummies.
+    Check(&'a BTreeSet<String>),
+    /// Derivation: succeeded upstream role -> job id.
+    Jobs(&'a Store, &'a BTreeMap<String, String>),
+}
+
+fn placeholder_keys(map: &serde_json::Map<String, Value>, head: &str, extra: &[&str]) -> bool {
+    map.keys().all(|k| k == head || extra.contains(&k.as_str()))
+}
+
+fn optional_str<'v>(map: &'v serde_json::Map<String, Value>, key: &str) -> Result<Option<&'v str>> {
+    match map.get(key) {
+        None => Ok(None),
+        Some(Value::String(text)) => Ok(Some(text.as_str())),
+        Some(_) => Err(invalid(format!("placeholder {key} must be a string"))),
+    }
+}
+
+/// A value in `unit`: a bare SI number for `si`, a Quantity otherwise.
+fn emit(value: f64, unit: &str, si: Option<&str>) -> Result<Value> {
+    Ok(match si {
+        Some(dimension) => json!(
+            Quantity {
+                value,
+                unit: unit.into()
+            }
+            .si(dimension)?
+        ),
+        None => json!({"value": value, "unit": unit}),
+    })
+}
+
+/// Strict placeholder substitution. `{"$param": NAME[, "unit"|"si"]}` names a
+/// design parameter, `{"$input": METRIC[, "si"]}` a declared input and
+/// `{"$job": ROLE[, "artifact", "pointer"[, "unit"]]}` an upstream job id or a
+/// finite number from its registered JSON artifact. `si: DIMENSION` emits a
+/// bare SI number for plan fields that carry no unit.
 fn substitute(
     value: &Value,
     env: &DesignEnvelope,
     params: &Params,
     used: &mut BTreeSet<String>,
+    bind: &Bind,
 ) -> Result<Value> {
     Ok(match value {
         Value::Object(map) if map.keys().any(|k| k.starts_with('$')) => {
+            if let Some(role) = map.get("$job") {
+                return job_placeholder(map, role, bind);
+            }
+            if let Some(name) = map.get("$input") {
+                let name = name
+                    .as_str()
+                    .filter(|_| placeholder_keys(map, "$input", &["si"]))
+                    .ok_or_else(|| {
+                        invalid("only {\"$input\": METRIC[, \"si\": DIMENSION]} placeholders are allowed")
+                    })?;
+                let si = optional_str(map, "si")?;
+                let Some(MetricSpec {
+                    unit,
+                    source: MetricSource::Declared { input },
+                    ..
+                }) = env.metric(name)
+                else {
+                    return Err(invalid(format!(
+                        "$input {name} must name a declared metric source"
+                    )));
+                };
+                return match (input, bind) {
+                    (PhysicalInput::Known { value, .. }, _) => emit(*value, unit, si),
+                    (PhysicalInput::Missing { .. }, Bind::Check(_)) => emit(1., unit, si),
+                    (PhysicalInput::Missing { reason }, _) => Err(invalid(format!(
+                        "declared input {name} is missing: {reason}"
+                    ))),
+                };
+            }
             let name = map
                 .get("$param")
                 .and_then(Value::as_str)
-                .filter(|_| map.keys().all(|k| k == "$param" || k == "unit"))
+                .filter(|_| placeholder_keys(map, "$param", &["unit", "si"]))
                 .ok_or_else(|| {
-                    invalid("only {\"$param\": NAME[, \"unit\": UNIT]} placeholders are allowed")
+                    invalid(
+                        "only {\"$param\": NAME[, \"unit\": UNIT | \"si\": DIMENSION]} placeholders are allowed",
+                    )
                 })?;
-            let unit = match map.get("unit") {
-                None => None,
-                Some(Value::String(unit)) => Some(unit.as_str()),
-                Some(_) => return Err(invalid("placeholder unit must be a string")),
-            };
+            let unit = optional_str(map, "unit")?;
+            let si = optional_str(map, "si")?;
+            if unit.is_some() && si.is_some() {
+                return Err(invalid("placeholder takes unit or si, not both"));
+            }
             used.insert(name.into());
             if let Some(param) = env.space.continuous.iter().find(|p| p.name == name) {
                 if unit.is_some_and(|unit| unit != param.unit) {
@@ -337,11 +459,11 @@ fn substitute(
                     )));
                 }
                 match params.get(name) {
-                    Some(ParamValue::Number(v)) => json!({"value": v, "unit": param.unit}),
+                    Some(ParamValue::Number(v)) => emit(*v, &param.unit, si)?,
                     _ => return Err(invalid(format!("numeric value for {name} required"))),
                 }
             } else if env.space.categorical.iter().any(|p| p.name == name) {
-                if unit.is_some() {
+                if unit.is_some() || si.is_some() {
                     return Err(invalid("categorical placeholders carry no unit"));
                 }
                 match params.get(name) {
@@ -354,26 +476,174 @@ fn substitute(
         }
         Value::Object(map) => Value::Object(
             map.iter()
-                .map(|(k, v)| Ok((k.clone(), substitute(v, env, params, used)?)))
+                .map(|(k, v)| Ok((k.clone(), substitute(v, env, params, used, bind)?)))
                 .collect::<Result<_>>()?,
         ),
         Value::Array(items) => Value::Array(
             items
                 .iter()
-                .map(|v| substitute(v, env, params, used))
+                .map(|v| substitute(v, env, params, used, bind))
                 .collect::<Result<_>>()?,
         ),
         other => other.clone(),
     })
 }
 
-/// Resolve one template set into validated immutable plans.
+fn job_placeholder(
+    map: &serde_json::Map<String, Value>,
+    role: &Value,
+    bind: &Bind,
+) -> Result<Value> {
+    let role = role
+        .as_str()
+        .filter(|_| placeholder_keys(map, "$job", &["artifact", "pointer", "unit"]))
+        .ok_or_else(|| {
+            invalid(
+                "only {\"$job\": ROLE[, \"artifact\", \"pointer\"[, \"unit\"]]} placeholders are allowed",
+            )
+        })?;
+    let artifact = optional_str(map, "artifact")?;
+    let pointer = optional_str(map, "pointer")?;
+    let unit = optional_str(map, "unit")?;
+    if artifact.is_some() != pointer.is_some() || (unit.is_some() && artifact.is_none()) {
+        return Err(invalid(
+            "$job artifact and pointer go together; unit needs both",
+        ));
+    }
+    let number = match bind {
+        Bind::Static => {
+            return Err(invalid(
+                "$job placeholders are only allowed in chained plan_request templates",
+            ));
+        }
+        Bind::Check(upstream) => {
+            if !upstream.contains(role)
+                || artifact.is_some_and(|a| !relative_path(a))
+                || pointer.is_some_and(|p| !p.starts_with('/') || p.len() > 256)
+            {
+                return Err(invalid(format!(
+                    "$job {role} must name an upstream (after-chain) role with a relative artifact and JSON pointer"
+                )));
+            }
+            if artifact.is_none() {
+                return Ok(json!(uuid::Uuid::nil().to_string()));
+            }
+            json!(1)
+        }
+        Bind::Jobs(store, jobs) => {
+            let id = jobs
+                .get(role)
+                .ok_or_else(|| invalid(format!("upstream {role} has no succeeded job")))?;
+            let (Some(artifact), Some(pointer)) = (artifact, pointer) else {
+                return Ok(json!(id));
+            };
+            crate::qualification::registered_json(store, id, artifact)?
+                .and_then(|(_, v)| v.pointer(pointer).cloned())
+                .filter(|v| v.as_f64().is_some_and(f64::is_finite))
+                .ok_or_else(|| {
+                    invalid(format!(
+                        "upstream {role} {artifact}{pointer} is not a registered finite number"
+                    ))
+                })?
+        }
+    };
+    Ok(match unit {
+        Some(unit) => json!({"value": number, "unit": unit}),
+        None => number,
+    })
+}
+
+/// Roles a template transitively waits for (its `after` chain).
+fn upstream(templates: &[ChildTemplate], template: &ChildTemplate) -> BTreeSet<String> {
+    let mut roles = BTreeSet::new();
+    let mut next = template.after.as_deref();
+    while let Some(role) = next {
+        if !roles.insert(role.to_string()) {
+            break;
+        }
+        next = templates
+            .iter()
+            .find(|t| t.role == role)
+            .and_then(|t| t.after.as_deref());
+    }
+    roles
+}
+
+/// Resolve a chained planning request into an allowlisted worker operation.
+fn request_operation(
+    env: &DesignEnvelope,
+    template: &ChildTemplate,
+    params: &Params,
+    used: &mut BTreeSet<String>,
+    bind: &Bind,
+) -> Result<Operation> {
+    let request = template
+        .plan_request
+        .as_ref()
+        .ok_or_else(|| invalid("chained template plan_request required"))?;
+    let value = substitute(request, env, params, used, bind)?;
+    let op: Operation = serde_json::from_value(value).map_err(|e| {
+        invalid(format!(
+            "template {} plan_request schema: {e}",
+            template.role
+        ))
+    })?;
+    if !chain_allowed(&op) {
+        return Err(invalid(format!(
+            "template {} plan_request operation must be one of {CHAIN_OPERATIONS:?}",
+            template.role
+        )));
+    }
+    Ok(op)
+}
+
+/// A derived plan passes unchanged plan validation under the effective policy
+/// and stays inside the template's approved output allowance.
+fn admit_derived(template: &ChildTemplate, plan: &ExecutionPlan, policy: &str) -> Result<()> {
+    plan.validate()?;
+    if plan.policy != policy {
+        return Err(invalid("derived plan policy differs from effective policy"));
+    }
+    if Some(plan.observation.max_artifact_bytes) > template.max_artifact_bytes {
+        return Err(invalid(
+            "derived plan output allowance exceeds the template's approved max_artifact_bytes",
+        ));
+    }
+    Ok(())
+}
+
+/// The worker's own planning dispatch (the same path the CLI/MCP call).
+pub type Planner<'a> = dyn FnMut(Operation) -> Result<ExecutionPlan> + 'a;
+
+fn derive(
+    store: &Store,
+    env: &DesignEnvelope,
+    template: &ChildTemplate,
+    params: &Params,
+    jobs: &BTreeMap<String, String>,
+    policy: &str,
+    planner: &mut Planner,
+) -> Result<ExecutionPlan> {
+    let op = request_operation(
+        env,
+        template,
+        params,
+        &mut BTreeSet::new(),
+        &Bind::Jobs(store, jobs),
+    )?;
+    let plan = planner(op)?;
+    admit_derived(template, &plan, policy)?;
+    Ok(plan)
+}
+
+/// Resolve one template set: validated immutable plans for complete
+/// templates and `None` for chained ones (checked with dummy upstreams).
 pub fn child_plans(
     env: &DesignEnvelope,
     level: Level,
     params: &Params,
     policy: &str,
-) -> Result<Vec<(String, ExecutionPlan)>> {
+) -> Result<Vec<(String, Option<ExecutionPlan>)>> {
     let templates = env
         .templates
         .get(env.set(level)?)
@@ -382,7 +652,12 @@ pub fn child_plans(
     let plans = templates
         .iter()
         .map(|template| {
-            let value = substitute(&template.plan, env, params, &mut used)?;
+            if template.plan_request.is_some() {
+                let roles = upstream(templates, template);
+                request_operation(env, template, params, &mut used, &Bind::Check(&roles))?;
+                return Ok((template.role.clone(), None));
+            }
+            let value = substitute(&template.plan, env, params, &mut used, &Bind::Static)?;
             let plan: ExecutionPlan = serde_json::from_value(value)
                 .map_err(|e| invalid(format!("template {} plan schema: {e}", template.role)))?;
             plan.validate()?;
@@ -391,7 +666,7 @@ pub fn child_plans(
                     "template plan policy differs from effective policy",
                 ));
             }
-            Ok((template.role.clone(), plan))
+            Ok((template.role.clone(), Some(plan)))
         })
         .collect::<Result<Vec<_>>>()?;
     for spec in &env.metric_sources {
@@ -400,7 +675,9 @@ pub fn child_plans(
                 used.insert(param.clone());
             }
             MetricSource::Provider { params, .. } => used.extend(params.iter().cloned()),
-            MetricSource::Job { .. } => {}
+            MetricSource::Job { .. }
+            | MetricSource::Declared { .. }
+            | MetricSource::Correlation { .. } => {}
         }
     }
     let declared: BTreeSet<String> = env
@@ -440,7 +717,8 @@ fn corner(env: &DesignEnvelope, high: bool) -> Params {
         .collect()
 }
 
-/// Lowest-corner plans of every used template set, for pre-intent admission checks.
+/// Lowest-corner complete plans of every used template set, for pre-intent
+/// admission checks. Chained plans are admitted when derived.
 pub fn probe_plans(env: &DesignEnvelope, policy: &str) -> Result<Vec<ExecutionPlan>> {
     let mut plans = vec![];
     for level in [Level::Screen, Level::Refine] {
@@ -448,7 +726,7 @@ pub fn probe_plans(env: &DesignEnvelope, policy: &str) -> Result<Vec<ExecutionPl
             plans.extend(
                 child_plans(env, level, &corner(env, false), policy)?
                     .into_iter()
-                    .map(|(_, plan)| plan),
+                    .filter_map(|(_, plan)| plan),
             );
         }
     }
@@ -560,11 +838,39 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
                 "each template set needs 1..4 children with unique token roles",
             ));
         }
+        for (position, t) in templates.iter().enumerate() {
+            let chained = match (&t.plan, &t.plan_request) {
+                (Value::Object(_), None) => t.after.is_none() && t.max_artifact_bytes.is_none(),
+                (Value::Null, Some(request)) => {
+                    request
+                        .get("operation")
+                        .and_then(Value::as_str)
+                        .is_some_and(|op| CHAIN_OPERATIONS.contains(&op))
+                        && t.max_artifact_bytes
+                            .is_some_and(|b| (1..=MAX_TOTAL_ARTIFACT_BYTES).contains(&b))
+                        && t.after
+                            .as_ref()
+                            .is_none_or(|a| templates[..position].iter().any(|u| &u.role == a))
+                }
+                _ => false,
+            };
+            if !chained {
+                return Err(invalid(format!(
+                    "template {} needs either a complete plan, or a plan_request with an allowlisted operation {CHAIN_OPERATIONS:?}, max_artifact_bytes and an optional after naming an earlier role",
+                    t.role
+                )));
+            }
+        }
     }
     let mut metrics = BTreeSet::new();
-    if env.metric_sources.is_empty() || env.metric_sources.len() > MAX_METRICS {
-        return Err(invalid("1..8 metric sources required"));
+    if env.metric_sources.is_empty() || env.metric_sources.len() > MAX_METRIC_SOURCES {
+        return Err(invalid("1..24 metric sources required"));
     }
+    let every_set_has = |role: &str| {
+        used_sets
+            .iter()
+            .all(|set| env.templates[*set].iter().any(|t| t.role == role))
+    };
     for spec in &env.metric_sources {
         if !token(&spec.metric)
             || spec.metric.len() > 32
@@ -581,9 +887,7 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
                 artifact,
                 pointer,
             } => {
-                used_sets
-                    .iter()
-                    .all(|set| env.templates[*set].iter().any(|t| &t.role == role))
+                every_set_has(role)
                     && relative_path(artifact)
                     && pointer.starts_with('/')
                     && pointer.len() <= 256
@@ -598,10 +902,22 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
                     && declared.len() == params.len()
                     && params.iter().all(|n| names.contains(n.as_str()))
             }
+            MetricSource::Declared { input } => {
+                input.validate().is_ok()
+                    && match input {
+                        PhysicalInput::Known { value, .. } => value.is_finite(),
+                        PhysicalInput::Missing { .. } => true,
+                    }
+            }
+            MetricSource::Correlation { role, request } => {
+                every_set_has(role)
+                    && spec.unit == "K"
+                    && correlation_request(request, &uuid::Uuid::nil().to_string()).is_ok()
+            }
         };
         if !valid {
             return Err(invalid(format!(
-                "metric {} source must name a template role in every fidelity with a relative artifact and JSON pointer, a same-unit continuous parameter, or a registered same-unit provider over declared parameters",
+                "metric {} source must name a template role in every fidelity with a relative artifact and JSON pointer, a same-unit continuous parameter, a registered same-unit provider over declared parameters, a finite declared input with provenance or missing reason, or a role with a valid job-less correlation request in K",
                 spec.metric
             )));
         }
@@ -627,14 +943,22 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
             "at most 8 constraints over declared same-unit metrics with finite limits and safety factors >= 1",
         ));
     }
+    // Derived plans always bind the worker's effective policy; without a
+    // complete template and an explicit policy there is nothing to compare.
     let policy = match policy {
         Some(policy) => policy.to_string(),
-        None => env.templates[&env.fidelity.screen][0]
-            .plan
-            .get("policy")
-            .and_then(Value::as_str)
-            .ok_or_else(|| invalid("template plan policy required"))?
-            .to_string(),
+        None => match env.templates[&env.fidelity.screen]
+            .iter()
+            .find(|t| t.plan_request.is_none())
+        {
+            Some(t) => t
+                .plan
+                .get("policy")
+                .and_then(Value::as_str)
+                .ok_or_else(|| invalid("template plan policy required"))?
+                .to_string(),
+            None => "worker".into(),
+        },
     };
     let mut bytes = BTreeMap::new();
     for level in [Level::Screen, Level::Refine] {
@@ -645,7 +969,12 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
             total = total.max(
                 plans
                     .iter()
-                    .map(|(_, p)| p.observation.max_artifact_bytes)
+                    .zip(&env.templates[set])
+                    .map(|((_, p), t)| {
+                        p.as_ref().map_or(t.max_artifact_bytes.unwrap_or(0), |p| {
+                            p.observation.max_artifact_bytes
+                        })
+                    })
                     .try_fold(0u64, u64::checked_add)
                     .ok_or_else(|| invalid("design output allowance overflow"))?,
             );
@@ -905,9 +1234,16 @@ pub fn rank(items: &mut [(u32, Assessment)]) {
 #[serde(deny_unknown_fields)]
 pub struct ChildRecord {
     pub role: String,
-    pub plan_digest: String,
-    pub idempotency_key: String,
+    /// `None` until a chained child's plan is derived.
+    pub plan_digest: Option<String>,
+    pub idempotency_key: Option<String>,
     pub max_artifact_bytes: u64,
+    /// Upstream job a chained plan was derived from (bound in its key).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub upstream_job: Option<String>,
+    /// Why a chained child was never submitted; its metrics stay unknown.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub blocked: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -1055,7 +1391,25 @@ fn polls(env: &DesignEnvelope, center: &Point, steps: &[i64], diagonals: bool) -
         .collect()
 }
 
-/// Combine job-extracted values with parameter and provider metrics.
+/// A metric source's correlation request bound to one thermal job.
+fn correlation_request(
+    request: &Value,
+    job_id: &str,
+) -> Result<crate::correlation::CorrelationRequest> {
+    let mut request = request
+        .as_object()
+        .filter(|r| !r.contains_key("job_id"))
+        .cloned()
+        .ok_or_else(|| invalid("correlation request object without job_id required"))?;
+    request.insert("job_id".into(), json!(job_id));
+    let request: crate::correlation::CorrelationRequest =
+        serde_json::from_value(Value::Object(request))
+            .map_err(|e| invalid(format!("correlation request schema: {e}")))?;
+    request.validate()?;
+    Ok(request)
+}
+
+/// Combine job-extracted values with parameter, declared and provider metrics.
 pub fn compute_metrics(
     env: &DesignEnvelope,
     params: &Params,
@@ -1065,10 +1419,16 @@ pub fn compute_metrics(
     let mut metrics = Metrics::new();
     for spec in &env.metric_sources {
         let value = match &spec.source {
-            MetricSource::Job { .. } => job_values.get(&spec.metric).copied().flatten(),
+            MetricSource::Job { .. } | MetricSource::Correlation { .. } => {
+                job_values.get(&spec.metric).copied().flatten()
+            }
             MetricSource::Parameter { param } => match params.get(param) {
                 Some(ParamValue::Number(v)) => Some(*v),
                 _ => None,
+            },
+            MetricSource::Declared { input } => match input {
+                PhysicalInput::Known { value, .. } => Some(*value),
+                PhysicalInput::Missing { .. } => None,
             },
             MetricSource::Provider { .. } => continue,
         };
@@ -1169,17 +1529,11 @@ pub fn example() -> Result<DesignEnvelope> {
         templates: BTreeMap::from([
             (
                 "screen".into(),
-                vec![ChildTemplate {
-                    role: "flow".into(),
-                    plan: template(33)?,
-                }],
+                vec![ChildTemplate::complete("flow", template(33)?)],
             ),
             (
                 "refine".into(),
-                vec![ChildTemplate {
-                    role: "flow".into(),
-                    plan: template(65)?,
-                }],
+                vec![ChildTemplate::complete("flow", template(65)?)],
             ),
         ]),
         metric_sources: vec![
@@ -1228,6 +1582,19 @@ fn child_key(intent: &DesignIntent, index: u32, role: &str) -> Result<String> {
     Ok(format!(
         "design_{}",
         digest(&(&intent.id, &intent.envelope_digest, index, role))?
+    ))
+}
+
+/// A derived plan is additionally bound to the upstream job it came from.
+fn derived_key(
+    intent: &DesignIntent,
+    index: u32,
+    role: &str,
+    upstream: Option<&str>,
+) -> Result<String> {
+    Ok(format!(
+        "design_{}",
+        digest(&(&intent.id, &intent.envelope_digest, index, role, upstream))?
     ))
 }
 
@@ -1359,66 +1726,225 @@ fn terminal(state: &str) -> bool {
 
 pub type Submit<'a> = dyn FnMut(&ExecutionPlan, &str) -> Result<()> + 'a;
 
-/// Resubmit missing children idempotently; once all are terminal, extract metrics.
+fn save(store: &Store, id: &str, candidate: &Candidate) -> Result<()> {
+    store.connection.execute(
+        "UPDATE design_candidates SET candidate=?1 WHERE design=?2 AND idx=?3",
+        params![serde_json::to_string(candidate)?, id, candidate.index],
+    )?;
+    Ok(())
+}
+
+/// Resubmit missing children idempotently, derive chained children whose
+/// upstream succeeded (blocking them when it did not), and extract metrics
+/// once every child is terminal or blocked. Persists every change.
 fn refresh(
     store: &Store,
     intent: &DesignIntent,
     candidate: &mut Candidate,
     submit: &mut Submit,
+    planner: &mut Planner,
 ) -> Result<bool> {
+    let env = &intent.envelope;
+    let policy = &intent.profile.policy;
+    let templates = &env.templates[env.set(candidate.fidelity)?];
+    if templates.len() != candidate.children.len()
+        || templates
+            .iter()
+            .zip(&candidate.children)
+            .any(|(t, c)| t.role != c.role)
+    {
+        return Err(invalid(
+            "persisted candidate children differ from the approved templates",
+        ));
+    }
     let mut jobs = vec![];
     for child in &candidate.children {
-        jobs.push(job_by_key(store, &child.idempotency_key)?);
+        jobs.push(match &child.idempotency_key {
+            Some(key) => job_by_key(store, key)?,
+            None => None,
+        });
     }
-    if jobs.iter().any(Option::is_none) {
-        let plans = child_plans(
-            &intent.envelope,
-            candidate.fidelity,
-            &candidate.params,
-            &intent.profile.policy,
-        )?;
+    let missing_static = templates
+        .iter()
+        .zip(&jobs)
+        .any(|(t, j)| t.plan_request.is_none() && j.is_none());
+    if missing_static {
+        let plans = child_plans(env, candidate.fidelity, &candidate.params, policy)?;
         for ((child, (_, plan)), job) in candidate.children.iter().zip(&plans).zip(&mut jobs) {
-            if plan.id()? != child.plan_digest {
+            let (Some(plan), Some(key)) = (plan, &child.idempotency_key) else {
+                continue;
+            };
+            if Some(plan.id()?) != child.plan_digest {
                 return Err(invalid(
                     "regenerated child plan differs from its recorded digest",
                 ));
             }
             if job.is_none() {
-                submit(plan, &child.idempotency_key)?;
-                *job = job_by_key(store, &child.idempotency_key)?;
+                submit(plan, key)?;
+                *job = job_by_key(store, key)?;
+            }
+        }
+    }
+    let mut changed = false;
+    for i in 0..templates.len() {
+        let template = &templates[i];
+        if template.plan_request.is_none() || candidate.children[i].blocked.is_some() {
+            continue;
+        }
+        let succeeded: BTreeMap<String, String> = candidate
+            .children
+            .iter()
+            .zip(&jobs)
+            .filter_map(|(c, j)| {
+                j.as_ref()
+                    .filter(|j| j.state == "succeeded")
+                    .map(|j| (c.role.clone(), j.id.clone()))
+            })
+            .collect();
+        if let Some(key) = candidate.children[i].idempotency_key.clone() {
+            if jobs[i].is_none() {
+                // Crash between recording and submitting: derive the same plan again.
+                let plan = derive(
+                    store,
+                    env,
+                    template,
+                    &candidate.params,
+                    &succeeded,
+                    policy,
+                    planner,
+                )?;
+                if Some(plan.id()?) != candidate.children[i].plan_digest {
+                    return Err(invalid(
+                        "re-derived chained plan differs from its recorded digest",
+                    ));
+                }
+                submit(&plan, &key)?;
+                jobs[i] = job_by_key(store, &key)?;
+            }
+            continue;
+        }
+        let upstream_job = match &template.after {
+            None => None,
+            Some(after) => {
+                let u = templates
+                    .iter()
+                    .position(|t| &t.role == after)
+                    .ok_or_else(|| invalid("chained template upstream role missing"))?;
+                let blocked = match (&candidate.children[u].blocked, &jobs[u]) {
+                    (Some(reason), _) => {
+                        Some(format!("upstream {after} never submitted: {reason}"))
+                    }
+                    (None, None) => continue,
+                    (None, Some(job)) if !terminal(&job.state) => continue,
+                    (None, Some(job)) if job.state != "succeeded" => {
+                        Some(format!("upstream {after} {}", job.state))
+                    }
+                    (None, Some(_)) => None,
+                };
+                if let Some(reason) = blocked {
+                    candidate.children[i].blocked = Some(reason);
+                    changed = true;
+                    continue;
+                }
+                jobs[u].as_ref().map(|j| j.id.clone())
+            }
+        };
+        match derive(
+            store,
+            env,
+            template,
+            &candidate.params,
+            &succeeded,
+            policy,
+            planner,
+        ) {
+            Ok(plan) => {
+                let key = derived_key(
+                    intent,
+                    candidate.index,
+                    &template.role,
+                    upstream_job.as_deref(),
+                )?;
+                let child = &mut candidate.children[i];
+                child.plan_digest = Some(plan.id()?);
+                child.idempotency_key = Some(key.clone());
+                child.upstream_job = upstream_job;
+                // Intent first: the derived binding is durable before submission.
+                save(store, &intent.id, candidate)?;
+                submit(&plan, &key)?;
+                jobs[i] = job_by_key(store, &key)?;
+            }
+            // Transient state and missing host capability are not per-candidate facts.
+            Err(error @ (Error::Io(_) | Error::Sql(_) | Error::Unqualified(_))) => {
+                return Err(error);
+            }
+            Err(error) => {
+                candidate.children[i].blocked = Some(format!("chained planning refused: {error}"));
+                changed = true;
             }
         }
     }
     let mut values = Metrics::new();
+    let mut pending = false;
     for (child, job) in candidate.children.iter().zip(&jobs) {
-        let job = job
-            .as_ref()
-            .ok_or_else(|| invalid("child submission not durable"))?;
-        if job.plan_digest != child.plan_digest {
+        if child.blocked.is_some() {
+            continue;
+        }
+        let Some(job) = job else {
+            if child.idempotency_key.is_some() {
+                return Err(invalid("child submission not durable"));
+            }
+            pending = true;
+            continue;
+        };
+        if Some(&job.plan_digest) != child.plan_digest.as_ref() {
             return Err(Error::IdempotencyConflict);
         }
         if !terminal(&job.state) {
-            return Ok(false);
+            pending = true;
+            continue;
         }
-        for spec in &intent.envelope.metric_sources {
-            if let MetricSource::Job {
-                role,
-                artifact,
-                pointer,
-            } = &spec.source
-                && role == &child.role
-                && job.state == "succeeded"
-            {
-                let value = crate::qualification::registered_json(store, &job.id, artifact)
-                    .ok()
-                    .flatten()
-                    .and_then(|(_, v)| v.pointer(pointer).and_then(Value::as_f64));
-                values.insert(spec.metric.clone(), value);
-            }
+        if job.state != "succeeded" {
+            continue;
+        }
+        for spec in &env.metric_sources {
+            let value = match &spec.source {
+                MetricSource::Job {
+                    role,
+                    artifact,
+                    pointer,
+                } if role == &child.role => {
+                    crate::qualification::registered_json(store, &job.id, artifact)
+                        .ok()
+                        .flatten()
+                        .and_then(|(_, v)| v.pointer(pointer).and_then(Value::as_f64))
+                }
+                MetricSource::Correlation { role, request } if role == &child.role => {
+                    correlation_request(request, &job.id)
+                        .and_then(|request| {
+                            crate::correlation::run(
+                                store,
+                                Path::new(&intent.profile.allowed_input_root),
+                                &request,
+                            )
+                        })
+                        .ok()
+                        .map(|report| crate::correlation::objective(&report))
+                }
+                _ => continue,
+            };
+            values.insert(spec.metric.clone(), value);
         }
     }
-    candidate.metrics = compute_metrics(&intent.envelope, &candidate.params, &values, PROVIDERS);
+    if pending {
+        if changed {
+            save(store, &intent.id, candidate)?;
+        }
+        return Ok(false);
+    }
+    candidate.metrics = compute_metrics(env, &candidate.params, &values, PROVIDERS);
     candidate.state = "evaluated".into();
+    save(store, &intent.id, candidate)?;
     Ok(true)
 }
 
@@ -1446,14 +1972,29 @@ fn create(
         &proposal.params,
         &intent.profile.policy,
     )?;
+    let templates = &env.templates[env.set(proposal.fidelity)?];
     let children = plans
         .iter()
-        .map(|(role, plan)| {
-            Ok(ChildRecord {
-                role: role.clone(),
-                plan_digest: plan.id()?,
-                idempotency_key: child_key(intent, index, role)?,
-                max_artifact_bytes: plan.observation.max_artifact_bytes,
+        .zip(templates)
+        .map(|((role, plan), template)| {
+            Ok(match plan {
+                Some(plan) => ChildRecord {
+                    role: role.clone(),
+                    plan_digest: Some(plan.id()?),
+                    idempotency_key: Some(child_key(intent, index, role)?),
+                    max_artifact_bytes: plan.observation.max_artifact_bytes,
+                    upstream_job: None,
+                    blocked: None,
+                },
+                // Chained: the approved allowance is reserved before derivation.
+                None => ChildRecord {
+                    role: role.clone(),
+                    plan_digest: None,
+                    idempotency_key: None,
+                    max_artifact_bytes: template.max_artifact_bytes.unwrap_or(0),
+                    upstream_job: None,
+                    blocked: None,
+                },
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -1478,19 +2019,23 @@ fn create(
         params![intent.id, index, serde_json::to_string(&candidate)?],
     )?;
     for (child, (_, plan)) in candidate.children.iter().zip(&plans) {
-        submit(plan, &child.idempotency_key)?;
+        if let (Some(plan), Some(key)) = (plan, &child.idempotency_key) {
+            submit(plan, key)?;
+        }
     }
     Ok(candidate)
 }
 
-/// Advance one running design: refresh pending children, then propose the
-/// next deterministic candidate when nothing is pending. Execution stays
-/// with the ordinary worker queue and shared admission.
+/// Advance one running design: refresh pending children (deriving chained
+/// plans through `planner`), then propose the next deterministic candidate
+/// when nothing is pending. Execution stays with the ordinary worker queue
+/// and shared admission.
 pub fn advance(
     store: &Store,
     id: &str,
     profile: &HostExecutionProfile,
     submit: &mut Submit,
+    planner: &mut Planner,
 ) -> Result<()> {
     let (intent, state, _) = load(store, id)?;
     if state != "running" {
@@ -1504,14 +2049,7 @@ pub fn advance(
     let mut history = candidates(store, id)?;
     let mut pending = false;
     for candidate in history.iter_mut().filter(|c| c.state == "pending") {
-        if refresh(store, &intent, candidate, submit)? {
-            store.connection.execute(
-                "UPDATE design_candidates SET candidate=?1 WHERE design=?2 AND idx=?3",
-                params![serde_json::to_string(&*candidate)?, id, candidate.index],
-            )?;
-        } else {
-            pending = true;
-        }
+        pending |= !refresh(store, &intent, candidate, submit, planner)?;
     }
     if pending {
         return Ok(());
@@ -1535,7 +2073,11 @@ pub fn advance(
                 submit,
             ) {
                 Err(Error::Resource(_)) => finish(store, id, "artifact_budget_exhausted"),
-                other => other.map(|_| ()),
+                // Root plan requests derive immediately rather than next tick.
+                Ok(mut candidate) => {
+                    refresh(store, &intent, &mut candidate, submit, planner).map(|_| ())
+                }
+                Err(error) => Err(error),
             }
         }
     }
@@ -1591,6 +2133,9 @@ pub struct JobRef {
     pub role: String,
     pub job_id: Option<String>,
     pub state: Option<String>,
+    /// Chained child never submitted (upstream failure or planning refusal).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blocked: Option<String>,
 }
 
 #[derive(Debug, Serialize, JsonSchema)]
@@ -1641,11 +2186,15 @@ fn jobs(store: &Store, candidate: &Candidate) -> Result<Vec<JobRef>> {
         .children
         .iter()
         .map(|child| {
-            let job = job_by_key(store, &child.idempotency_key)?;
+            let job = match &child.idempotency_key {
+                Some(key) => job_by_key(store, key)?,
+                None => None,
+            };
             Ok(JobRef {
                 role: child.role.clone(),
                 job_id: job.as_ref().map(|j| j.id.clone()),
                 state: job.map(|j| j.state),
+                blocked: child.blocked.clone(),
             })
         })
         .collect()
@@ -1753,6 +2302,19 @@ pub struct Winner {
     pub objective: Option<f64>,
     pub jobs: Vec<JobRef>,
     pub constraints: Vec<ConstraintEvidence>,
+    /// Present when the objective minimizes measured-correlation RMSE: the
+    /// winner's parameters are then `calibrated` against that test only.
+    pub calibration: Vec<Calibration>,
+}
+
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct Calibration {
+    pub label: String,
+    pub metric: String,
+    pub rmse_k: Option<f64>,
+    pub role: String,
+    pub measurement_csv: Value,
+    pub test_provenance: Value,
 }
 
 #[derive(Debug, Serialize, JsonSchema)]
@@ -1793,7 +2355,11 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
                     evidence: match (ca.value, env.metric(&spec.metric).map(|m| &m.source)) {
                         (None, _) | (_, None) => "unknown",
                         (_, Some(MetricSource::Job { .. })) => "simulated",
-                        (_, Some(MetricSource::Parameter { .. })) => "prescribed",
+                        (
+                            _,
+                            Some(MetricSource::Parameter { .. } | MetricSource::Declared { .. }),
+                        ) => "prescribed",
+                        (_, Some(MetricSource::Correlation { .. })) => "measured",
                         (_, Some(MetricSource::Provider { name, .. })) => {
                             provider(name).map_or("unknown", |p| p.evidence())
                         }
@@ -1804,6 +2370,24 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
                     satisfied: ca.satisfied,
                 })
                 .collect();
+            // Parameters minimizing a measured-correlation objective are
+            // calibrated values, labelled with the approved test provenance.
+            let calibration = env
+                .objective
+                .terms
+                .iter()
+                .filter_map(|t| match env.metric(&t.metric).map(|m| &m.source) {
+                    Some(MetricSource::Correlation { role, request }) => Some(Calibration {
+                        label: "calibrated".into(),
+                        metric: t.metric.clone(),
+                        rmse_k: c.metrics.get(&t.metric).copied().flatten(),
+                        role: role.clone(),
+                        measurement_csv: request["measurement_csv"].clone(),
+                        test_provenance: request["provenance"].clone(),
+                    }),
+                    _ => None,
+                })
+                .collect();
             Some(Winner {
                 index,
                 fidelity: c.fidelity,
@@ -1811,6 +2395,7 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
                 objective: a.objective,
                 jobs: jobs(store, c)?,
                 constraints,
+                calibration,
             })
         }
     };

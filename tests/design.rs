@@ -766,3 +766,514 @@ fn external_proposal_is_evaluated_like_a_proposal_through_the_cli() {
     assert_eq!(report["data"]["winner"]["params"], external["params"]);
     assert_eq!(report["data"]["winner"]["fidelity"], "refine");
 }
+
+// ---- chained templates, declared inputs and manufacturing providers -------
+
+const MIB: u64 = 1024 * 1024;
+
+/// CI-runnable two-stage chain: `derived` is planned by the ordinary `plan`
+/// operation from `flow`'s registered mean velocity (used as its drive), so a
+/// derived metric proves the upstream output reached the downstream plan.
+/// Synthetic plumbing fixture with no physical meaning.
+fn chain_env(evaluations: u32) -> DesignEnvelope {
+    let mut env = example().unwrap();
+    env.fidelity = Fidelity {
+        screen: "screen".into(),
+        refine_top_k: None,
+        refine: None,
+    };
+    env.templates.remove("refine");
+    env.budget.max_evaluations = evaluations;
+    env.budget.max_artifact_bytes = u64::from(evaluations) * 2 * MIB;
+    let mut case = env.templates["screen"][0].plan["case"].clone();
+    case["acceleration"] = json!({"$job": "flow", "artifact": "validation.json",
+        "pointer": "/mean_velocity_m_s", "unit": "m/s2"});
+    env.templates
+        .get_mut("screen")
+        .unwrap()
+        .push(ChildTemplate {
+            role: "derived".into(),
+            plan: serde_json::Value::Null,
+            plan_request: Some(json!({"operation": "plan", "case": case})),
+            after: Some("flow".into()),
+            max_artifact_bytes: Some(MIB),
+        });
+    env.metric_sources.push(MetricSpec {
+        metric: "derived_velocity".into(),
+        unit: "m/s".into(),
+        source: MetricSource::Job {
+            role: "derived".into(),
+            artifact: "validation.json".into(),
+            pointer: "/mean_velocity_m_s".into(),
+        },
+    });
+    env
+}
+
+fn chained(env: &mut DesignEnvelope) -> &mut ChildTemplate {
+    &mut env.templates.get_mut("screen").unwrap()[1]
+}
+
+fn declared(metric: &str, unit: &str, input: serde_json::Value) -> MetricSpec {
+    serde_json::from_value(json!({"metric": metric, "unit": unit,
+        "source": {"kind": "declared", "input": input}}))
+    .unwrap()
+}
+
+#[test]
+fn chained_templates_are_allowlisted_upstream_bound_and_strict() {
+    let base = chain_env(4);
+    let prepared = prepare(&base, Some("ci")).unwrap();
+    assert_eq!(prepared.candidate_artifact_bytes["screen"], 2 * MIB);
+    let refuse = |change: &dyn Fn(&mut DesignEnvelope), why: &str| {
+        let mut env = base.clone();
+        change(&mut env);
+        assert!(prepare(&env, Some("ci")).is_err(), "{why} accepted");
+    };
+    refuse(
+        &|e| chained(e).plan_request.as_mut().unwrap()["operation"] = json!("submit"),
+        "non-planning operation",
+    );
+    refuse(
+        &|e| {
+            chained(e).plan_request = Some(
+                json!({"operation": "plan_cad_inspection", "case": {}, "max_artifact_bytes": 1}),
+            )
+        },
+        "planning operation outside the allowlist",
+    );
+    refuse(
+        &|e| chained(e).after = Some("derived".into()),
+        "self dependency",
+    );
+    refuse(
+        &|e| chained(e).after = Some("missing".into()),
+        "unknown upstream",
+    );
+    refuse(&|e| chained(e).after = None, "$job without an upstream");
+    refuse(
+        &|e| chained(e).max_artifact_bytes = None,
+        "unbounded derived output",
+    );
+    refuse(
+        &|e| {
+            let plan = e.templates["screen"][0].plan.clone();
+            chained(e).plan = plan;
+        },
+        "plan and plan_request together",
+    );
+    refuse(
+        &|e| chained(e).plan_request.as_mut().unwrap()["case"]["surrogate"] = json!(1),
+        "request schema",
+    );
+    refuse(
+        &|e| {
+            chained(e).plan_request.as_mut().unwrap()["case"]["acceleration"] =
+                json!({"$job": "flow", "artifact": "validation.json"})
+        },
+        "artifact without pointer",
+    );
+    refuse(
+        &|e| {
+            chained(e).plan_request.as_mut().unwrap()["case"]["acceleration"] =
+                json!({"$job": "flow", "artifact": "../x.json", "pointer": "/a", "unit": "m/s2"})
+        },
+        "traversing upstream artifact",
+    );
+    refuse(
+        &|e| {
+            e.templates.get_mut("screen").unwrap()[0].plan["case"]["name"] = json!({"$job": "flow"})
+        },
+        "$job in a complete plan",
+    );
+    refuse(
+        &|e| {
+            chained(e).plan_request.as_mut().unwrap()["case"]["max_time_s"] =
+                json!({"$input": "undeclared", "si": "time"})
+        },
+        "$input naming no declared source",
+    );
+    refuse(
+        &|e| {
+            e.metric_sources.push(declared(
+                "ambient",
+                "K",
+                json!({"availability": "missing", "reason": " "}),
+            ))
+        },
+        "declared input without a reason",
+    );
+    let correlation = |request: serde_json::Value, unit: &str| -> MetricSpec {
+        serde_json::from_value(json!({"metric": "rmse", "unit": unit,
+            "source": {"kind": "correlation", "role": "flow", "request": request}}))
+        .unwrap()
+    };
+    let request = json!({"schema_version": 1, "measurement_csv": "run.csv", "dimension": "temperature",
+        "probe_map": {"tc1": {"association": "node", "node_id": 1}}, "time_offset_s": 0.0,
+        "time_window": [0.0, 1.0], "tolerance": {"abs": {"value": 1.0, "unit": "K"}, "rel": 0.0},
+        "provenance": {"test_id": "t", "rig": "r", "sensor_type": "s",
+            "sensor_accuracy": {"value": 0.5, "unit": "K"}, "date": "d"}});
+    let mut accepted = base.clone();
+    accepted
+        .metric_sources
+        .push(correlation(request.clone(), "K"));
+    accepted.metric_sources.push(declared(
+        "ambient",
+        "K",
+        json!({"availability": "missing", "reason": "site not chosen"}),
+    ));
+    prepare(&accepted, Some("ci")).unwrap();
+    let mut with_job = request.clone();
+    with_job["job_id"] = json!(uuid_nil());
+    refuse(
+        &|e| e.metric_sources.push(correlation(with_job.clone(), "K")),
+        "correlation request carrying its own job",
+    );
+    refuse(
+        &|e| e.metric_sources.push(correlation(request.clone(), "degC")),
+        "correlation metric not in K",
+    );
+}
+
+fn uuid_nil() -> String {
+    "00000000-0000-0000-0000-000000000000".into()
+}
+
+#[test]
+fn declared_inputs_resolve_in_requests_and_missing_stays_unknown() {
+    let mut env = chain_env(4);
+    env.metric_sources.push(declared(
+        "horizon",
+        "min",
+        json!({"availability": "known", "value": 0.5, "provenance": "test", "synthetic": true}),
+    ));
+    env.metric_sources.push(declared(
+        "ambient",
+        "K",
+        json!({"availability": "missing", "reason": "site not chosen"}),
+    ));
+    chained(&mut env).plan_request.as_mut().unwrap()["case"]["max_time_s"] =
+        json!({"$input": "ambient", "si": "time"});
+    assert!(
+        prepare(&env, Some("ci")).is_err(),
+        "a K input cannot become a time"
+    );
+    chained(&mut env).plan_request.as_mut().unwrap()["case"]["max_time_s"] =
+        json!({"$input": "horizon", "si": "time"});
+    prepare(&env, Some("ci")).unwrap();
+    let params = Params::from([
+        ("height".into(), ParamValue::Number(6.)),
+        ("acceleration".into(), ParamValue::Number(0.34)),
+    ]);
+    let metrics = compute_metrics(&env, &params, &BTreeMap::new(), &[]);
+    assert_eq!(metrics["horizon"], Some(0.5));
+    assert_eq!(metrics["ambient"], None);
+}
+
+fn provider_value(name: &str, params: &Params, metrics: &[(&str, f64)]) -> Option<f64> {
+    let metrics: BTreeMap<String, f64> = metrics.iter().map(|(k, v)| (k.to_string(), *v)).collect();
+    PROVIDERS
+        .iter()
+        .find(|p| p.name() == name)
+        .unwrap()
+        .evaluate(params, &metrics)
+        .ok()
+        .flatten()
+}
+
+#[test]
+fn manufacturing_providers_reuse_w1_and_never_fabricate_missing_inputs() {
+    use harbor_cad::manufacturing::{GeometrySummary, Library, manufacturability, unit_cost};
+    let library = Library::builtin().unwrap();
+    let route = |r: &str| Params::from([("route".into(), ParamValue::Choice(r.into()))]);
+    let al = route("al-6061-t6__cnc-3axis-al");
+    let geometry = [
+        ("volume_m3", 4e-4),
+        ("xmin_m", 0.),
+        ("xmax_m", 0.2),
+        ("ymin_m", 0.),
+        ("ymax_m", 0.15),
+        ("zmin_m", 0.01),
+        ("zmax_m", 0.09),
+        ("min_wall_m", 0.004),
+    ];
+    let with = |extra: &[(&'static str, f64)]| [&geometry[..], extra].concat();
+    let summary = GeometrySummary {
+        volume_m3: 4e-4,
+        bbox_m: [0.2, 0.15, 0.08],
+        min_wall_m: Some(0.004),
+        surface_area_m2: None,
+    };
+    let estimate = unit_cost(&library, &summary, "al-6061-t6", "cnc-3axis-al", 50).unwrap();
+    for (name, expected) in [
+        ("unit_cost_low_usd", estimate.low),
+        ("unit_cost_high_usd", estimate.high),
+    ] {
+        let value = provider_value(name, &al, &with(&[("quantity", 50.)])).unwrap();
+        assert!((value - expected.unwrap()).abs() < 1e-9, "{name}");
+    }
+    assert!(estimate.high > estimate.low);
+    assert_eq!(provider_value("unit_cost_high_usd", &al, &geometry), None);
+    assert_eq!(
+        provider_value("unit_cost_high_usd", &al, &with(&[("quantity", 50.5)])),
+        None
+    );
+    assert_eq!(
+        provider_value(
+            "unit_cost_high_usd",
+            &Params::new(),
+            &with(&[("quantity", 50.)])
+        ),
+        None,
+        "no route, no estimate"
+    );
+    let incompatible = route("pa12-mjf__cnc-3axis-al");
+    assert_eq!(
+        provider_value(
+            "unit_cost_high_usd",
+            &incompatible,
+            &with(&[("quantity", 50.)])
+        ),
+        None
+    );
+    assert!(
+        provider_value("manufacturability_violations", &incompatible, &geometry).unwrap() >= 1.
+    );
+    let found = manufacturability(&library, &summary, "al-6061-t6", "cnc-3axis-al").unwrap();
+    assert_eq!(
+        provider_value("manufacturability_violations", &al, &geometry),
+        Some(found.len() as f64)
+    );
+    let no_wall: Vec<_> = geometry
+        .iter()
+        .copied()
+        .filter(|(k, _)| *k != "min_wall_m")
+        .collect();
+    assert_eq!(
+        provider_value("manufacturability_violations", &al, &no_wall),
+        None,
+        "unknown wall is not zero violations"
+    );
+    let thin = with(&[])
+        .into_iter()
+        .map(|(k, v)| (k, if k == "min_wall_m" { 0.0003 } else { v }))
+        .collect::<Vec<_>>();
+    assert!(provider_value("manufacturability_violations", &al, &thin).unwrap() >= 1.);
+    let mass = provider_value("mass_kg", &al, &geometry).unwrap();
+    assert!((mass - 4e-4 * 2700.).abs() < 1e-9);
+    // al-6061-t6: conservative max service 100 degC, min service -100 degC.
+    let margin =
+        provider_value("temperature_margin_k", &al, &[("max_temperature_k", 330.)]).unwrap();
+    assert!((margin - (373.15 - 330.)).abs() < 1e-9);
+    let both = provider_value(
+        "temperature_margin_k",
+        &al,
+        &[("max_temperature_k", 330.), ("min_temperature_k", 180.)],
+    )
+    .unwrap();
+    assert!(
+        (both - (180. - 173.15)).abs() < 1e-9,
+        "the tighter of both margins"
+    );
+    assert_eq!(provider_value("temperature_margin_k", &al, &geometry), None);
+    assert_eq!(
+        provider_value("stress_margin", &al, &[("max_von_mises_pa", 50e6)]),
+        None,
+        "no stated safety factor"
+    );
+    let stress = provider_value(
+        "stress_margin",
+        &al,
+        &[("max_von_mises_pa", 50e6), ("stress_safety_factor", 2.)],
+    )
+    .unwrap();
+    assert!((stress - (240e6 / 2. / 50e6 - 1.)).abs() < 1e-9);
+    assert!(PROVIDERS.iter().all(|p| p.evidence() == "estimated"));
+}
+
+#[test]
+fn enclosure_and_calibration_examples_validate() {
+    let read = |name: &str| -> DesignEnvelope {
+        serde_json::from_str(
+            &std::fs::read_to_string(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("examples")
+                    .join(name),
+            )
+            .unwrap(),
+        )
+        .unwrap()
+    };
+    let enclosure = read("design-enclosure.json");
+    let prepared = prepare(&enclosure, Some("research")).unwrap();
+    assert_eq!(prepared.combinations, 3);
+    let roles: Vec<_> = enclosure.templates["screen"]
+        .iter()
+        .map(|t| (t.role.as_str(), t.after.as_deref()))
+        .collect();
+    assert_eq!(
+        roles,
+        [
+            ("variant", None),
+            ("mesh", Some("variant")),
+            ("thermal", Some("mesh"))
+        ]
+    );
+    // Thermal inputs are declared but missing: the derived FEM refuses rather
+    // than run on invented boundary values, so the thermal constraint stays unknown.
+    let params = Params::from([(
+        "route".into(),
+        ParamValue::Choice("pa12-mjf__mjf-pa12".into()),
+    )]);
+    let metrics = compute_metrics(&enclosure, &params, &BTreeMap::new(), PROVIDERS);
+    assert_eq!(metrics["quantity"], Some(50.));
+    assert_eq!(metrics["temperature_margin_k"], None);
+    assert_eq!(metrics["unit_cost_high_usd"], None);
+    let calibrate = read("design-calibrate.json");
+    prepare(&calibrate, Some("research")).unwrap();
+}
+
+/// Raw durable candidate row, for asserting the recorded chain binding.
+fn candidate_row(root: &Path, id: &str, index: u64) -> serde_json::Value {
+    let raw: String = Store::open(root)
+        .unwrap()
+        .connection
+        .query_row(
+            "SELECT candidate FROM design_candidates WHERE design=?1 AND idx=?2",
+            rusqlite::params![id, index as i64],
+            |r| r.get(0),
+        )
+        .unwrap();
+    serde_json::from_str(&raw).unwrap()
+}
+
+fn submit_design(root: &Path, env: &DesignEnvelope, key: &str) -> String {
+    let digest = prepare(env, Some("ci")).unwrap().approval_digest;
+    let submitted = call(
+        root,
+        json!({"operation":"design_submit","envelope":env,"approved_digest":digest,"idempotency_key":key}),
+    );
+    assert!(submitted.ok, "{submitted:?}");
+    submitted.data.unwrap()["id"].as_str().unwrap().to_string()
+}
+
+fn job_refs(status: &serde_json::Value) -> usize {
+    status["iterations"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|i| i["jobs"].as_array().unwrap())
+        .filter(|j| j["job_id"].is_string())
+        .count()
+}
+
+#[test]
+fn worker_derives_chained_children_from_upstream_output_and_resumes_without_duplicates() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("state");
+    let env = chain_env(4);
+    let mut worker = start(&root);
+    let id = submit_design(&root, &env, "chain");
+    wait_until(&root, &id, |s| {
+        s["iterations"][0]["jobs"][1]["job_id"].is_string()
+    });
+    // Crash after the first derivation and restart on the same state root.
+    drop(worker);
+    worker = start(&root);
+    let status = wait_until(&root, &id, |s| s["state"] != "running");
+    assert_eq!(status["state"], "budget_exhausted", "{status}");
+    let iterations = status["iterations"].as_array().unwrap();
+    assert_eq!(iterations.len(), 4);
+    assert_eq!(
+        job_count(&root) as usize,
+        job_refs(&status),
+        "no duplicate children"
+    );
+    let mut derived_checked = 0;
+    for (index, iteration) in iterations.iter().enumerate() {
+        let jobs = iteration["jobs"].as_array().unwrap();
+        assert_eq!(jobs[1]["role"], "derived");
+        if jobs[0]["state"] != "succeeded" {
+            // A crash-interrupted upstream blocks its dependent; nothing is fabricated.
+            assert!(jobs[1]["job_id"].is_null() && jobs[1]["blocked"].is_string());
+            continue;
+        }
+        let row = candidate_row(&root, &id, index as u64);
+        let child = &row["children"][1];
+        assert_eq!(child["upstream_job"], jobs[0]["job_id"], "{row}");
+        assert!(child["plan_digest"].is_string() && child["idempotency_key"].is_string());
+        assert_ne!(
+            child["idempotency_key"],
+            row["children"][0]["idempotency_key"]
+        );
+        if jobs[1]["state"] == "succeeded" {
+            // u2 = u1 h^2 / (12 nu): the derived drive is the upstream velocity.
+            let h = num(
+                &serde_json::from_value(iteration["params"].clone()).unwrap(),
+                "height",
+            ) * 1e-3;
+            let u1 = iteration["metrics"]["mean_velocity"].as_f64().unwrap();
+            let u2 = iteration["metrics"]["derived_velocity"].as_f64().unwrap();
+            assert!(
+                (u2 - u1 * h * h / 12e-5).abs() <= 1e-9 * u2.abs(),
+                "{iteration}"
+            );
+            derived_checked += 1;
+        }
+    }
+    assert!(derived_checked >= 3, "{status}");
+    // Re-advancing a finished design submits nothing new.
+    let before = job_count(&root);
+    let repeat = call(
+        &root,
+        json!({"operation":"design_submit","envelope":env,
+            "approved_digest":prepare(&env, Some("ci")).unwrap().approval_digest,"idempotency_key":"chain"}),
+    );
+    assert_eq!(repeat.data.unwrap()["id"], id);
+    assert_eq!(job_count(&root), before);
+    drop(worker);
+}
+
+#[test]
+fn failed_upstream_or_refused_derivation_never_submits_the_dependent() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("state");
+    let _worker = start(&root);
+
+    // The analytical residual (~1e-15) exceeds this tolerance: every upstream job fails.
+    let mut failing = chain_env(3);
+    failing.templates.get_mut("screen").unwrap()[0].plan["case"]["applicability"]["numerical_tolerance"] =
+        json!(1e-300);
+    let id = submit_design(&root, &failing, "failing");
+    let status = wait_until(&root, &id, |s| s["state"] != "running");
+    assert_ne!(status["state"], "failed", "{status}");
+    for iteration in status["iterations"].as_array().unwrap() {
+        let jobs = iteration["jobs"].as_array().unwrap();
+        assert_eq!(jobs[0]["state"], "failed", "{iteration}");
+        assert!(jobs[1]["job_id"].is_null(), "{iteration}");
+        assert_eq!(jobs[1]["blocked"], "upstream flow failed");
+        assert!(iteration["metrics"]["derived_velocity"].is_null());
+        assert_eq!(iteration["standing"], "unknown");
+    }
+    assert_eq!(job_count(&root) as usize, job_refs(&status));
+
+    // A derived plan larger than the approved allowance is refused per candidate.
+    let mut undersized = chain_env(2);
+    undersized.provenance.push_str(" undersized");
+    chained(&mut undersized).max_artifact_bytes = Some(1024);
+    let before = job_count(&root);
+    let id = submit_design(&root, &undersized, "undersized");
+    let status = wait_until(&root, &id, |s| s["state"] != "running");
+    for iteration in status["iterations"].as_array().unwrap() {
+        let derived = &iteration["jobs"][1];
+        assert!(derived["job_id"].is_null(), "{iteration}");
+        assert!(
+            derived["blocked"]
+                .as_str()
+                .unwrap()
+                .contains("approved max_artifact_bytes"),
+            "{iteration}"
+        );
+    }
+    assert_eq!(job_count(&root) - before, 2, "only the upstream jobs ran");
+}

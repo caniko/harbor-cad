@@ -1,0 +1,419 @@
+{
+  "schema_version": 1,
+  "name": "outdoor_enclosure_pilot",
+  "provenance": "Outdoor wall/pole-mounted electronics enclosure, pilot 50 units. Synthetic enclosure_fixture geometry (not a validated product design). Requirements, not physics: order quantity 50 and a 10 K temperature margin below the conservative material service limit. Electronics power, site ambient and solar load are declared inputs that stay missing until measured or specified; nothing is defaulted. Replace source_job with an authorized enclosure_fixture job.",
+  "seed": 11,
+  "space": {
+    "continuous": [
+      {
+        "name": "wall",
+        "low": 2.0,
+        "high": 6.0,
+        "step": 0.5,
+        "unit": "mm"
+      },
+      {
+        "name": "fin_count",
+        "low": 4.0,
+        "high": 8.0,
+        "step": 1.0,
+        "unit": "1"
+      },
+      {
+        "name": "fin_height",
+        "low": 5.0,
+        "high": 25.0,
+        "step": 1.0,
+        "unit": "mm"
+      },
+      {
+        "name": "length",
+        "low": 180.0,
+        "high": 240.0,
+        "step": 5.0,
+        "unit": "mm"
+      },
+      {
+        "name": "height",
+        "low": 60.0,
+        "high": 100.0,
+        "step": 5.0,
+        "unit": "mm"
+      }
+    ],
+    "categorical": [
+      {
+        "name": "route",
+        "choices": [
+          "al-6061-t6__cnc-3axis-al",
+          "pa12-mjf__mjf-pa12",
+          "al-5052-h32__sheet-metal-laser-brake"
+        ]
+      }
+    ]
+  },
+  "objective": {
+    "kind": "minimize",
+    "terms": [
+      {
+        "metric": "unit_cost_high_usd",
+        "weight": 1.0
+      }
+    ]
+  },
+  "constraints": [
+    {
+      "metric": "temperature_margin_k",
+      "op": "ge",
+      "limit": 10.0,
+      "unit": "K",
+      "safety_factor": null
+    },
+    {
+      "metric": "manufacturability_violations",
+      "op": "le",
+      "limit": 0.0,
+      "unit": "1",
+      "safety_factor": null
+    }
+  ],
+  "budget": {
+    "max_evaluations": 32,
+    "max_wall_seconds": 172800,
+    "max_artifact_bytes": 15032385536
+  },
+  "fidelity": {
+    "screen": "screen"
+  },
+  "templates": {
+    "screen": [
+      {
+        "role": "variant",
+        "plan_request": {
+          "operation": "plan_cad_variant",
+          "request": {
+            "schema_version": 2,
+            "source_job": "00000000-0000-0000-0000-000000000000",
+            "sheet_name": "Params",
+            "parameters": {
+              "wall": {
+                "$param": "wall",
+                "unit": "mm"
+              },
+              "fin_count": {
+                "$param": "fin_count",
+                "unit": "1"
+              },
+              "fin_height": {
+                "$param": "fin_height",
+                "unit": "mm"
+              },
+              "length": {
+                "$param": "length",
+                "unit": "mm"
+              },
+              "height": {
+                "$param": "height",
+                "unit": "mm"
+              }
+            },
+            "regions": [
+              "housing"
+            ],
+            "geometry_tolerance": {
+              "value": 1e-05,
+              "unit": "m"
+            },
+            "provenance": "design-loop candidate of the synthetic enclosure_fixture Params sheet"
+          }
+        },
+        "max_artifact_bytes": 268435456
+      },
+      {
+        "role": "mesh",
+        "after": "variant",
+        "plan_request": {
+          "operation": "plan_cad_mesh",
+          "request": {
+            "source_job": {
+              "$job": "variant"
+            },
+            "region_name": "housing",
+            "resolution": 8,
+            "geometry_tolerance_m": 1e-05
+          }
+        },
+        "max_artifact_bytes": 67108864
+      },
+      {
+        "role": "thermal",
+        "after": "mesh",
+        "plan_request": {
+          "operation": "plan_fem_imported",
+          "request": {
+            "source_job": {
+              "$job": "variant"
+            },
+            "region_name": "housing",
+            "spec": {
+              "schema_version": 1,
+              "reference": {
+                "schema_version": 1,
+                "synthetic": true,
+                "backend": "cpu",
+                "mode": "thermal_boundary",
+                "size_m": [
+                  {
+                    "$param": "length",
+                    "si": "length"
+                  },
+                  0.15,
+                  {
+                    "$param": "height",
+                    "si": "length"
+                  }
+                ],
+                "resolution": 8,
+                "geometry_tolerance_m": 1e-05,
+                "temperatures_k": [
+                  {
+                    "$input": "ambient_max_k",
+                    "si": "temperature"
+                  },
+                  {
+                    "$input": "internal_air_max_k",
+                    "si": "temperature"
+                  }
+                ],
+                "numerical_tolerance": 1e-06,
+                "conductivity_w_m_k": {
+                  "$input": "housing_conductivity",
+                  "si": "thermal_conductivity"
+                }
+              },
+              "material_provenance": "route-specific conductivity is a declared input",
+              "boundary_provenance": "declared site ambient maximum and internal air maximum"
+            }
+          }
+        },
+        "max_artifact_bytes": 134217728
+      }
+    ]
+  },
+  "metric_sources": [
+    {
+      "metric": "quantity",
+      "unit": "1",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "known",
+          "value": 50.0,
+          "provenance": "pilot build quantity from the product requirement (10-100 units); a requirement, not a physical value",
+          "synthetic": false
+        }
+      }
+    },
+    {
+      "metric": "ambient_max_k",
+      "unit": "K",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "missing",
+          "reason": "site design ambient maximum not specified; needs climate data for the installation site"
+        }
+      }
+    },
+    {
+      "metric": "internal_air_max_k",
+      "unit": "K",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "missing",
+          "reason": "no solved internal air temperature: needs the electronics power and solar load model"
+        }
+      }
+    },
+    {
+      "metric": "housing_conductivity",
+      "unit": "W/(m*K)",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "missing",
+          "reason": "route-specific conductivity is not bound per categorical choice by this envelope"
+        }
+      }
+    },
+    {
+      "metric": "electronics_power_w",
+      "unit": "W",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "missing",
+          "reason": "electronics dissipation not yet measured or specified"
+        }
+      }
+    },
+    {
+      "metric": "solar_irradiance",
+      "unit": "W/m2",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "missing",
+          "reason": "site peak solar irradiance not specified"
+        }
+      }
+    },
+    {
+      "metric": "max_temperature_k",
+      "unit": "K",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "missing",
+          "reason": "no allowlisted solver computes a power-driven component temperature on imported enclosure geometry; the imported FEM receipt publishes no temperature scalar"
+        }
+      }
+    },
+    {
+      "metric": "volume_m3",
+      "unit": "m3",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/volume_m3"
+      }
+    },
+    {
+      "metric": "xmin_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/bounds_m/0"
+      }
+    },
+    {
+      "metric": "xmax_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/bounds_m/1"
+      }
+    },
+    {
+      "metric": "ymin_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/bounds_m/2"
+      }
+    },
+    {
+      "metric": "ymax_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/bounds_m/3"
+      }
+    },
+    {
+      "metric": "zmin_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/bounds_m/4"
+      }
+    },
+    {
+      "metric": "zmax_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/bounds_m/5"
+      }
+    },
+    {
+      "metric": "min_wall_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/min_wall_m"
+      }
+    },
+    {
+      "metric": "unit_cost_high_usd",
+      "unit": "USD",
+      "source": {
+        "kind": "provider",
+        "name": "unit_cost_high_usd",
+        "params": [
+          "route"
+        ]
+      }
+    },
+    {
+      "metric": "unit_cost_low_usd",
+      "unit": "USD",
+      "source": {
+        "kind": "provider",
+        "name": "unit_cost_low_usd",
+        "params": [
+          "route"
+        ]
+      }
+    },
+    {
+      "metric": "mass_kg",
+      "unit": "kg",
+      "source": {
+        "kind": "provider",
+        "name": "mass_kg",
+        "params": [
+          "route"
+        ]
+      }
+    },
+    {
+      "metric": "manufacturability_violations",
+      "unit": "1",
+      "source": {
+        "kind": "provider",
+        "name": "manufacturability_violations",
+        "params": [
+          "route"
+        ]
+      }
+    },
+    {
+      "metric": "temperature_margin_k",
+      "unit": "K",
+      "source": {
+        "kind": "provider",
+        "name": "temperature_margin_k",
+        "params": [
+          "route"
+        ]
+      }
+    }
+  ]
+}
