@@ -337,6 +337,11 @@ pub struct EnclosureThermalInputs {
     pub solar: Option<SolarInput>,
     pub radiation: bool,
     pub energy_balance_tolerance: f64,
+    /// Linear power-sweep mode: the design loop superposes solves at two
+    /// heat-source powers, which is exact only for a linear model, so
+    /// radiation (T^4) is refused. Constant films and solar keep it affine.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub power_sweep: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -712,6 +717,11 @@ pub fn resolve(inputs: &EnclosureThermalInputs, geometry: &SolidsGeometry) -> Re
     if inputs.schema_version != 1 {
         return Err(invalid(
             "enclosure thermal inputs schema_version 1 required",
+        ));
+    }
+    if inputs.power_sweep && inputs.radiation {
+        return Err(invalid(
+            "power_sweep superposes solves linearly in power and requires radiation off (radiation is nonlinear)",
         ));
     }
     let names: BTreeSet<&str> = geometry.names().into_iter().collect();

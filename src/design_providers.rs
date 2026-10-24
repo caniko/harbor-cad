@@ -12,13 +12,18 @@
 //! - `quantity` (order size, an integer 1..=1e6);
 //! - `max_temperature_k`, optional `min_temperature_k`;
 //! - `max_von_mises_pa`, `stress_safety_factor`;
-//! - `component_max_temperature_k`, `pcb_max_temperature_k` (component margin).
+//! - `component_max_temperature_k`, `pcb_max_temperature_k` (component margin);
+//! - power sweep (`max_supported_pcb_power_w`): `pcb_power_low_w`,
+//!   `pcb_power_high_w`, `housing_margin_required_k` and, per solve, the
+//!   board (`pcb_max_temperature_k`, `internal_air_temperature_k`) and housing
+//!   (`max_temperature_k`) peaks: unprefixed at the low power, `hi_` at the
+//!   high power and `check_` for the refine-tier verification solve.
 //!
 //! A missing input, missing sourced data or an incompatible route is unknown
 //! (`None`), never a default.
 use crate::{
     Result,
-    design::{MetricProvider, ParamValue, Params},
+    design::{Level, MetricProvider, ParamValue, Params},
     manufacturing::{
         GeometrySummary, Library, MarginCheck, Severity, manufacturability, service_margins,
         unit_cost,
@@ -45,7 +50,134 @@ pub static ALL: &[&dyn MetricProvider] = &[
     &Manufacturing::TemperatureMargin,
     &Manufacturing::StressMargin,
     &ComponentMargin,
+    &PowerSweep,
 ];
+
+pub const MAX_SUPPORTED_PCB_POWER: &str = "max_supported_pcb_power_w";
+/// Refine-tier affinity tolerance: the verification solve at the supported
+/// power must match the superposed prediction within this many kelvin.
+pub const AFFINITY_TOLERANCE_K: f64 = 0.5;
+
+/// Largest PCB power in `[p_lo, p_hi]` keeping every criterion at or below
+/// its limit, from solves at the two powers. With radiation off and constant
+/// films and solar the model is linear, so every nodal temperature is affine
+/// in power; a peak (maximum over nodes) is convex, so the chord between the
+/// two solves bounds it from above inside the interval (conservative).
+/// `None` if a criterion already exceeds its limit at `p_lo` or does not
+/// rise with power (affinity not established).
+pub fn supported_power(powers: [f64; 2], lo: &[f64], hi: &[f64], limits: &[f64]) -> Option<f64> {
+    let [p_lo, p_hi] = powers;
+    if !(p_lo > 0. && p_hi > p_lo) || lo.len() != hi.len() || lo.len() != limits.len() {
+        return None;
+    }
+    let mut best = p_hi;
+    for ((lo, hi), limit) in lo.iter().zip(hi).zip(limits) {
+        let slope = (hi - lo) / (p_hi - p_lo);
+        if !(lo <= limit && slope > 0.) {
+            return None;
+        }
+        best = best.min(p_lo + (limit - lo) / slope);
+    }
+    best.is_finite().then_some(best)
+}
+
+/// Superposed temperatures at `power` (the chord through the two solves).
+pub fn superposed(powers: [f64; 2], lo: &[f64], hi: &[f64], power: f64) -> Vec<f64> {
+    let t = (power - powers[0]) / (powers[1] - powers[0]);
+    lo.iter()
+        .zip(hi)
+        .map(|(lo, hi)| lo + t * (hi - lo))
+        .collect()
+}
+
+/// [board, housing] peaks of one solve: board is the hotter of the PCB peak
+/// and the internal air (components sit between them).
+fn sweep_point(metrics: &BTreeMap<String, f64>, prefix: &str) -> Option<[f64; 2]> {
+    let get = |name: &str| metrics.get(&format!("{prefix}{name}")).copied();
+    Some([
+        get("pcb_max_temperature_k")?.max(get("internal_air_temperature_k")?),
+        get("max_temperature_k")?,
+    ])
+}
+
+/// Maximum steady PCB dissipation the design supports at the hot point:
+/// the component limit bounds the board, and the route material's
+/// conservative service maximum less `housing_margin_required_k` bounds the
+/// housing (as `temperature_margin_k`). Clamped to the swept
+/// `[pcb_power_low_w, pcb_power_high_w]`; unknown if even the low power
+/// fails. Screen: the superposed estimate. Refine: additionally a third
+/// solve at that power must match the prediction within
+/// `AFFINITY_TOLERANCE_K`, else unknown.
+pub struct PowerSweep;
+
+impl MetricProvider for PowerSweep {
+    fn name(&self) -> &'static str {
+        MAX_SUPPORTED_PCB_POWER
+    }
+    fn unit(&self) -> &'static str {
+        "W"
+    }
+    fn evidence(&self) -> &'static str {
+        "estimated"
+    }
+    fn evaluate(&self, params: &Params, metrics: &BTreeMap<String, f64>) -> Result<Option<f64>> {
+        self.evaluate_at(Level::Screen, params, metrics)
+    }
+    fn evaluate_at(
+        &self,
+        level: Level,
+        params: &Params,
+        metrics: &BTreeMap<String, f64>,
+    ) -> Result<Option<f64>> {
+        let get = |name: &str| metrics.get(name).copied();
+        let (
+            Some((material, _)),
+            Some(p_lo),
+            Some(p_hi),
+            Some(component),
+            Some(margin),
+            Some(lo),
+            Some(hi),
+        ) = (
+            route(params),
+            get("pcb_power_low_w"),
+            get("pcb_power_high_w"),
+            get("component_max_temperature_k"),
+            get("housing_margin_required_k"),
+            sweep_point(metrics, ""),
+            sweep_point(metrics, "hi_"),
+        )
+        else {
+            return Ok(None);
+        };
+        let Some(service) =
+            service_margins(&Library::builtin()?, material, lo[1], lo[1], None, 1.)?
+                .into_iter()
+                .find(|m| m.check == MarginCheck::MaxTemperature)
+                .and_then(|m| m.capacity)
+        else {
+            return Ok(None);
+        };
+        let powers = [p_lo, p_hi];
+        let Some(power) = supported_power(powers, &lo, &hi, &[component, service - margin]) else {
+            return Ok(None);
+        };
+        if level == Level::Refine {
+            let Some(check) = sweep_point(metrics, "check_") else {
+                return Ok(None);
+            };
+            let expected = superposed(powers, &lo, &hi, power);
+            if check
+                .iter()
+                .zip(&expected)
+                .any(|(t, e)| (t - e).abs() > AFFINITY_TOLERANCE_K)
+            {
+                return Ok(None);
+            }
+        }
+        Ok(Some(power))
+    }
+}
 
 /// `component_max_temperature_k` (an operator input) minus the simulated
 /// `pcb_max_temperature_k`; unknown unless both are known.

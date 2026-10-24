@@ -360,6 +360,17 @@ fn thermal_inputs_resolve_library_routes_conservatively_and_refuse_missing_data(
     );
     declared["radiation"] = json!(false);
     assert!(resolve(declared).is_ok());
+    // Power-sweep superposition is linear: radiation (T^4) is refused there.
+    let mut sweep = inputs();
+    sweep["power_sweep"] = json!(true);
+    assert!(
+        resolve(sweep.clone())
+            .unwrap_err()
+            .to_string()
+            .contains("requires radiation off")
+    );
+    sweep["radiation"] = json!(false);
+    assert!(!resolve(sweep).unwrap().radiation);
     refused("/heat_source_region", json!("lid"));
     refused("/exposed_regions", json!(["pcb", "housing"]));
     refused("/energy_balance_tolerance", json!(1e-2));
@@ -936,13 +947,15 @@ fn enclosure_examples_chain_variant_general_mesh_and_enclosure_thermal() {
                     .unwrap()
             })
             .collect();
+        // The pilot sweeps PCB power with two enclosure solves per candidate.
+        let thermal = if synthetic { 1 } else { 2 };
         assert_eq!(
             operations,
             [
-                "plan_cad_variant",
-                "plan_cad_solid_mesh",
-                "plan_enclosure_thermal"
+                &["plan_cad_variant", "plan_cad_solid_mesh"][..],
+                &vec!["plan_enclosure_thermal"; thermal]
             ]
+            .concat()
         );
         let sources = raw["metric_sources"].as_array().unwrap();
         let declared: Vec<&Value> = sources
@@ -950,25 +963,26 @@ fn enclosure_examples_chain_variant_general_mesh_and_enclosure_thermal() {
             .filter(|m| m["source"]["kind"] == "declared" && m["metric"] != "quantity")
             .map(|m| &m["source"]["input"])
             .collect();
-        // The pilot takes its environment from cited conditions and leaves only
-        // product-specific inputs missing; the demo labels every input synthetic.
+        // The pilot takes its environment, component limit and board
+        // conductivity from cited data and declares only requirements (sweep
+        // range, housing margin); the demo labels every input synthetic.
         assert_eq!(declared.len(), if synthetic { 6 } else { 3 }, "{name}");
         assert!(declared.iter().all(|input| if synthetic {
             input["synthetic"] == true
         } else {
-            input["availability"] == "missing"
-                && input["reason"]
-                    .as_str()
-                    .unwrap()
-                    .starts_with("product-specific: supplied by operator")
+            input["availability"] == "known" && input["synthetic"] == false
         }));
         let sourced = sources
             .iter()
             .filter(|m| m["source"]["kind"] == "sourced")
             .count();
-        assert_eq!(sourced, if synthetic { 0 } else { 5 }, "{name}");
+        assert_eq!(sourced, if synthetic { 0 } else { 7 }, "{name}");
         // The pilot's glazing takes the explicit conservative solar bound.
         let spec = &raw["templates"]["screen"][2]["plan_request"]["request"]["spec"];
+        assert_eq!(
+            spec["power_sweep"],
+            if synthetic { Value::Null } else { json!(true) }
+        );
         assert_eq!(
             spec["solar"]["transparent_solar"],
             if synthetic {

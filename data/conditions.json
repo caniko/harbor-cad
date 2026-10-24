@@ -452,5 +452,67 @@
         "synthetic": false
       }
     }
+  ],
+  "electronics": [
+    {
+      "id": "component-limit-industrial",
+      "name": "Default component temperature limit: upper end of the industrial temperature grade (-40 to +85 degC); a conservative default, not a product limit",
+      "dimension": "temperature",
+      "value": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 85,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 85,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://onlinedocs.microchip.com/oxy/GUID-D7090430-8C77-4611-BE14-1E6C9D0B117F-en-US-1/GUID-87171942-2C1D-41F6-9FA7-947EC3D11DE1.html | Microchip AN3539 Migrating from the ATECC508A to the ATECC608B, 1.1.13 Enhanced Temperature Range | accessed 2026-10-24 | 'specified over the standard industrial range of -40 degC to +85 degC' (ambient operating range) ;; https://onlinedocs.microchip.com/oxy/GUID-CD7D5B53-9E11-46D9-93FD-B61B8712109B-en-US-3/GUID-D274977D-6A7E-436A-B482-77989CDA69DA.html | Microchip dsPIC33A high-performance digital signal controller datasheet, Qualification | accessed 2026-10-24 | 'AEC-Q100 REV G (Grade 3: -40 degC to +85 degC)' corroborates the same 85 degC upper end ;; DEFAULT, not product data: grade codes are manufacturer-specific (check the limiting part's datasheet) and a grade is an ambient operating range; applying it to the hotter of the board peak and the internal air is conservative for a part graded industrial or wider",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "pcb-fr4-copper-in-plane",
+      "name": "Effective in-plane thermal conductivity of FR-4 boards with continuous copper layers",
+      "dimension": "thermal_conductivity",
+      "value": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 8.1,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 17.4,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://www.electronics-cooling.com/1995/10/thermal-conductivity-of-printed-wiring-boards/ | J. E. Graebner, Thermal Conductivity of Printed Wiring Boards, Electronics Cooling (1995-10-01) | accessed 2026-10-24 | measured in-plane 8.1-15.9 W/(m*K) on multilayer boards with continuous copper layers (a board without continuous copper planes measured 0.81); kappa_P = 0.8 + 350 Z_Cu/Z ;; https://www.electronics-cooling.com/1998/05/conduction-heat-transfer-in-a-printed-circuit-board/ | Conduction Heat Transfer in a Printed Circuit Board, Electronics Cooling (1998-05-01) | accessed 2026-10-24 | typical 1.59 mm four-layer board (two internal planes and two trace layers of 35 um, 70 um equivalent continuous copper; Cu 390, FR-4 0.25 W/(m*K)) computes to k in-plane 17.4 W/(m*K)",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "pcb-fr4-copper-through-plane",
+      "name": "Effective through-plane (normal) thermal conductivity of FR-4 boards with copper layers; its low end is the conservative isotropic design value",
+      "dimension": "thermal_conductivity",
+      "value": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.26,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 0.81,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://www.electronics-cooling.com/1998/05/conduction-heat-transfer-in-a-printed-circuit-board/ | Conduction Heat Transfer in a Printed Circuit Board, Electronics Cooling (1998-05-01) | accessed 2026-10-24 | series (through-plane) rule for the typical four-layer board gives k through-plane 0.26 W/(m*K) ;; https://www.electronics-cooling.com/1995/10/thermal-conductivity-of-printed-wiring-boards/ | J. E. Graebner, Thermal Conductivity of Printed Wiring Boards, Electronics Cooling (1995-10-01) | accessed 2026-10-24 | measured perpendicular 0.64-0.81 W/(m*K); kappa_N = [1.69 (1 - Z_Cu/Z) + 0.0026 Z_Cu/Z]^-1 ;; design use: the low end 0.26 W/(m*K) lies below every in-plane and through-plane value cited here, so used as the isotropic board conductivity it understates conduction in every direction (conservative for board temperatures). Anisotropy is not modelled (one isotropic conductivity per region), so in-plane spreading (8.1-17.4) is understated 30-70x",
+        "synthetic": false
+      }
+    }
   ]
 }

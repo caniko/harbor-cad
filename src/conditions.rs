@@ -49,6 +49,18 @@ pub struct Finish {
     pub emissivity: PhysicalInput<QuantityRange>,
 }
 
+/// A cited conservative electronics default (not product data), e.g. a
+/// component temperature limit or an effective board conductivity.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ElectronicsDefault {
+    pub id: String,
+    pub name: String,
+    /// `temperature` or `thermal_conductivity`.
+    pub dimension: String,
+    pub value: PhysicalInput<QuantityRange>,
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ConditionsFile {
@@ -56,6 +68,7 @@ struct ConditionsFile {
     classes: Vec<ClimateClass>,
     films: Vec<Film>,
     internal_films: Vec<Film>,
+    electronics: Vec<ElectronicsDefault>,
 }
 
 #[derive(Deserialize)]
@@ -95,6 +108,8 @@ pub struct Conditions {
     pub films: Vec<Film>,
     /// Natural convection on cavity surfaces inside closed enclosures.
     pub internal_films: Vec<Film>,
+    /// Cited conservative electronics defaults (not product data).
+    pub electronics: Vec<ElectronicsDefault>,
     pub finishes: Vec<Finish>,
     /// Glazing that transmits solar: no finish, no absorbed-solar fallback.
     pub transparent_materials: Vec<String>,
@@ -143,6 +158,7 @@ fn si_unit(dimension: &str) -> &'static str {
         "temperature" => "K",
         "irradiance" => "W/m2",
         "heat_transfer_coefficient" => "W/(m2*K)",
+        "thermal_conductivity" => "W/(m*K)",
         _ => "1",
     }
 }
@@ -192,6 +208,7 @@ impl Conditions {
             classes: conditions.classes,
             films: conditions.films,
             internal_films: conditions.internal_films,
+            electronics: conditions.electronics,
             finishes: finishes.finishes,
             transparent_materials: finishes.transparent_materials,
             library,
@@ -208,6 +225,7 @@ impl Conditions {
             .map(|c| (&c.id, &c.name))
             .chain(self.films.iter().map(|f| (&f.id, &f.name)))
             .chain(self.internal_films.iter().map(|f| (&f.id, &f.name)))
+            .chain(self.electronics.iter().map(|e| (&e.id, &e.name)))
             .chain(self.finishes.iter().map(|f| (&f.id, &f.name)));
         for (id, name) in named {
             if !token(id) || !ids.insert(id.as_str()) || name.trim().is_empty() {
@@ -276,6 +294,19 @@ impl Conditions {
                     "{id}: scope and a wind_film at the class design wind speed required"
                 )));
             }
+        }
+        for e in &self.electronics {
+            let (min, max) = match e.dimension.as_str() {
+                "temperature" => (150., 500.),
+                "thermal_conductivity" => (0.01, 1e3),
+                _ => {
+                    return Err(invalid(format!(
+                        "{}: dimension temperature or thermal_conductivity required",
+                        e.id
+                    )));
+                }
+            };
+            context(&e.id, "value", check(&e.value, &e.dimension, min, max))?;
         }
         for id in &self.transparent_materials {
             self.library.material(id)?;
@@ -416,11 +447,12 @@ impl Conditions {
     /// `condition:<class>.<hot|cold>.<ambient_temperature|solar_irradiance|film_coefficient>`,
     /// `finish:<id>.<solar_absorptance|emissivity>` (conservative ends:
     /// absorptance high, emissivity low) or `film:<id>.<low|high>` (the
-    /// caller names the end that is conservative for its use).
+    /// caller names the end that is conservative for its use), and
+    /// `electronics:<id>.<low|high>` likewise.
     pub fn lookup(&self, key: &str) -> Result<Sourced> {
         let bad = || {
             invalid(format!(
-                "sourced key {key} must be condition:<class>.<hot|cold>.<ambient_temperature|solar_irradiance|film_coefficient> , finish:<id>.<solar_absorptance|emissivity> or film:<id>.<low|high>"
+                "sourced key {key} must be condition:<class>.<hot|cold>.<ambient_temperature|solar_irradiance|film_coefficient> , finish:<id>.<solar_absorptance|emissivity>, film:<id>.<low|high> or electronics:<id>.<low|high>"
             ))
         };
         if let Some(rest) = key.strip_prefix("condition:") {
@@ -441,12 +473,17 @@ impl Conditions {
                 _ => Err(bad()),
             };
         }
-        if let Some((id, end_name)) = key.strip_prefix("film:").and_then(|r| r.split_once('.')) {
-            let high = match end_name {
-                "low" => false,
-                "high" => true,
-                _ => return Err(bad()),
-            };
+        let named_end = |prefix: &str| {
+            key.strip_prefix(prefix)
+                .and_then(|r| r.split_once('.'))
+                .map(|(id, end_name)| match end_name {
+                    "low" => Ok((id, false)),
+                    "high" => Ok((id, true)),
+                    _ => Err(bad()),
+                })
+                .transpose()
+        };
+        if let Some((id, high)) = named_end("film:")? {
             let what = format!("film {id}");
             return end(
                 &self.film(id)?.coefficient,
@@ -454,6 +491,14 @@ impl Conditions {
                 high,
                 &what,
             );
+        }
+        if let Some((id, high)) = named_end("electronics:")? {
+            let e = self
+                .electronics
+                .iter()
+                .find(|e| e.id == id)
+                .ok_or_else(|| invalid(format!("unknown electronics default {id}")))?;
+            return end(&e.value, &e.dimension, high, &format!("electronics {id}"));
         }
         let (id, field) = key
             .strip_prefix("finish:")

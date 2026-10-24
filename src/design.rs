@@ -27,7 +27,7 @@ pub const MAX_CATEGORICAL: usize = 2;
 pub const MAX_CHOICES: usize = 6;
 pub const MAX_EVALUATIONS: u32 = 32;
 pub const MAX_REFINE: u32 = 3;
-const MAX_CHILDREN: usize = 4;
+const MAX_CHILDREN: usize = 5;
 const MAX_METRICS: usize = 8;
 const MAX_METRIC_SOURCES: usize = 32;
 /// Planning operations a chained template may request. Each is resolved by the
@@ -258,6 +258,11 @@ pub struct DesignEnvelope {
     pub fidelity: Fidelity,
     pub templates: BTreeMap<String, Vec<ChildTemplate>>,
     pub metric_sources: Vec<MetricSpec>,
+    /// Optional second Pareto axis (maximized) for status/export, replacing
+    /// the minimum constraint margin; the Pareto set then covers only
+    /// feasible candidates (e.g. cost vs supported power).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pareto_metric: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -285,6 +290,16 @@ pub trait MetricProvider: Sync {
     /// `calibrated` only when backed by calibrated data; otherwise `estimated`.
     fn evidence(&self) -> &'static str;
     fn evaluate(&self, params: &Params, metrics: &BTreeMap<String, f64>) -> Result<Option<f64>>;
+    /// Fidelity-aware evaluation (e.g. a refine-only verification); defaults
+    /// to `evaluate`.
+    fn evaluate_at(
+        &self,
+        _level: Level,
+        params: &Params,
+        metrics: &BTreeMap<String, f64>,
+    ) -> Result<Option<f64>> {
+        self.evaluate(params, metrics)
+    }
 }
 
 /// Registered local providers (estimate-only W1 manufacturing screens).
@@ -427,6 +442,9 @@ fn substitute(
         Value::Object(map) if map.keys().any(|k| k.starts_with('$')) => {
             if let Some(role) = map.get("$job") {
                 return job_placeholder(map, role, bind);
+            }
+            if let Some(name) = map.get("$metric") {
+                return metric_placeholder(map, name, env, params, bind);
             }
             if let Some(name) = map.get("$input") {
                 let name = name
@@ -578,6 +596,78 @@ fn job_placeholder(
     })
 }
 
+/// A succeeded job's finite number at `pointer` in a registered JSON artifact.
+fn job_value(store: &Store, job: &str, artifact: &str, pointer: &str) -> Option<f64> {
+    crate::qualification::registered_json(store, job, artifact)
+        .ok()
+        .flatten()
+        .and_then(|(_, v)| v.pointer(pointer).and_then(Value::as_f64))
+}
+
+/// `{"$metric": METRIC[, "si"]}`: a metric evaluated from the upstream
+/// (after-chain) job metrics plus parameter, declared, sourced and provider
+/// metrics. A derived request only ever sees upstream results, so it is
+/// evaluated at screen semantics (no refine-only verification exists yet).
+/// Unknown refuses the request.
+fn metric_placeholder(
+    map: &serde_json::Map<String, Value>,
+    name: &Value,
+    env: &DesignEnvelope,
+    params: &Params,
+    bind: &Bind,
+) -> Result<Value> {
+    let name = name
+        .as_str()
+        .filter(|_| placeholder_keys(map, "$metric", &["si"]))
+        .ok_or_else(|| {
+            invalid("only {\"$metric\": METRIC[, \"si\": DIMENSION]} placeholders are allowed")
+        })?;
+    let si = optional_str(map, "si")?;
+    let spec = env
+        .metric(name)
+        .ok_or_else(|| invalid(format!("$metric {name} must name a metric source")))?;
+    let value = match bind {
+        Bind::Static => {
+            return Err(invalid(
+                "$metric placeholders are only allowed in chained plan_request templates",
+            ));
+        }
+        Bind::Check(_) => 1.,
+        Bind::Jobs(store, jobs) => {
+            let mut values = Metrics::new();
+            for m in &env.metric_sources {
+                if let MetricSource::Job {
+                    role,
+                    artifact,
+                    pointer,
+                } = &m.source
+                    && let Some(job) = jobs.get(role)
+                {
+                    values.insert(m.metric.clone(), job_value(store, job, artifact, pointer));
+                }
+            }
+            compute_metrics(env, Level::Screen, params, &values, PROVIDERS)
+                .get(name)
+                .copied()
+                .flatten()
+                .ok_or_else(|| {
+                    invalid(format!(
+                        "metric {name} is unknown from the upstream results"
+                    ))
+                })?
+        }
+    };
+    emit(value, &spec.unit, si)
+}
+
+/// Whether the envelope superposes power-sweep solves (see `design_providers`).
+fn power_sweep_used(env: &DesignEnvelope) -> bool {
+    env.metric_sources.iter().any(|m| {
+        matches!(&m.source, MetricSource::Provider { name, .. }
+            if name == crate::design_providers::MAX_SUPPORTED_PCB_POWER)
+    })
+}
+
 /// Roles a template transitively waits for (its `after` chain).
 fn upstream(templates: &[ChildTemplate], template: &ChildTemplate) -> BTreeSet<String> {
     let mut roles = BTreeSet::new();
@@ -679,7 +769,21 @@ pub fn child_plans(
         .map(|template| {
             if template.plan_request.is_some() {
                 let roles = upstream(templates, template);
-                request_operation(env, template, params, &mut used, &Bind::Check(&roles))?;
+                let op =
+                    request_operation(env, template, params, &mut used, &Bind::Check(&roles))?;
+                // Superposition is exact only for the linear model: a sweep
+                // provider needs every enclosure solve in radiation-free
+                // power_sweep mode (radiation is refused there).
+                if let Operation::PlanEnclosureThermal { request } = &op
+                    && ((power_sweep_used(env) && !request.spec.power_sweep)
+                        || (request.spec.power_sweep && request.spec.radiation))
+                {
+                    return Err(invalid(format!(
+                        "template {}: {} requires every plan_enclosure_thermal in power_sweep mode, which refuses radiation",
+                        template.role,
+                        crate::design_providers::MAX_SUPPORTED_PCB_POWER
+                    )));
+                }
                 return Ok((template.role.clone(), None));
             }
             let value = substitute(&template.plan, env, params, &mut used, &Bind::Static)?;
@@ -861,7 +965,7 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
             || roles.iter().any(|r| !token(r) || r.len() > 32)
         {
             return Err(invalid(
-                "each template set needs 1..4 children with unique token roles",
+                "each template set needs 1..5 children with unique token roles",
             ));
         }
         for (position, t) in templates.iter().enumerate() {
@@ -892,11 +996,11 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
     if env.metric_sources.is_empty() || env.metric_sources.len() > MAX_METRIC_SOURCES {
         return Err(invalid("1..32 metric sources required"));
     }
-    let every_set_has = |role: &str| {
-        used_sets
-            .iter()
-            .all(|set| env.templates[*set].iter().any(|t| t.role == role))
-    };
+    let set_has = |set: &str, role: &str| env.templates[set].iter().any(|t| t.role == role);
+    let every_set_has = |role: &str| used_sets.iter().all(|set| set_has(set, role));
+    // A job metric of a role absent from a fidelity (e.g. a refine-only
+    // verification solve) is unknown there.
+    let some_set_has = |role: &str| used_sets.iter().any(|set| set_has(set, role));
     for spec in &env.metric_sources {
         if !token(&spec.metric)
             || spec.metric.len() > 32
@@ -913,7 +1017,7 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
                 artifact,
                 pointer,
             } => {
-                every_set_has(role)
+                some_set_has(role)
                     && relative_path(artifact)
                     && pointer.starts_with('/')
                     && pointer.len() <= 256
@@ -946,7 +1050,7 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
         };
         if !valid {
             return Err(invalid(format!(
-                "metric {} source must name a template role in every fidelity with a relative artifact and JSON pointer, a same-unit continuous parameter, a registered same-unit provider over declared parameters, a finite declared input with provenance or missing reason, a role with a valid job-less correlation request in K, or a resolvable sourced condition/finish key in its SI unit",
+                "metric {} source must name a template role (job: in some fidelity, correlation: in every fidelity) with a relative artifact and JSON pointer, a same-unit continuous parameter, a registered same-unit provider over declared parameters, a finite declared input with provenance or missing reason, a role with a valid job-less correlation request in K, or a resolvable sourced condition/finish key in its SI unit",
                 spec.metric
             )));
         }
@@ -971,6 +1075,13 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
         return Err(invalid(
             "at most 8 constraints over declared same-unit metrics with finite limits and safety factors >= 1",
         ));
+    }
+    if env
+        .pareto_metric
+        .as_ref()
+        .is_some_and(|m| !metrics.contains(m.as_str()))
+    {
+        return Err(invalid("pareto_metric must name a declared metric"));
     }
     // Derived plans always bind the worker's effective policy; without a
     // complete template and an explicit policy there is nothing to compare.
@@ -1441,6 +1552,7 @@ fn correlation_request(
 /// Combine job-extracted values with parameter, declared and provider metrics.
 pub fn compute_metrics(
     env: &DesignEnvelope,
+    level: Level,
     params: &Params,
     job_values: &Metrics,
     providers: &[&dyn MetricProvider],
@@ -1485,7 +1597,7 @@ pub fn compute_metrics(
             let value = providers
                 .iter()
                 .find(|p| p.name() == name)
-                .and_then(|p| p.evaluate(&selected, &known).ok().flatten())
+                .and_then(|p| p.evaluate_at(level, &selected, &known).ok().flatten())
                 .filter(|v| v.is_finite());
             metrics.insert(spec.metric.clone(), value);
         }
@@ -1594,6 +1706,7 @@ pub fn example() -> Result<DesignEnvelope> {
                 },
             },
         ],
+        pareto_metric: None,
     })
 }
 
@@ -1824,13 +1937,16 @@ fn refresh(
         if template.plan_request.is_none() || candidate.children[i].blocked.is_some() {
             continue;
         }
+        // Only upstream (after-chain) results bind a derivation, so it is
+        // reproducible once its chain has succeeded.
+        let chain = upstream(templates, template);
         let succeeded: BTreeMap<String, String> = candidate
             .children
             .iter()
             .zip(&jobs)
             .filter_map(|(c, j)| {
                 j.as_ref()
-                    .filter(|j| j.state == "succeeded")
+                    .filter(|j| j.state == "succeeded" && chain.contains(&c.role))
                     .map(|j| (c.role.clone(), j.id.clone()))
             })
             .collect();
@@ -1946,12 +2062,7 @@ fn refresh(
                     role,
                     artifact,
                     pointer,
-                } if role == &child.role => {
-                    crate::qualification::registered_json(store, &job.id, artifact)
-                        .ok()
-                        .flatten()
-                        .and_then(|(_, v)| v.pointer(pointer).and_then(Value::as_f64))
-                }
+                } if role == &child.role => job_value(store, &job.id, artifact, pointer),
                 MetricSource::Correlation { role, request } if role == &child.role => {
                     correlation_request(request, &job.id)
                         .and_then(|request| {
@@ -1975,7 +2086,13 @@ fn refresh(
         }
         return Ok(false);
     }
-    candidate.metrics = compute_metrics(env, &candidate.params, &values, PROVIDERS);
+    candidate.metrics = compute_metrics(
+        env,
+        candidate.fidelity,
+        &candidate.params,
+        &values,
+        PROVIDERS,
+    );
     candidate.state = "evaluated".into();
     save(store, &intent.id, candidate)?;
     Ok(true)
@@ -2209,12 +2326,57 @@ pub struct DesignStatus {
     pub iterations: Vec<Iteration>,
     pub incumbent: Option<u32>,
     pub feasible: Vec<u32>,
-    /// Non-dominated in (minimize objective, maximize minimum constraint margin).
+    /// Non-dominated in (minimize objective, maximize the second axis):
+    /// `pareto_metric` over feasible candidates, else the minimum constraint
+    /// margin.
     pub pareto: Vec<u32>,
+    pub pareto_metric: Option<String>,
     pub physical_validation: String,
     /// Declared metric inputs labelled synthetic; nonempty means every
     /// result derived from them is synthetic demonstration output.
     pub synthetic_inputs: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, JsonSchema)]
+pub struct ParetoPoint {
+    pub index: u32,
+    pub fidelity: Level,
+    pub objective: f64,
+    /// `pareto_metric` value, or the minimum constraint margin without one.
+    pub value: f64,
+}
+
+/// Non-dominated (minimize objective, maximize the second axis) candidates.
+fn pareto_front(env: &DesignEnvelope, iterations: &[Iteration]) -> Vec<ParetoPoint> {
+    let points: Vec<ParetoPoint> = iterations
+        .iter()
+        .filter_map(|i| {
+            let value = match &env.pareto_metric {
+                Some(metric) if i.standing == Standing::Feasible => {
+                    i.metrics.get(metric).copied().flatten()?
+                }
+                Some(_) => return None,
+                None => i.min_margin?,
+            };
+            Some(ParetoPoint {
+                index: i.index,
+                fidelity: i.fidelity,
+                objective: i.objective?,
+                value,
+            })
+        })
+        .collect();
+    points
+        .iter()
+        .filter(|p| {
+            !points.iter().any(|q| {
+                q.objective <= p.objective
+                    && q.value >= p.value
+                    && (q.objective < p.objective || q.value > p.value)
+            })
+        })
+        .cloned()
+        .collect()
 }
 
 fn synthetic_inputs(env: &DesignEnvelope) -> Vec<String> {
@@ -2282,18 +2444,9 @@ pub fn status(store: &Store, id: &str) -> Result<DesignStatus> {
             jobs: jobs(store, c)?,
         });
     }
-    let both: Vec<(u32, f64, f64)> = iterations
+    let pareto = pareto_front(env, &iterations)
         .iter()
-        .filter_map(|i| Some((i.index, i.objective?, i.min_margin?)))
-        .collect();
-    let pareto = both
-        .iter()
-        .filter(|(_, o, m)| {
-            !both
-                .iter()
-                .any(|(_, o2, m2)| o2 <= o && m2 >= m && (o2 < o || m2 > m))
-        })
-        .map(|(i, ..)| *i)
+        .map(|p| p.index)
         .collect();
     Ok(DesignStatus {
         schema_version: 1,
@@ -2317,6 +2470,7 @@ pub fn status(store: &Store, id: &str) -> Result<DesignStatus> {
             .map(|i| i.index)
             .collect(),
         pareto,
+        pareto_metric: env.pareto_metric.clone(),
         iterations,
         physical_validation: "unqualified".into(),
         synthetic_inputs: synthetic_inputs(env),
@@ -2372,6 +2526,9 @@ pub struct DesignReport {
     pub evaluations: u32,
     pub feasible: u32,
     pub winner: Option<Winner>,
+    /// Non-dominated candidates (see `DesignStatus::pareto`).
+    pub pareto: Vec<ParetoPoint>,
+    pub pareto_metric: Option<String>,
     pub statement: String,
     pub physical_validation: String,
     pub synthetic_inputs: Vec<String>,
@@ -2512,6 +2669,8 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
             },
             status.state
         ),
+        pareto: pareto_front(env, &status.iterations),
+        pareto_metric: status.pareto_metric,
         state: status.state,
         winner,
         physical_validation: "unqualified".into(),

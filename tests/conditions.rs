@@ -20,6 +20,7 @@ fn every_input(c: &Conditions) -> Vec<&PhysicalInput<QuantityRange>> {
         })
         .collect();
     all.extend(c.films.iter().map(|f| &f.coefficient));
+    all.extend(c.electronics.iter().map(|e| &e.value));
     all.extend(
         c.finishes
             .iter()
@@ -82,6 +83,30 @@ fn design_points_are_ordered_and_follow_the_standard() {
         c.lookup("film:enclosed-cavity-natural.high").unwrap().value,
         8.2
     );
+}
+
+#[test]
+fn electronics_defaults_are_cited_conservative_ends() {
+    let c = Conditions::builtin().unwrap();
+    let limit = c
+        .lookup("electronics:component-limit-industrial.low")
+        .unwrap();
+    assert!((limit.value - 358.15).abs() < 1e-9 && limit.unit == "K");
+    assert!(limit.provenance.contains("industrial") && limit.provenance.contains("DEFAULT"));
+    let k = |key: &str| c.lookup(key).unwrap();
+    let design = k("electronics:pcb-fr4-copper-through-plane.low");
+    assert_eq!((design.value, design.unit), (0.26, "W/(m*K)"));
+    // The isotropic design value is below every cited in-plane and
+    // through-plane value, and the limitation is stated.
+    assert!(design.value <= k("electronics:pcb-fr4-copper-in-plane.low").value);
+    assert!(k("electronics:pcb-fr4-copper-through-plane.high").value < 8.1);
+    assert!(design.provenance.contains("Anisotropy is not modelled"));
+    for key in [
+        "electronics:component-limit-industrial.mid",
+        "electronics:nope.low",
+    ] {
+        assert!(c.lookup(key).is_err(), "{key}");
+    }
 }
 
 #[test]
@@ -156,6 +181,18 @@ fn strict_validation_refuses_uncited_and_inconsistent_data() {
         ),
         (
             conditions.replacen("\"value\": 40,", "\"value\": -40,", 1),
+            true,
+        ),
+        (
+            conditions.replacen(
+                "\"dimension\": \"temperature\"",
+                "\"dimension\": \"velocity\"",
+                1,
+            ),
+            true,
+        ),
+        (
+            conditions.replacen("\"value\": 0.26,", "\"value\": 0.001,", 1),
             true,
         ),
         (

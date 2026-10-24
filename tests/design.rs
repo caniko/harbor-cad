@@ -18,7 +18,7 @@ fn num(params: &Params, name: &str) -> f64 {
 fn simulate(env: &DesignEnvelope, job: impl Fn(&Params, Level) -> Metrics) -> Vec<Candidate> {
     let mut history: Vec<Candidate> = vec![];
     while let Some(p) = propose(env, &history).unwrap() {
-        let metrics = compute_metrics(env, &p.params, &job(&p.params, p.fidelity), &[]);
+        let metrics = compute_metrics(env, p.fidelity, &p.params, &job(&p.params, p.fidelity), &[]);
         history.push(Candidate {
             index: history.len() as u32,
             origin: "proposer".into(),
@@ -451,14 +451,14 @@ fn provider_metrics_see_declared_params_and_missing_inputs_stay_unknown() {
         ("acceleration".into(), ParamValue::Number(0.34)),
     ]);
     let known = BTreeMap::from([("mean_velocity".into(), Some(0.5))]);
-    let metrics = compute_metrics(&env, &params, &known, &[&Constant]);
+    let metrics = compute_metrics(&env, Level::Screen, &params, &known, &[&Constant]);
     assert_eq!(metrics["unit_cost"], Some(1.5));
     assert_eq!(metrics["height"], Some(6.));
-    let missing = compute_metrics(&env, &params, &BTreeMap::new(), &[&Constant]);
+    let missing = compute_metrics(&env, Level::Screen, &params, &BTreeMap::new(), &[&Constant]);
     assert_eq!(missing["unit_cost"], None);
     assert_eq!(missing["mean_velocity"], None);
     assert_eq!(
-        compute_metrics(&env, &params, &known, &[])["unit_cost"],
+        compute_metrics(&env, Level::Screen, &params, &known, &[])["unit_cost"],
         None
     );
 }
@@ -965,7 +965,7 @@ fn declared_inputs_resolve_in_requests_and_missing_stays_unknown() {
         ("height".into(), ParamValue::Number(6.)),
         ("acceleration".into(), ParamValue::Number(0.34)),
     ]);
-    let metrics = compute_metrics(&env, &params, &BTreeMap::new(), &[]);
+    let metrics = compute_metrics(&env, Level::Screen, &params, &BTreeMap::new(), &[]);
     assert_eq!(metrics["horizon"], Some(0.5));
     assert_eq!(metrics["ambient"], None);
 }
@@ -998,6 +998,112 @@ fn component_margin_uses_the_hotter_of_board_and_internal_air() {
         Some(398.15 - 330.)
     );
     assert_eq!(m(&[limit, ("internal_air_temperature_k", 345.)]), None);
+}
+
+#[test]
+fn power_sweep_superposes_two_solves_clamps_and_verifies_on_refine() {
+    let al = Params::from([(
+        "route".into(),
+        ParamValue::Choice("al-6061-t6__cnc-3axis-al__powder-coat-white".into()),
+    )]);
+    let sweep = PROVIDERS
+        .iter()
+        .find(|p| p.name() == "max_supported_pcb_power_w")
+        .unwrap();
+    let run = |level, params: &Params, metrics: &[(&str, f64)]| {
+        let metrics: BTreeMap<String, f64> =
+            metrics.iter().map(|(k, v)| (k.to_string(), *v)).collect();
+        sweep.evaluate_at(level, params, &metrics).unwrap()
+    };
+    // Board: 340 K at 1 W rising 5 K/W; housing: 330 K rising 3 K/W. The
+    // 6061-T6 conservative service maximum is 373.15 K, less the 10 K margin.
+    let base = vec![
+        ("pcb_power_low_w", 1.),
+        ("pcb_power_high_w", 15.),
+        ("component_max_temperature_k", 358.15),
+        ("housing_margin_required_k", 10.),
+        ("pcb_max_temperature_k", 340.),
+        ("internal_air_temperature_k", 335.),
+        ("max_temperature_k", 330.),
+        ("hi_pcb_max_temperature_k", 410.),
+        ("hi_internal_air_temperature_k", 380.),
+        ("hi_max_temperature_k", 372.),
+    ];
+    let with = |changes: &[(&'static str, f64)]| {
+        let mut m = base.clone();
+        for (k, v) in changes {
+            match m.iter_mut().find(|(n, _)| n == k) {
+                Some(entry) => entry.1 = *v,
+                None => m.push((k, *v)),
+            }
+        }
+        m
+    };
+    let close = |a: Option<f64>, b: f64| a.is_some_and(|a| (a - b).abs() < 1e-9);
+    // The component limit on the board binds ...
+    let board = 1. + 18.15 / 5.;
+    assert!(close(run(Level::Screen, &al, &base), board));
+    // ... the hotter of board peak and internal air is the board ...
+    assert!(close(
+        run(
+            Level::Screen,
+            &al,
+            &with(&[("internal_air_temperature_k", 345.)])
+        ),
+        1. + 13.15 / (65. / 14.)
+    ));
+    // ... else the housing service limit less the margin binds ...
+    let housing = 1. + 33.15 / 3.;
+    assert!(close(
+        run(
+            Level::Screen,
+            &al,
+            &with(&[("component_max_temperature_k", 400.)])
+        ),
+        housing
+    ));
+    // ... and the result is clamped to the swept range.
+    let cool = with(&[
+        ("component_max_temperature_k", 500.),
+        ("hi_max_temperature_k", 340.),
+    ]);
+    assert!(close(run(Level::Screen, &al, &cool), 15.));
+    // Even 1 W fails, power does not raise a peak, or an input is unknown: None.
+    assert_eq!(
+        run(
+            Level::Screen,
+            &al,
+            &with(&[("component_max_temperature_k", 339.)])
+        ),
+        None
+    );
+    assert_eq!(
+        run(Level::Screen, &al, &with(&[("hi_max_temperature_k", 330.)])),
+        None
+    );
+    let unknown: Vec<_> = base
+        .iter()
+        .copied()
+        .filter(|(k, _)| *k != "hi_internal_air_temperature_k")
+        .collect();
+    assert_eq!(run(Level::Screen, &al, &unknown), None);
+    assert_eq!(run(Level::Screen, &Params::new(), &base), None);
+    // Refine: the third solve at the supported power must match the
+    // superposed prediction within 0.5 K, else the metric is unknown.
+    assert_eq!(run(Level::Refine, &al, &base), None);
+    let t = (board - 1.) / 14.;
+    let check = |offset: f64| {
+        with(&[
+            ("check_pcb_max_temperature_k", 340. + 70. * t + offset),
+            ("check_internal_air_temperature_k", 335. + 45. * t),
+            ("check_max_temperature_k", 330. + 42. * t),
+        ])
+    };
+    assert!(close(run(Level::Refine, &al, &check(0.)), board));
+    assert!(close(run(Level::Refine, &al, &check(0.4)), board));
+    assert_eq!(run(Level::Refine, &al, &check(0.6)), None);
+    // Screen ignores a verification solve's absence and presence alike.
+    assert!(close(run(Level::Screen, &al, &check(0.6)), board));
 }
 
 #[test]
@@ -1159,48 +1265,124 @@ fn enclosure_and_calibration_examples_validate() {
             "{choice}"
         );
     }
-    let roles: Vec<_> = enclosure.templates["screen"]
-        .iter()
-        .map(|t| (t.role.as_str(), t.after.as_deref()))
-        .collect();
+    let roles = |set: &str| -> Vec<(String, Option<String>)> {
+        enclosure.templates[set]
+            .iter()
+            .map(|t| (t.role.clone(), t.after.clone()))
+            .collect()
+    };
+    let pair = |role: &str, after: Option<&str>| (role.to_string(), after.map(String::from));
     assert_eq!(
-        roles,
+        roles("screen"),
         [
-            ("variant", None),
-            ("mesh", Some("variant")),
-            ("thermal", Some("mesh"))
+            pair("variant", None),
+            pair("mesh", Some("variant")),
+            pair("thermal_lo", Some("mesh")),
+            pair("thermal_hi", Some("mesh"))
         ]
     );
-    // Product-specific inputs are declared but missing: the derived FEM refuses
-    // rather than run on invented values, so the thermal constraints stay unknown.
-    // The environment and the internal cavity film are cited values.
+    // The refine tier chains both sweep solves before the verification solve
+    // at the superposed supported power.
+    assert_eq!(
+        roles("refine"),
+        [
+            pair("variant", None),
+            pair("mesh", Some("variant")),
+            pair("thermal_lo", Some("mesh")),
+            pair("thermal_hi", Some("thermal_lo")),
+            pair("thermal_check", Some("thermal_hi"))
+        ]
+    );
+    let constraint = |metric: &str| {
+        enclosure
+            .constraints
+            .iter()
+            .find(|c| c.metric == metric)
+            .unwrap()
+    };
+    assert_eq!(constraint("max_supported_pcb_power_w").limit, 1.);
+    assert_eq!(
+        enclosure.pareto_metric.as_deref(),
+        Some("max_supported_pcb_power_w")
+    );
+    // Every enclosure solve is a radiation-free power_sweep solve; superposition
+    // is refused on the nonlinear (radiating) model or outside sweep mode.
+    for (pointer, value) in [("radiation", json!(true)), ("power_sweep", json!(false))] {
+        let mut bad = enclosure.clone();
+        bad.templates.get_mut("screen").unwrap()[3]
+            .plan_request
+            .as_mut()
+            .unwrap()["request"]["spec"][pointer] = value;
+        let error = prepare(&bad, Some("research")).unwrap_err().to_string();
+        assert!(error.contains("power_sweep"), "{pointer}: {error}");
+    }
+    // The component limit and board conductivity are cited defaults, the sweep
+    // range and housing margin declared requirements; no operator input is missing.
     let params = Params::from([(
         "route".into(),
         ParamValue::Choice("pa12-mjf__mjf-pa12__pigment-black-polymer".into()),
     )]);
-    let metrics = compute_metrics(&enclosure, &params, &BTreeMap::new(), PROVIDERS);
+    let metrics = compute_metrics(
+        &enclosure,
+        Level::Screen,
+        &params,
+        &BTreeMap::new(),
+        PROVIDERS,
+    );
     assert_eq!(metrics["quantity"], Some(50.));
     assert_eq!(metrics["ambient_hot_k"], Some(313.15));
     assert_eq!(metrics["solar_hot_w_m2"], Some(1120.));
     assert_eq!(metrics["film_hot_w_m2_k"], Some(2.2));
     assert_eq!(metrics["internal_film_coefficient"], Some(1.2));
     assert_eq!(metrics["min_temperature_k"], Some(273.15 - 33.));
-    assert_eq!(metrics["pcb_power_w"], None);
+    assert!((metrics["component_max_temperature_k"].unwrap() - 358.15).abs() < 1e-9);
+    assert_eq!(metrics["pcb_conductivity"], Some(0.26));
+    assert_eq!(
+        (metrics["pcb_power_low_w"], metrics["pcb_power_high_w"]),
+        (Some(1.), Some(15.))
+    );
+    assert_eq!(
+        metrics["housing_margin_required_k"],
+        Some(constraint("temperature_margin_k").limit)
+    );
+    assert!(
+        enclosure
+            .metric_sources
+            .iter()
+            .all(|m| !matches!(&m.source, MetricSource::Declared { input } if !matches!(input, harbor_cad::materials::PhysicalInput::Known { synthetic: false, .. })))
+    );
     assert_eq!(metrics["temperature_margin_k"], None);
-    assert_eq!(metrics["component_temperature_margin_k"], None);
+    assert_eq!(metrics["max_supported_pcb_power_w"], None);
     assert_eq!(metrics["unit_cost_high_usd"], None);
     // With a simulated housing peak, PA12's -40 degC minimum leaves 7 K at the
     // class 4.1 cold point, below the 10 K requirement; aluminium keeps 67 K
     // cold-side, so its margin is the hot side.
     let simulated = BTreeMap::from([("max_temperature_k".to_string(), Some(330.))]);
-    let metrics = compute_metrics(&enclosure, &params, &simulated, PROVIDERS);
+    let metrics = compute_metrics(&enclosure, Level::Screen, &params, &simulated, PROVIDERS);
     assert!((metrics["temperature_margin_k"].unwrap() - 7.).abs() < 1e-9);
     let al = Params::from([(
         "route".into(),
         ParamValue::Choice("al-6061-t6__cnc-3axis-al__powder-coat-white".into()),
     )]);
-    let metrics = compute_metrics(&enclosure, &al, &simulated, PROVIDERS);
+    let metrics = compute_metrics(&enclosure, Level::Screen, &al, &simulated, PROVIDERS);
     assert!((metrics["temperature_margin_k"].unwrap() - (373.15 - 330.)).abs() < 1e-9);
+    // Two simulated sweep solves give the supported power on screen; refine
+    // without its verification solve leaves it unknown.
+    let solves = BTreeMap::from(
+        [
+            ("max_temperature_k", 330.),
+            ("pcb_max_temperature_k", 340.),
+            ("internal_air_temperature_k", 335.),
+            ("hi_max_temperature_k", 372.),
+            ("hi_pcb_max_temperature_k", 410.),
+            ("hi_internal_air_temperature_k", 380.),
+        ]
+        .map(|(k, v)| (k.to_string(), Some(v))),
+    );
+    let screen = compute_metrics(&enclosure, Level::Screen, &al, &solves, PROVIDERS);
+    assert!((screen["max_supported_pcb_power_w"].unwrap() - (1. + 18.15 / 5.)).abs() < 1e-9);
+    let refine = compute_metrics(&enclosure, Level::Refine, &al, &solves, PROVIDERS);
+    assert_eq!(refine["max_supported_pcb_power_w"], None);
     // The glazing's conservative solar bound is carried into the export.
     let bounds = conservative_bounds(&enclosure);
     assert_eq!(bounds.len(), 1);
@@ -1310,6 +1492,78 @@ fn worker_derives_chained_children_from_upstream_output_and_resumes_without_dupl
     );
     assert_eq!(repeat.data.unwrap()["id"], id);
     assert_eq!(job_count(&root), before);
+    drop(worker);
+}
+
+#[test]
+fn metric_placeholders_derive_from_upstream_metrics_and_pareto_metric_is_reported() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("state");
+    let mut env = chain_env(3);
+    // The same drive as the $job chain, but through a metric evaluated from
+    // the upstream job (the velocity reused numerically as the drive).
+    env.metric_sources.push(MetricSpec {
+        metric: "drive".into(),
+        unit: "m/s2".into(),
+        source: MetricSource::Job {
+            role: "flow".into(),
+            artifact: "validation.json".into(),
+            pointer: "/mean_velocity_m_s".into(),
+        },
+    });
+    chained(&mut env).plan_request.as_mut().unwrap()["case"]["acceleration"] =
+        json!({"$metric": "drive"});
+    env.pareto_metric = Some("derived_velocity".into());
+    for (bad, why) in [
+        (json!({"$metric": "undeclared"}), "undeclared metric"),
+        (json!({"$metric": "drive", "unit": "m/s2"}), "extra key"),
+    ] {
+        let mut e = env.clone();
+        chained(&mut e).plan_request.as_mut().unwrap()["case"]["acceleration"] = bad;
+        assert!(prepare(&e, Some("ci")).is_err(), "{why} accepted");
+    }
+    let mut e = env.clone();
+    e.templates.get_mut("screen").unwrap()[0].plan["case"]["acceleration"] =
+        json!({"$metric": "drive"});
+    assert!(
+        prepare(&e, Some("ci")).is_err(),
+        "$metric in a complete plan"
+    );
+    let mut e = env.clone();
+    e.pareto_metric = Some("undeclared".into());
+    assert!(prepare(&e, Some("ci")).is_err(), "undeclared pareto metric");
+
+    let worker = start(&root);
+    let id = submit_design(&root, &env, "metric");
+    let status = wait_until(&root, &id, |s| s["state"] != "running");
+    let mut checked = 0;
+    for iteration in status["iterations"].as_array().unwrap() {
+        if iteration["jobs"][1]["state"] != "succeeded" {
+            continue;
+        }
+        let h = num(
+            &serde_json::from_value(iteration["params"].clone()).unwrap(),
+            "height",
+        ) * 1e-3;
+        let u1 = iteration["metrics"]["mean_velocity"].as_f64().unwrap();
+        let u2 = iteration["metrics"]["derived_velocity"].as_f64().unwrap();
+        assert!((u2 - u1 * h * h / 12e-5).abs() <= 1e-9 * u2.abs());
+        checked += 1;
+    }
+    assert!(checked >= 2, "{status}");
+    // The Pareto set now trades the objective against the declared metric
+    // (maximized) over feasible candidates only.
+    assert_eq!(status["pareto_metric"], "derived_velocity");
+    let pareto = status["pareto"].as_array().unwrap();
+    assert!(!pareto.is_empty());
+    for index in pareto {
+        let i = &status["iterations"][index.as_u64().unwrap() as usize];
+        assert_eq!(i["standing"], "feasible", "{status}");
+    }
+    let report = call(&root, json!({"operation":"design_export","design_id":id}));
+    let report = report.data.unwrap();
+    assert_eq!(report["pareto"].as_array().unwrap().len(), pareto.len());
+    assert_eq!(report["pareto_metric"], "derived_velocity");
     drop(worker);
 }
 
