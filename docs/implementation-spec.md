@@ -232,3 +232,78 @@ publication; energy-balance error and air-node residual stay within the
 approved tolerance (≤1e-3). Exterior-face selection by ray escape is a labelled
 heuristic. Native CalculiX execution, mesh quality on real geometry and physical
 validation are separate gates.
+
+**Supported-power sweep** ([design-loop.md](design-loop.md)). PCB dissipation is
+a swept design quantity, not an operator input. Two `power_sweep` solves at the
+ends of the declared range (pilot 1 W and 15 W) give per-criterion chords; the
+PCB peak and the internal air are each bounded against the component limit
+(components sit between them), and the housing peak against the route's
+conservative service limit less the required margin. `max_supported_pcb_power_w`
+is the smallest crossing, clamped to the range, and is unknown when the low end
+already fails or a temperature does not rise with power. Superposition is
+allowed only for a linear model: `power_sweep` with T⁴ radiation is refused.
+The refine tier verifies the result with a third solve within 0.5 K, otherwise
+the metric is unknown. `pareto_metric` reports cost vs supported power. The
+85 °C industrial-grade limit and the FR-4/copper board conductivities are cited
+conservative defaults, not product data; replace them with the limiting part's
+datasheet and the real stack-up.
+
+**Conservative bounds** ([enclosure-thermal.md](enclosure-thermal.md)). A credit
+that is not a direct physical model must be a provable bound, labelled
+`conservative_bound` in the receipt's applicability and in the export's
+`conservative_bounds` (statement prefix `CONSERVATIVE BOUND`), or no credit is
+given. Each uses low-end optics and conductivities; a missing sourced value
+yields no credit, never a default.
+
+- Transparent glazing under solar refuses unless
+  `transparent_solar: "deposit_incident_in_cavity"` deposits all irradiance
+  incident on the pane's sun-facing faces into the internal air node.
+- Exterior radiation, `radiation: "linearized_lower_bound"`: h_r = 4εσTa³ added
+  to the exterior film. The tangent of the convex T⁴ bounds grey exchange from
+  below for any T; the receipt reports the coldest exterior node and the claim
+  is refused if it is below ambient.
+- Orthotropic board: a declared axis-aligned plate takes its through-plane value
+  along its thinnest axis and its in-plane value along the others. The pilot's
+  in-plane 8.1 W/(m·K) bounds conduction only for a board with at least one
+  continuous copper plane. That is a **board requirement**, confirmed by the
+  operator for the pilot PCB on 2026-10-24; a board without one uses the
+  isotropic 0.26 W/(m·K).
+- Cavity radiation, `cavity_radiation: "linearized_lower_bound"`: a two-surface
+  ε_eff from low-end interior emissivities and h_cr = 4ε_effσTa³ through one
+  radiation node. It is credited only when the receipt's postcondition holds
+  (minimum board-surface node ≥ maximum wall node ≥ ambient); the adapter and
+  Rust both refuse otherwise and the metric stays unknown.
+- The component margin uses the hotter of the board peak and the internal air.
+  The internal cavity film is the cited low end of `enclosed-cavity-natural`.
+  The route categorical lists only compatible `MATERIAL__PROCESS__FINISH`
+  triples.
+
+**Proposer** ([design-loop.md](design-loop.md)). After the screen, up to three
+pattern searches start from the best screening points ranked
+feasibility-first and split the remaining screen budget without extra
+evaluations. At the step floor, an edge step follows an active constraint by a
+secant on known margins. Every proposal is a pure function of the envelope and
+the stored candidates, so a restarted worker regenerates the same sequence. A
+design whose searches do not all converge ends `budget_exhausted`. A surrogate
+remains the upgrade path.
+
+**Render/media DRM sandbox** ([gpu-backends.md](gpu-backends.md)). EGL and VAAPI
+stages run under `harbor-cad-render-drm-single-node-v1` and
+`harbor-cad-media-drm-single-node-v1`: the sandbox `/dev` holds only the
+selected render node and its `by-path` alias, never `/dev/kfd` or another
+card. The adapter attests its view in receipt `sandbox`, and the worker refuses
+a receipt whose policy, node or listing is missing or differs. There is no CPU
+or other-GPU fallback. Adapters from earlier packages do not emit this
+evidence, so native render/media needs newly built packages and stays
+unqualified until it is rerun.
+
+**Multi-GPU KFD exclusion** ([host-authority.md](host-authority.md)). HIP compute
+beside a second amdgpu-bound GPU is admitted only with an installed
+`HostAuthority` `kfd_exclusion` receipt (`harbor-cad-native-hip-kfd-exclusion-v1`)
+that matches the exact running kernel (release and `/proc/version` digest), the
+selected PCI and the foreign-PCI set. Any drift restores the single-KFD
+refusal, and there is no environment bypass. `scripts/verify_kfd_exclusion.py`
+produces the evidence: foreign `ACQUIRE_VM`, `ALLOC_MEMORY_OF_GPU` and
+`CREATE_QUEUE` each return `EINVAL`, with the selected card as positive control.
+It has not run, because the iGPU stays on `vfio-pci` until an opt-in amdgpu boot
+entry is active.
