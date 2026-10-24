@@ -243,7 +243,8 @@ def test_compatible_candidate_is_feasible_on_the_reference_solver_path(tmp_path)
     assert energy["solar_cavity_w"] > 0 and energy["solar_absorbed_w"] > 0
     assert result["internal_air_k"] > values["ambient_k"]
     housing = result["regions"]["housing"]["max_k"]
-    board = result["regions"]["pcb"]["max_k"]
+    # Components sit between board and internal air: the hotter bounds them.
+    board = max(result["regions"]["pcb"]["max_k"], result["internal_air_k"])
     # The design constraints of the envelope, with the providers' definitions.
     temperature_margin = min(
         values["metal"]["max_k"] - housing, values["cold_k"] - values["metal"]["min_k"]

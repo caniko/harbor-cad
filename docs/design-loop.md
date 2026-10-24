@@ -48,7 +48,7 @@ with a changed envelope or profile is an idempotency conflict.
   `refine_top_k` ≤ 3 re-evaluations of the best screened candidates.
 - `templates`: named sets of 1–4 `{role, plan}` or chained
   `{role, plan_request, after?, max_artifact_bytes}` children.
-- `metric_sources`: at most 24 `{metric, unit, source}`.
+- `metric_sources`: at most 32 `{metric, unit, source}`.
 
 ## Templates
 

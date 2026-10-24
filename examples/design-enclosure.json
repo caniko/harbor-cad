@@ -385,6 +385,16 @@
       }
     },
     {
+      "metric": "internal_air_temperature_k",
+      "unit": "K",
+      "source": {
+        "kind": "job",
+        "role": "thermal",
+        "artifact": "stages/fem-imported/fem-imported-receipt.json",
+        "pointer": "/internal_air_k"
+      }
+    },
+    {
       "metric": "volume_m3",
       "unit": "m3",
       "source": {

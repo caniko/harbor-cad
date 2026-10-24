@@ -982,6 +982,25 @@ fn provider_value(name: &str, params: &Params, metrics: &[(&str, f64)]) -> Optio
 }
 
 #[test]
+fn component_margin_uses_the_hotter_of_board_and_internal_air() {
+    let none = Params::new();
+    let limit = ("component_max_temperature_k", 398.15);
+    let board = ("pcb_max_temperature_k", 330.);
+    let m =
+        |metrics: &[(&str, f64)]| provider_value("component_temperature_margin_k", &none, metrics);
+    assert_eq!(m(&[limit, board]), Some(398.15 - 330.));
+    assert_eq!(
+        m(&[limit, board, ("internal_air_temperature_k", 345.)]),
+        Some(398.15 - 345.)
+    );
+    assert_eq!(
+        m(&[limit, board, ("internal_air_temperature_k", 320.)]),
+        Some(398.15 - 330.)
+    );
+    assert_eq!(m(&[limit, ("internal_air_temperature_k", 345.)]), None);
+}
+
+#[test]
 fn manufacturing_providers_reuse_w1_and_never_fabricate_missing_inputs() {
     use harbor_cad::manufacturing::{GeometrySummary, Library, manufacturability, unit_cost};
     let library = Library::builtin().unwrap();

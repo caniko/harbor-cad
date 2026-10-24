@@ -29,7 +29,7 @@ pub const MAX_EVALUATIONS: u32 = 32;
 pub const MAX_REFINE: u32 = 3;
 const MAX_CHILDREN: usize = 4;
 const MAX_METRICS: usize = 8;
-const MAX_METRIC_SOURCES: usize = 24;
+const MAX_METRIC_SOURCES: usize = 32;
 /// Planning operations a chained template may request. Each is resolved by the
 /// worker's own dispatch, exactly as the CLI/MCP planning call would be.
 pub const CHAIN_OPERATIONS: [&str; 7] = [
@@ -890,7 +890,7 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
     }
     let mut metrics = BTreeSet::new();
     if env.metric_sources.is_empty() || env.metric_sources.len() > MAX_METRIC_SOURCES {
-        return Err(invalid("1..24 metric sources required"));
+        return Err(invalid("1..32 metric sources required"));
     }
     let every_set_has = |role: &str| {
         used_sets

@@ -63,8 +63,12 @@ impl MetricProvider for ComponentMargin {
     }
     fn evaluate(&self, _: &Params, metrics: &BTreeMap<String, f64>) -> Result<Option<f64>> {
         let get = |name: &str| metrics.get(name).copied();
+        // Components sit between the board solid and the internal air, so the
+        // hotter of the two bounds them when the air temperature is extracted.
+        let peak = get("pcb_max_temperature_k")
+            .map(|pcb| get("internal_air_temperature_k").map_or(pcb, |air| pcb.max(air)));
         Ok(get("component_max_temperature_k")
-            .zip(get("pcb_max_temperature_k"))
+            .zip(peak)
             .map(|(limit, peak)| limit - peak))
     }
 }
