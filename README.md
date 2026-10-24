@@ -18,7 +18,7 @@ Process success is never a physical-validation claim.
 
 ```sh
 cargo build --locked --jobs 2
-uv sync --locked
+uv sync --locked --project python
 harbor-cad worker --state /absolute/private/state --profile profiles/ci.json
 harbor-cad case init > case.json
 harbor-cad case plan case.json > planned.json
@@ -43,7 +43,7 @@ MCP uses the same worker, with bounded structured responses and durable job IDs:
 
 ```sh
 HARBOR_CAD_SOCKET=/absolute/private/state/worker.sock \
-  uv run --locked harbor-cad-mcp --profile all
+  uv run --locked --project python harbor-cad-mcp --profile all
 ```
 
 Profiles: `cad`, `simulation`, `results`, `all`. There is no arbitrary shell,
@@ -83,7 +83,7 @@ execution or resource estimate; Catalyst/Conduit/VTKHDF remain optional and defe
 ```sh
 cargo test --locked --jobs 2
 cargo clippy --locked --all-targets --jobs 2 -- -D warnings
-HARBOR_CAD_TEST_BINARY="$PWD/target/debug/harbor-cad" uv run --locked pytest -q
+HARBOR_CAD_TEST_BINARY="$PWD/target/debug/harbor-cad" uv run --locked --project python pytest -q python/tests
 treefmt --config-file treefmt.toml
 ```
 
@@ -105,6 +105,12 @@ For packaged stdio conformance, also set
 `test_fem_protocol.py`, `test_framework_mcp_matrix.py` and `test_protocol.py`.
 Their stdio clients clear checkout `PYTHONPATH` before launching that executable;
 the default suite continues to test the checkout server.
+
+CAD's tagged JSON inputs decode numeric fields with their declared types, including
+when another workspace member enables `serde_json/arbitrary_precision`. The native
+regressions exercise this feature union, borrowed generic inputs, worker defaults,
+round trips, and rejection of duplicate, unknown, and inactive-variant fields.
+Serialization and the generated public JSON schemas retain the existing contract.
 
 `doctor` is read-only inventory, not a GPU benchmark. `qualify` reports gate
 status without promoting untested combinations. Native package outputs and
@@ -283,7 +289,7 @@ systemd user manager and the separately built CLI, MCP and `runtime-cpu` are
 required:
 
 ```sh
-uv run --locked python scripts/verify_native_cpu.py \
+uv run --locked --project python python scripts/verify_native_cpu.py \
   --executable /nix/store/CLI/bin/harbor-cad \
   --mcp /nix/store/MCP/bin/harbor-cad-mcp \
   --runtime /nix/store/RUNTIME-harbor-cad-native-runtime.json \

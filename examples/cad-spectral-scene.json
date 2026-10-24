@@ -1,17 +1,36 @@
 {
   "schema_version": 1,
   "source_job": "00000000-0000-0000-0000-000000000001",
-  "wavelengths": [{"value": 300.0, "unit": "nm"}, {"value": 400.0, "unit": "nm"}],
-  "geometry_tolerance": {"value": 1e-6, "unit": "m"},
-  "materials": [{
-    "name": "synthetic_opaque",
-    "response": {
-      "availability": "known",
-      "value": {"formulation": "opaque_lambertian", "interpolation": "piecewise_linear", "reflectance": [0.2, 0.4], "absorptivity": [0.8, 0.6]},
-      "provenance": "Explicit manufactured optical reference; not measured product material data",
-      "synthetic": true
-    },
-    "ageing_action": {"availability": "missing", "reason": "No calibrated spectral ageing action supplied"}
-  }],
-  "assignments": [{"region_name": "solid", "material_name": "synthetic_opaque", "provenance": "Explicit complete named native solid; no face numbering"}]
+  "wavelengths": [
+    { "value": 300.0, "unit": "nm" },
+    { "value": 400.0, "unit": "nm" }
+  ],
+  "geometry_tolerance": { "value": 1e-6, "unit": "m" },
+  "materials": [
+    {
+      "name": "synthetic_opaque",
+      "response": {
+        "availability": "known",
+        "value": {
+          "formulation": "opaque_lambertian",
+          "interpolation": "piecewise_linear",
+          "reflectance": [0.2, 0.4],
+          "absorptivity": [0.8, 0.6]
+        },
+        "provenance": "Explicit manufactured optical reference; not measured product material data",
+        "synthetic": true
+      },
+      "ageing_action": {
+        "availability": "missing",
+        "reason": "No calibrated spectral ageing action supplied"
+      }
+    }
+  ],
+  "assignments": [
+    {
+      "region_name": "solid",
+      "material_name": "synthetic_opaque",
+      "provenance": "Explicit complete named native solid; no face numbering"
+    }
+  ]
 }

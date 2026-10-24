@@ -17,9 +17,19 @@
   "native_rejection_cases": 7,
   "numerical_tolerance": 1e-6,
   "worker_resolution": 8,
-  "worker_normalized_max_errors": {"temperature": 0.0, "heat_flux": 1.309672e-13, "displacement": 8.823259867232294e-16, "stress": 9.643145833333334e-15},
-  "jobs": {"cli_thermal_boundary": "289d9c62-a754-4d6e-9f20-275dcd3e0a60", "mcp_free_expansion": "a7213998-3ad1-42dc-875e-7ecca37db808", "forced_death": "343e3bcd-1759-409f-804e-fc3c6e772e7e", "cancel": "70d32e68-ab9c-4ed0-862c-8e68a4c01a9b"},
-  "owned_service_ram_peak_bytes": {"cli": 38465536, "mcp": 42467328},
+  "worker_normalized_max_errors": {
+    "temperature": 0.0,
+    "heat_flux": 1.309672e-13,
+    "displacement": 8.823259867232294e-16,
+    "stress": 9.643145833333334e-15
+  },
+  "jobs": {
+    "cli_thermal_boundary": "289d9c62-a754-4d6e-9f20-275dcd3e0a60",
+    "mcp_free_expansion": "a7213998-3ad1-42dc-875e-7ecca37db808",
+    "forced_death": "343e3bcd-1759-409f-804e-fc3c6e772e7e",
+    "cancel": "70d32e68-ab9c-4ed0-862c-8e68a4c01a9b"
+  },
+  "owned_service_ram_peak_bytes": { "cli": 38465536, "mcp": 42467328 },
   "resource_scope": "verified 2-GiB memory.max, zero swap, one-CPU quota and TasksMax=128; orderly completion retains aggregate process-tree RAM and CPU counters; forced kills have no invented final peaks",
   "sandbox": "harbor-cad-fem-cpu-v1: exact operation closure, read-only request, stage-local writes, no GPU/sysfs/host home/session bus/worker socket/host network",
   "lifecycle": "digest approvals, CLI/MCP parity, restart and retry with same invocation, forced complete-tree death, cancellation, same terminal retry and release passed",
@@ -31,11 +41,27 @@
   "worker_report": "/data/scratch/tmp/opencode/harbor-cad-authority-20261005/fem-worker-2/verification.json",
   "worker_report_sha256": "8fca33862cd81d71d5a1bec12da57c0472fbca13c124b8524463c9a2a24b3e2b",
   "failed_attempts": [
-    {"gate": "fem-native-1", "reason": "exact CalculiX STEP/INCREMENT headers reproduced parser rejection; preserved and fixed by 8476eeb"},
-    {"gate": "fem-worker-1", "log": "/data/scratch/tmp/opencode/harbor-cad-filter-research-20261006/fem-worker-gate-1.log", "log_sha256": "027b5dca79aced6c4e10120a9fecc6fd1f1f5c1de3e16d4a27de9b8e167ed7ec", "reason": "CLI passed; subsequent MCP root registration failed before job creation. Exact five-root reproduction and full gate-2 rerun passed with unchanged binaries and gates; original root failure cause remains unobserved because helper stderr was suppressed."}
+    {
+      "gate": "fem-native-1",
+      "reason": "exact CalculiX STEP/INCREMENT headers reproduced parser rejection; preserved and fixed by 8476eeb"
+    },
+    {
+      "gate": "fem-worker-1",
+      "log": "/data/scratch/tmp/opencode/harbor-cad-filter-research-20261006/fem-worker-gate-1.log",
+      "log_sha256": "027b5dca79aced6c4e10120a9fecc6fd1f1f5c1de3e16d4a27de9b8e167ed7ec",
+      "reason": "CLI passed; subsequent MCP root registration failed before job creation. Exact five-root reproduction and full gate-2 rerun passed with unchanged binaries and gates; original root failure cause remains unobserved because helper stderr was suppressed."
+    }
   ],
   "root_trace": "/data/scratch/tmp/opencode/harbor-cad-filter-research-20261006/fem-root-trace-1/verification.json",
   "root_trace_sha256": "68eba73c6f23aafa7a604f3bf6d18d8865e174b0d058bb5825023256f522be10",
   "physical_validation": "unqualified",
-  "unqualified": ["changed runtime packages", "imported-CAD correspondence", "contact and preload", "transient thermal histories", "hybrid GPU factorization", "physical validation", "logout/reboot/solver resume"]
+  "unqualified": [
+    "changed runtime packages",
+    "imported-CAD correspondence",
+    "contact and preload",
+    "transient thermal histories",
+    "hybrid GPU factorization",
+    "physical validation",
+    "logout/reboot/solver resume"
+  ]
 }

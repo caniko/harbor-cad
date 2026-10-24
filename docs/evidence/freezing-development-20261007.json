@@ -14,7 +14,14 @@
   "native_service": {
     "unit": "harbor-cad-freezing-protocol-10-20261007.service",
     "lease": "canix runtime lease exec --kind harbor-cad-freezing-protocol-diagnostic --host atlas --source-worktree /data/scratch/tmp/opencode/harbor-cad-resume-20261007/freezing-diagnostic-10 --revision diagnostic-10 --wait-seconds 3600",
-    "controls": {"MemoryMax": "2G", "MemorySwapMax": "0", "CPUQuota": "200%", "TasksMax": 128, "RuntimeMaxSec": 600, "KillMode": "control-group"},
+    "controls": {
+      "MemoryMax": "2G",
+      "MemorySwapMax": "0",
+      "CPUQuota": "200%",
+      "TasksMax": 128,
+      "RuntimeMaxSec": 600,
+      "KillMode": "control-group"
+    },
     "exit_code": 0,
     "runtime_s_reported": 51.705,
     "cpu_time_s_reported": 51.089,
@@ -22,20 +29,88 @@
     "swap_peak_reported": "0B"
   },
   "accepted": [
-    {"stefan_number": 0.1, "resolution": 64, "front_error": 0.001303580784887376, "temperature_error": 0.01894585756434697, "mass_error": 0.0, "energy_error": 8.330677818255143e-16},
-    {"stefan_number": 0.1, "resolution": 128, "front_error": 0.0006988748669082556, "temperature_error": 0.015456667961909809, "mass_error": 0.0, "energy_error": 5.117993041221194e-15},
-    {"stefan_number": 0.1, "resolution": 256, "front_error": 5.8786086880868726e-05, "temperature_error": 0.010499081289470857, "mass_error": 0.0, "energy_error": 2.6217887041415465e-14},
-    {"stefan_number": 0.05, "resolution": 256, "front_error": 0.00034389201860099416, "temperature_error": 0.007572634514780852, "mass_error": 0.0, "energy_error": 6.551456130374408e-15},
-    {"stefan_number": 0.2, "resolution": 128, "front_error": 0.0004885669421339778, "temperature_error": 0.012719893338200894, "mass_error": 0.0, "energy_error": 1.5793723867370993e-14},
-    {"stefan_number": 0.2, "resolution": 256, "front_error": 0.00032231646375396883, "temperature_error": 0.0060151830080023005, "mass_error": 0.0, "energy_error": 5.813795342024023e-14}
+    {
+      "stefan_number": 0.1,
+      "resolution": 64,
+      "front_error": 0.001303580784887376,
+      "temperature_error": 0.01894585756434697,
+      "mass_error": 0.0,
+      "energy_error": 8.330677818255143e-16
+    },
+    {
+      "stefan_number": 0.1,
+      "resolution": 128,
+      "front_error": 0.0006988748669082556,
+      "temperature_error": 0.015456667961909809,
+      "mass_error": 0.0,
+      "energy_error": 5.117993041221194e-15
+    },
+    {
+      "stefan_number": 0.1,
+      "resolution": 256,
+      "front_error": 5.8786086880868726e-5,
+      "temperature_error": 0.010499081289470857,
+      "mass_error": 0.0,
+      "energy_error": 2.6217887041415465e-14
+    },
+    {
+      "stefan_number": 0.05,
+      "resolution": 256,
+      "front_error": 0.00034389201860099416,
+      "temperature_error": 0.007572634514780852,
+      "mass_error": 0.0,
+      "energy_error": 6.551456130374408e-15
+    },
+    {
+      "stefan_number": 0.2,
+      "resolution": 128,
+      "front_error": 0.0004885669421339778,
+      "temperature_error": 0.012719893338200894,
+      "mass_error": 0.0,
+      "energy_error": 1.5793723867370993e-14
+    },
+    {
+      "stefan_number": 0.2,
+      "resolution": 256,
+      "front_error": 0.00032231646375396883,
+      "temperature_error": 0.0060151830080023005,
+      "mass_error": 0.0,
+      "energy_error": 5.813795342024023e-14
+    }
   ],
-  "tolerances": {"front": 0.02, "temperature": 0.02, "mass": 1e-10, "energy": 1e-10},
+  "tolerances": {
+    "front": 0.02,
+    "temperature": 0.02,
+    "mass": 1e-10,
+    "energy": 1e-10
+  },
   "rejected": [
-    {"stefan_number": 0.05, "resolution": 64, "temperature_error": 0.031335467451290566, "original_receipt_sha256": "31b251b92772371df67b0f34f68300e13e11634c45ee3c0653d727f60ed030b8"},
-    {"stefan_number": 0.05, "resolution": 128, "temperature_error": 0.030622298053084918, "original_receipt_sha256": "bd16f89d400fc86e1c8f3ca7b6ab26ad97d1b1cb4e508499bd4f361376d73c5f"},
-    {"stefan_number": 0.2, "resolution": 64, "temperature_error": 0.026814644224824713, "original_receipt_sha256": "1eae9b718ff6521d6459f431ece0ba67bc23b67996fc9d02a6cbb55a52764ed7"}
+    {
+      "stefan_number": 0.05,
+      "resolution": 64,
+      "temperature_error": 0.031335467451290566,
+      "original_receipt_sha256": "31b251b92772371df67b0f34f68300e13e11634c45ee3c0653d727f60ed030b8"
+    },
+    {
+      "stefan_number": 0.05,
+      "resolution": 128,
+      "temperature_error": 0.030622298053084918,
+      "original_receipt_sha256": "bd16f89d400fc86e1c8f3ca7b6ab26ad97d1b1cb4e508499bd4f361376d73c5f"
+    },
+    {
+      "stefan_number": 0.2,
+      "resolution": 64,
+      "temperature_error": 0.026814644224824713,
+      "original_receipt_sha256": "1eae9b718ff6521d6459f431ece0ba67bc23b67996fc9d02a6cbb55a52764ed7"
+    }
   ],
-  "refinement": {"stefan_number": 0.1, "resolutions": [64, 128, 256], "equal_retained_physical_times": true, "front_and_temperature_errors_strictly_decreasing": true, "active_nodal_control_volume_scope": "explicit per grid; excludes boundary shells"},
+  "refinement": {
+    "stefan_number": 0.1,
+    "resolutions": [64, 128, 256],
+    "equal_retained_physical_times": true,
+    "front_and_temperature_errors_strictly_decreasing": true,
+    "active_nodal_control_volume_scope": "explicit per grid; excludes boundary shells"
+  },
   "portable_formats": "complete canonical Float64 VTK point grids and physical-time PVD collections generated and byte-reverified against every original CSV grid",
   "physical_validation": "unqualified",
   "rust_replay": {
@@ -45,8 +120,18 @@
     "source": "/data/scratch/tmp/opencode/harbor-cad-resume-20261007/freezing-rust-replay-4/main.rs",
     "build": "/data/scratch/tmp/opencode/harbor-cad-resume-20261007/freezing-rust-replay-4/build-stderr.log",
     "exit_code": 0,
-    "accepted_cases": ["s0.1-n64", "s0.1-n128", "s0.1-n256", "s0.05-n256", "s0.2-n128", "s0.2-n256"],
-    "maximum_approved_gate_fractions": [0.9472928782173484, 0.7728333980954905, 0.5249540644735429, 0.3786317257390426, 0.6359946669100447, 0.300759150400115],
+    "accepted_cases": [
+      "s0.1-n64",
+      "s0.1-n128",
+      "s0.1-n256",
+      "s0.05-n256",
+      "s0.2-n128",
+      "s0.2-n256"
+    ],
+    "maximum_approved_gate_fractions": [
+      0.9472928782173484, 0.7728333980954905, 0.5249540644735429,
+      0.3786317257390426, 0.6359946669100447, 0.300759150400115
+    ],
     "scope": "independent Rust reconstruction of unchanged original CSV grids, complete boundary exchange and derived VTK/PVD; wrapper request identity, moisture entry and sandbox canaries are fixture scaffolding, not measured execution evidence",
     "sandbox_qualification": "unqualified",
     "worker_qualification": "unqualified",

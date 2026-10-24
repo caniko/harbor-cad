@@ -161,7 +161,9 @@ impl crate::contracts::ExecutionPlan {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+crate::json::tagged_enum! {
+"kind";
+#[derive(Clone, Debug, Serialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum SpectralSource {
     Directional {
@@ -172,6 +174,9 @@ pub enum SpectralSource {
         radiance: Vec<Quantity>,
     },
 }
+
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct RadiantHistoryPoint {

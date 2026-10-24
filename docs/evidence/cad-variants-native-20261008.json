@@ -22,14 +22,26 @@
   "owned_cancellation_and_service_death_cases": 2,
   "cli_mcp_refusals": 8,
   "scenes": [
-    {"source": "origin", "variant_job": "474ba84c-9963-416b-8ebe-b29ed8fc64f4", "reimport_job": "76f03f2a-593c-4631-91e6-893d56e2a365", "reimport_terminal_state": "succeeded", "scene_id": "4777442b25ab4e2904513b310360cc6edab0baba0a5ad707b5b727b7430a9450"},
-    {"source": "translated", "variant_job": "4cfbb92a-c042-406f-afa1-f0a87d804d32", "reimport_job": "4f466356-3df3-4c8b-ab5b-44bb65224288", "reimport_terminal_state": "succeeded", "scene_id": "18d40656477d29b7896fab04d699582d76e5c77a8c7b8a3c1795ff86dfb8b110"}
+    {
+      "source": "origin",
+      "variant_job": "474ba84c-9963-416b-8ebe-b29ed8fc64f4",
+      "reimport_job": "76f03f2a-593c-4631-91e6-893d56e2a365",
+      "reimport_terminal_state": "succeeded",
+      "scene_id": "4777442b25ab4e2904513b310360cc6edab0baba0a5ad707b5b727b7430a9450"
+    },
+    {
+      "source": "translated",
+      "variant_job": "4cfbb92a-c042-406f-afa1-f0a87d804d32",
+      "reimport_job": "4f466356-3df3-4c8b-ab5b-44bb65224288",
+      "reimport_terminal_state": "succeeded",
+      "scene_id": "18d40656477d29b7896fab04d699582d76e5c77a8c7b8a3c1795ff86dfb8b110"
+    }
   ],
   "originals_and_placement_preserved": true,
   "native_import_isolation": "passed operation-specific checks",
   "worker_restart_and_terminal_idempotency": "passed",
   "native_roots_and_canonical_reservations_released": true,
-  "service_runtime_s": 28.140,
+  "service_runtime_s": 28.14,
   "cpu_time_s": 9.742,
   "memory_peak_reported": "365.6M; swap 0B",
   "material_triangle_status": "prepared_not_executed",

@@ -4,22 +4,31 @@
   "backend": "cpu",
   "variant": "scalar_spectral",
   "precision": "Float32",
-  "wavelengths": [{"value": 280, "unit": "nm"}, {"value": 400, "unit": "nm"}],
+  "wavelengths": [
+    { "value": 280, "unit": "nm" },
+    { "value": 400, "unit": "nm" }
+  ],
   "source": {
     "kind": "directional",
     "propagation_direction": [0, 0, -1],
-    "irradiance": [{"value": 1, "unit": "W/(m2*nm)"}, {"value": 3, "unit": "W/(m2*nm)"}]
+    "irradiance": [
+      { "value": 1, "unit": "W/(m2*nm)" },
+      { "value": 3, "unit": "W/(m2*nm)" }
+    ]
   },
   "source_provenance": "synthetic fixed collimated UV spectrum; no libRadtran or atmospheric qualification",
-  "sensor_width": {"value": 1, "unit": "mm"},
-  "sensor_height": {"value": 2, "unit": "mm"},
+  "sensor_width": { "value": 1, "unit": "mm" },
+  "sensor_height": { "value": 2, "unit": "mm" },
   "sensor_normal": [0, 0, 1],
   "occlusion": "none",
   "absorptivity": [0.2, 0.8],
   "optical_provenance": "synthetic explicitly prescribed piecewise-linear UV absorptivity; not visible RGB-derived",
   "ageing_action": [1, 0.5],
   "ageing_provenance": "synthetic dimensionless action spectrum; no durability or lifetime claim",
-  "history": [{"time": {"value": 0, "unit": "s"}, "scale": 0}, {"time": {"value": 1, "unit": "h"}, "scale": 2}],
+  "history": [
+    { "time": { "value": 0, "unit": "s" }, "scale": 0 },
+    { "time": { "value": 1, "unit": "h" }, "scale": 2 }
+  ],
   "history_interpolation": "piecewise_linear_prescribed_scale",
   "history_provenance": "synthetic prescribed amplitude ramp; fixed geometry, optics and source direction",
   "samples": 4096,

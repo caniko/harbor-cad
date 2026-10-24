@@ -2398,7 +2398,9 @@ pub struct HostExecutionProfile {
     pub service_mode: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+crate::json::tagged_enum! {
+"operation";
+#[derive(Clone, Debug, Serialize, JsonSchema)]
 #[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Operation {
     PrepareStudy {
@@ -2613,6 +2615,7 @@ pub enum Operation {
     PlanEnclosureThermal {
         request: Box<crate::enclosure_thermal::EnclosureThermalRequest>,
     },
+}
 }
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]

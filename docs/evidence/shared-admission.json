@@ -4,13 +4,36 @@
   "source_revision": "70b220d76ef2992ff8b8ded1a00e8f7c3145dc6e",
   "flake_lock_sha256": "c82b720484076521ba2a59ca4bf891873b69971a0c9766bd7f58c181d403a807",
   "evidence_root": "/data/scratch/tmp/opencode/harbor-cad-authority-20261005",
-  "command": {"path": "cli-build-3-command.json", "sha256": "13532545aac41818fa67d12a83ff1c178397f536ce063fb7154603214548f5c8"},
-  "report": {"path": "shared-admission-1/verification.json", "sha256": "76bfdacc053ff010d64c3cce6b7d77e37d112f2903cc05eb755dba8fb87d3068"},
-  "lifecycle_report": {"path": "shared-admission-1/lifecycle/verification.json", "sha256": "6d464a2e9d1c6075f0b04376669146e5a2f5aaf32f4d1c4f89cec984611d3aae"},
+  "command": {
+    "path": "cli-build-3-command.json",
+    "sha256": "13532545aac41818fa67d12a83ff1c178397f536ce063fb7154603214548f5c8"
+  },
+  "report": {
+    "path": "shared-admission-1/verification.json",
+    "sha256": "76bfdacc053ff010d64c3cce6b7d77e37d112f2903cc05eb755dba8fb87d3068"
+  },
+  "lifecycle_report": {
+    "path": "shared-admission-1/lifecycle/verification.json",
+    "sha256": "6d464a2e9d1c6075f0b04376669146e5a2f5aaf32f4d1c4f89cec984611d3aae"
+  },
   "runner": "/nix/store/7rxpdn9qrshxl3d5bf2msg80c802q9xy-harbor-cad-0.1.0/bin/harbor-cad",
   "runner_sha256": "be06572025a617fffd65d5b891b99bd2338748e41e069d52a77ca1395e504549",
   "scope": "packaged authority-bound synthetic CPU jobs; separate state roots share RAM/disk budgets",
-  "passed": ["cross-root RAM contention remains queued", "worker death preserves reservation", "restart completes original job", "cross-root quarantined disk bytes block launch", "immutable authorization exported with checksums", "systemd restart, forced death and cancellation", "complete-tree closure before admission and GC-root release"],
-  "observed_controls": {"memory_swap_max": 0, "tasks_max": 128, "cpu_quota": "one CPU", "kill_mode": "control-group", "no_new_privileges": true},
+  "passed": [
+    "cross-root RAM contention remains queued",
+    "worker death preserves reservation",
+    "restart completes original job",
+    "cross-root quarantined disk bytes block launch",
+    "immutable authorization exported with checksums",
+    "systemd restart, forced death and cancellation",
+    "complete-tree closure before admission and GC-root release"
+  ],
+  "observed_controls": {
+    "memory_swap_max": 0,
+    "tasks_max": 128,
+    "cpu_quota": "one CPU",
+    "kill_mode": "control-group",
+    "no_new_privileges": true
+  },
   "gpu_vram_and_b1": "unqualified by this CPU fixture"
 }

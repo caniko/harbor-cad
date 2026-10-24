@@ -28,15 +28,31 @@
     "timeout_s": 120
   },
   "results": [
-    {"scenario": "owned service SIGKILL and worker restart", "state": "failed", "exit_code": 9, "bundle_records": 23, "initial_native_field_preserved": true},
-    {"scenario": "ordinary complete-tree cancellation", "state": "cancelled", "exit_code": 143, "bundle_records": 23, "initial_native_field_preserved": true}
+    {
+      "scenario": "owned service SIGKILL and worker restart",
+      "state": "failed",
+      "exit_code": 9,
+      "bundle_records": 23,
+      "initial_native_field_preserved": true
+    },
+    {
+      "scenario": "ordinary complete-tree cancellation",
+      "state": "cancelled",
+      "exit_code": 143,
+      "bundle_records": 23,
+      "initial_native_field_preserved": true
+    }
   ],
   "initial_field": {
     "path": "failed-native/tmp/vtkData/data/channel_iT0000000iC00000.vti",
     "bytes": 61287,
     "sha256": "06aa89916379e447bc43a43bf9799cd2ab7f1f3ac7779df205711f41ea2bd9e8",
     "shape": [130, 68, 66],
-    "verified_finite_float64_arrays": ["geometry", "physPressure", "physVelocity"],
+    "verified_finite_float64_arrays": [
+      "geometry",
+      "physPressure",
+      "physVelocity"
+    ],
     "association": "PointData",
     "velocity_components": 3,
     "compression": "lossless zlib"

@@ -7,10 +7,25 @@
   "runtime": "/nix/store/6i85bhjnq4xsijyys5bf5z9f7cf37h5c-harbor-cad-native-runtime.json",
   "binary": "/nix/store/5w166aibr9dwvyr4vzq201xrb7v2yn01-harbor-cad-0.1.0/bin/harbor-cad",
   "mcp": "/nix/store/xj46c8a8j6jplgygr845ky4sxnwv5sra-harbor-cad-mcp/bin/harbor-cad-mcp",
-  "successful_jobs": ["8675b711-040e-4817-9ad6-816766e76a03", "d530588d-ea8a-4169-b49d-b331c36ebcf7"],
+  "successful_jobs": [
+    "8675b711-040e-4817-9ad6-816766e76a03",
+    "d530588d-ea8a-4169-b49d-b331c36ebcf7"
+  ],
   "cancelled_job": "adbfeb5c-dc71-4915-8570-8521efc090a6",
   "forced_death_job": "abadc75b-b51c-42a0-bd1c-6f863d728e0e",
-  "passed": ["distinct-inode originals before acknowledgment", "source immutability", "CLI and MCP original seed/region power and prescribed-dose queries", "complete approvals and provenance", "worker restart preserves service invocation", "namespaced immutable terminal idempotency", "changed source refusals before acknowledgment", "far-translated native Float32 geometry refusal without rebasing", "closed original export", "cancellation and forced service death", "every lifecycle runtime root and reservation released"],
+  "passed": [
+    "distinct-inode originals before acknowledgment",
+    "source immutability",
+    "CLI and MCP original seed/region power and prescribed-dose queries",
+    "complete approvals and provenance",
+    "worker restart preserves service invocation",
+    "namespaced immutable terminal idempotency",
+    "changed source refusals before acknowledgment",
+    "far-translated native Float32 geometry refusal without rebasing",
+    "closed original export",
+    "cancellation and forced service death",
+    "every lifecycle runtime root and reservation released"
+  ],
   "prior_failures_preserved": ["c8-25", "c8-27", "c8-28"],
   "scope": "synthetic CPU opaque Lambertian direct CAD optical transport; original facet order and separately prescribed action/duration; no interreflection, transmitting materials or lifetime inference",
   "physical_validation": "unqualified"

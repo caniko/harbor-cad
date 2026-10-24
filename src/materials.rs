@@ -3,7 +3,7 @@ use crate::{Result, contracts::invalid, science::Quantity};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, Serialize, JsonSchema)]
 #[serde(tag = "availability", rename_all = "snake_case", deny_unknown_fields)]
 pub enum PhysicalInput<T> {
     Known {
@@ -14,6 +14,74 @@ pub enum PhysicalInput<T> {
     Missing {
         reason: String,
     },
+}
+
+impl<'de, T: Deserialize<'de>> Deserialize<'de> for PhysicalInput<T> {
+    fn deserialize<D: serde::Deserializer<'de>>(
+        deserializer: D,
+    ) -> std::result::Result<Self, D::Error> {
+        // Keep generic (including borrowed) inputs typed rather than buffering
+        // their numbers through serde's internally tagged Content representation.
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields, bound(deserialize = "T: Deserialize<'de>"))]
+        struct Fields<T> {
+            availability: String,
+            #[serde(default, deserialize_with = "present")]
+            value: Option<T>,
+            #[serde(default, deserialize_with = "present")]
+            provenance: Option<String>,
+            #[serde(default, deserialize_with = "present")]
+            synthetic: Option<bool>,
+            #[serde(default, deserialize_with = "present")]
+            reason: Option<String>,
+        }
+        fn present<'de, D, T>(deserializer: D) -> std::result::Result<Option<T>, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+            T: Deserialize<'de>,
+        {
+            T::deserialize(deserializer).map(Some)
+        }
+        let fields = Fields::<T>::deserialize(deserializer)?;
+        match fields.availability.as_str() {
+            "known" => {
+                if fields.reason.is_some() {
+                    return Err(serde::de::Error::unknown_field(
+                        "reason",
+                        &["availability", "value", "provenance", "synthetic"],
+                    ));
+                }
+                Ok(Self::Known {
+                    value: fields
+                        .value
+                        .ok_or_else(|| serde::de::Error::missing_field("value"))?,
+                    provenance: fields
+                        .provenance
+                        .ok_or_else(|| serde::de::Error::missing_field("provenance"))?,
+                    synthetic: fields
+                        .synthetic
+                        .ok_or_else(|| serde::de::Error::missing_field("synthetic"))?,
+                })
+            }
+            "missing" => {
+                if fields.value.is_some()
+                    || fields.provenance.is_some()
+                    || fields.synthetic.is_some()
+                {
+                    return Err(serde::de::Error::custom("unexpected known input field"));
+                }
+                Ok(Self::Missing {
+                    reason: fields
+                        .reason
+                        .ok_or_else(|| serde::de::Error::missing_field("reason"))?,
+                })
+            }
+            availability => Err(serde::de::Error::unknown_variant(
+                availability,
+                &["known", "missing"],
+            )),
+        }
+    }
 }
 
 impl<T> PhysicalInput<T> {

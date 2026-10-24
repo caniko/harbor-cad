@@ -7,16 +7,16 @@ estimate rejects the plan and preserves its scientific parameters.
 
 The current estimator applies to the supported fixed adapters:
 
-| Operation | Conservative allowance |
-|---|---|
-| Analytical channel | 16 MiB RAM plus 160 bytes/sample; at least 1 MiB output or 128 bytes/sample |
-| CAD fixture/inspection | 1 GiB RAM and a 16 MiB native-output baseline |
-| Periodic OpenLB | Padded whole-cuboid allocation `(nx+4)(ny+6)(nz+4)`; 2048 bytes/cell plus 64 MiB RAM; same allowance in GPU VRAM |
-| Native fields | 96 bytes/allocated cell **for each retained time**, plus 32 MiB shared native overhead |
-| EGL renderer | At least 1 GiB RAM or 256 bytes/cell plus 32 bytes/pixel; 128 MiB VRAM plus 64 bytes/cell and 32 bytes/pixel |
-| PNG sequence | Each approved frame reserves 8 bytes/pixel plus 1 MiB |
-| VAAPI encoder | At least 512 MiB RAM or 16 bytes/pixel; 128 MiB VRAM plus 16 bytes/pixel; 128 MiB output plus 4 bytes/pixel/frame |
-| Bundle indexing | 16 MiB RAM; streaming copies are already included in native staging admission |
+| Operation              | Conservative allowance                                                                                            |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Analytical channel     | 16 MiB RAM plus 160 bytes/sample; at least 1 MiB output or 128 bytes/sample                                       |
+| CAD fixture/inspection | 1 GiB RAM and a 16 MiB native-output baseline                                                                     |
+| Periodic OpenLB        | Padded whole-cuboid allocation `(nx+4)(ny+6)(nz+4)`; 2048 bytes/cell plus 64 MiB RAM; same allowance in GPU VRAM  |
+| Native fields          | 96 bytes/allocated cell **for each retained time**, plus 32 MiB shared native overhead                            |
+| EGL renderer           | At least 1 GiB RAM or 256 bytes/cell plus 32 bytes/pixel; 128 MiB VRAM plus 64 bytes/cell and 32 bytes/pixel      |
+| PNG sequence           | Each approved frame reserves 8 bytes/pixel plus 1 MiB                                                             |
+| VAAPI encoder          | At least 512 MiB RAM or 16 bytes/pixel; 128 MiB VRAM plus 16 bytes/pixel; 128 MiB output plus 4 bytes/pixel/frame |
+| Bundle indexing        | 16 MiB RAM; streaming copies are already included in native staging admission                                     |
 
 The lattice dimensions are computed from SI geometry and refinement using
 checked allocation arithmetic. The padded allocation includes non-fluid and

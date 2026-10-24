@@ -23,6 +23,8 @@ thiserror = "2.0"
 uuid = { version = "1.22", features = ["v4"] }
 
 [dev-dependencies]
+# Exercise the feature union used when CAD and the database share a consumer.
+serde_json = { version = "1.0", features = ["arbitrary_precision"] }
 tempfile = "3.24"
 
 [lints.clippy]

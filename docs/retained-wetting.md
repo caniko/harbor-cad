@@ -15,7 +15,7 @@ CSV artifacts and the normal offline export bundle.
   "schema_version": 1,
   "source_job": "00000000-0000-0000-0000-000000000001",
   "physical_time_s": 0.0,
-  "extrusion": {"value": 1.0, "unit": "mm"},
+  "extrusion": { "value": 1.0, "unit": "mm" },
   "extrusion_provenance": "explicit synthetic depth, not measured droplet volume",
   "destination_region": "retained_phase",
   "destination_origin_m": [0.0, 0.0, 0.0],

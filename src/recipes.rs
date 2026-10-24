@@ -22,7 +22,9 @@ pub struct AmbientKnot {
     pub temperature: Quantity,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+crate::json::tagged_enum! {
+"assessment";
+#[derive(Clone, Debug, Serialize, JsonSchema)]
 #[serde(tag = "assessment", rename_all = "snake_case", deny_unknown_fields)]
 pub enum MoistureRisk {
     Missing {
@@ -37,6 +39,7 @@ pub enum MoistureRisk {
         minimum_surface_temperature: Quantity,
         provenance: String,
     },
+}
 }
 
 impl MoistureRisk {

@@ -4,7 +4,7 @@
     "schema_version": 1,
     "source_job": "00000000-0000-0000-0000-000000000001",
     "physical_time_s": 0.0,
-    "extrusion": {"value": 1.0, "unit": "mm"},
+    "extrusion": { "value": 1.0, "unit": "mm" },
     "extrusion_provenance": "synthetic explicitly prescribed extrusion; source is two dimensional",
     "destination_region": "retained_phase",
     "destination_origin_m": [0.0, 0.0, 0.0],
@@ -14,18 +14,24 @@
     "schema_version": 1,
     "synthetic": true,
     "formulation": "stationary_equal_property_retained_phase_conduction",
-    "density": {"value": 1000.0, "unit": "kg/m3"},
-    "specific_heat": {"value": 4180.0, "unit": "J/(kg*K)"},
-    "conductivity": {"value": 0.6, "unit": "W/(m*K)"},
+    "density": { "value": 1000.0, "unit": "kg/m3" },
+    "specific_heat": { "value": 4180.0, "unit": "J/(kg*K)" },
+    "conductivity": { "value": 0.6, "unit": "W/(m*K)" },
     "latent_heat_j_kg": 334400.0,
-    "melting_temperature": {"value": 0.0, "unit": "degC"},
-    "initial_temperature": {"value": 273.15, "unit": "K"},
-    "cold_wall_temperature": {"value": -8.0, "unit": "degC"},
-    "material_temperature_domain": [{"value": 250.0, "unit": "K"}, {"value": 300.0, "unit": "K"}],
+    "melting_temperature": { "value": 0.0, "unit": "degC" },
+    "initial_temperature": { "value": 273.15, "unit": "K" },
+    "cold_wall_temperature": { "value": -8.0, "unit": "degC" },
+    "material_temperature_domain": [
+      { "value": 250.0, "unit": "K" },
+      { "value": 300.0, "unit": "K" }
+    ],
     "material_provenance": "manufactured equal sensible properties of background and water phases; not real water-air",
     "initial_temperature_provenance": "independently prescribed initial melting state; wetting supplies no temperature",
     "cooling_boundary_provenance": "prescribed native half-link cold lower y wall, reflecting upper y wall and periodic x",
     "maximum_relative_conservation_error": 1e-10,
-    "moisture_risk": {"assessment": "missing", "reason": "no measured humidity or operating history supplied"}
+    "moisture_risk": {
+      "assessment": "missing",
+      "reason": "no measured humidity or operating history supplied"
+    }
   }
 }

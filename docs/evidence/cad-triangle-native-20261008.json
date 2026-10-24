@@ -14,7 +14,7 @@
   "seed_observations": 30,
   "maximum_projected_area_power_relative_error": 0.013427734375,
   "unchanged_gate": 0.02,
-  "versions": {"mitsuba": "3.9.1", "drjit": "1.5.0"},
+  "versions": { "mitsuba": "3.9.1", "drjit": "1.5.0" },
   "geometry_precision": "original binary-STL Float32 millimetres to Float64 metres; bounded native Float32 vertex storage; original areas retained for science",
   "original_geometry_gate": 1e-10,
   "reduction_precision": "compensated Float64",

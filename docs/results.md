@@ -85,7 +85,7 @@ reject; material/science/runtime identities stay explicit on both sides.
   "job_id": "a05f78ac-a7ce-4aed-a458-e4a4cbf0b9fc",
   "field": "temperature",
   "physical_time_s": 60.0,
-  "locations": [{"association": "node", "node_id": 7}]
+  "locations": [{ "association": "node", "node_id": 7 }]
 }
 ```
 

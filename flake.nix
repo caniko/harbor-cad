@@ -128,7 +128,7 @@
       inherit pkgs;
       python = pkgs.python313;
       name = "harbor-cad-mcp-env";
-      workspaceRoot = ./.;
+      workspaceRoot = ./python;
       dependencies = {harbor-cad-mcp = [];};
     };
     mcp = python.mkPythonApplicationPackage {
@@ -142,8 +142,8 @@
       inherit pkgs;
       python = pkgs.python313;
       name = "harbor-cad-tests";
-      workspaceRoot = ./.;
-      dependencies = (python.loadUvWorkspace {workspaceRoot = ./.;}).deps.all;
+      workspaceRoot = ./python;
+      dependencies = (python.loadUvWorkspace {workspaceRoot = ./python;}).deps.all;
     };
     native = import ./nix/native.nix {inherit pkgs cudaPkgs inputs;};
     filters = import ./nix/filters.nix {inherit pkgs;};
@@ -264,7 +264,6 @@
         cp -r ${self}/examples ./examples
         cp ${./flake.lock} flake.lock
         cp ${./Cargo.lock} Cargo.lock
-        cp ${./uv.lock} uv.lock
         ${testEnv}/bin/python -m pytest -q python/tests
         mkdir $out
       '';

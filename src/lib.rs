@@ -43,6 +43,7 @@ pub mod frames;
 pub mod freezing;
 mod freezing_fields;
 pub mod freezing_results;
+mod json;
 pub mod lifecycle;
 pub mod manufacturing;
 pub mod materials;

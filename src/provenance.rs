@@ -64,7 +64,7 @@ pub fn inspect() -> Result<BuildProvenance> {
         lockfiles_sha256: [
             ("flake.lock", flake.as_slice()),
             ("Cargo.lock", include_bytes!("../Cargo.lock").as_slice()),
-            ("uv.lock", include_bytes!("../uv.lock").as_slice()),
+            ("uv.lock", include_bytes!("../python/uv.lock").as_slice()),
         ]
         .into_iter()
         .map(|(name, bytes)| (name.into(), format!("{:x}", Sha256::digest(bytes))))

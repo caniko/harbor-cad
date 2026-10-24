@@ -27,8 +27,20 @@
     "complete_descendant_tree_closed": true,
     "terminal_runtime_roots_released": true,
     "results": [
-      {"scenario": "valid", "job_id": "5298d450-bbbe-42fe-94b3-3e56723086d9", "state": "succeeded", "verified_bundle_records": 15, "execution_binding_sha256": "2497262ee11689d63518b70221ea2bff3c7d3caa9e6a47748961ae9c6eda90c5"},
-      {"scenario": "missing-region", "job_id": "85306f23-84b4-4482-a7ca-6a87c4647f39", "state": "failed", "verified_bundle_records": 13, "execution_binding_sha256": "8f352d4af51be1866783c912dd4d3b02f075b1c5a307cb574daeadafba3c3644"}
+      {
+        "scenario": "valid",
+        "job_id": "5298d450-bbbe-42fe-94b3-3e56723086d9",
+        "state": "succeeded",
+        "verified_bundle_records": 15,
+        "execution_binding_sha256": "2497262ee11689d63518b70221ea2bff3c7d3caa9e6a47748961ae9c6eda90c5"
+      },
+      {
+        "scenario": "missing-region",
+        "job_id": "85306f23-84b4-4482-a7ca-6a87c4647f39",
+        "state": "failed",
+        "verified_bundle_records": 13,
+        "execution_binding_sha256": "8f352d4af51be1866783c912dd4d3b02f075b1c5a307cb574daeadafba3c3644"
+      }
     ]
   },
   "native_recovery": {
@@ -42,8 +54,18 @@
     "runtime_retained_across_worker_death": true,
     "terminal_runtime_roots_released": true,
     "results": [
-      {"test": "owned-service-SIGKILL-and-worker-restart", "state": "failed", "exit_code": 9, "verified_bundle_records": 25},
-      {"test": "ordinary-cancellation", "state": "cancelled", "exit_code": 143, "verified_bundle_records": 25}
+      {
+        "test": "owned-service-SIGKILL-and-worker-restart",
+        "state": "failed",
+        "exit_code": 9,
+        "verified_bundle_records": 25
+      },
+      {
+        "test": "ordinary-cancellation",
+        "state": "cancelled",
+        "exit_code": 143,
+        "verified_bundle_records": 25
+      }
     ]
   },
   "egl_vaapi": {
@@ -82,7 +104,16 @@
     "convergence": "not assessed",
     "pressure_accuracy": "unqualified"
   },
-  "local_cpu_gate": {"rust_unit_tests": 6, "rust_integration_tests": 46, "python_cases": 31, "clippy": "passed with -D warnings", "rust_format": "passed", "ruff_lint_format": "passed", "command": "python3 scripts/check_cpu.py", "source_code_revision": "41b8dd8"},
+  "local_cpu_gate": {
+    "rust_unit_tests": 6,
+    "rust_integration_tests": 46,
+    "python_cases": 31,
+    "clippy": "passed with -D warnings",
+    "rust_format": "passed",
+    "ruff_lint_format": "passed",
+    "command": "python3 scripts/check_cpu.py",
+    "source_code_revision": "41b8dd8"
+  },
   "canix_package_checks": {
     "jobs": 1,
     "cores": 2,

@@ -1,6 +1,6 @@
 /target/
 /.ci-bootstrap/
-/.venv/
+/python/.venv/
 /.direnv/
 /.nix-results/
 /.pytest_cache/

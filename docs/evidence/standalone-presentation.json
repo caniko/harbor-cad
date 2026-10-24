@@ -3,30 +3,109 @@
   "date": "2026-10-06",
   "scope": "P1 standalone retained-field rendering and registered-frame video; synthetic channel only",
   "package_source_revision": "6ec1289df74593d682c71690f71b9f53136a863f",
-  "qualifier": {"path": "scripts/verify_presentation.py", "sha256": "96261104d266e3a5d30d8791f9aa44f1f335cf8c4a65bd7f9ab1ca194fac2e8c", "independent_video": true},
+  "qualifier": {
+    "path": "scripts/verify_presentation.py",
+    "sha256": "96261104d266e3a5d30d8791f9aa44f1f335cf8c4a65bd7f9ab1ca194fac2e8c",
+    "independent_video": true
+  },
   "evidence_root": "/data/scratch/tmp/opencode/harbor-cad-authority-20261005",
-  "command": {"path": "presentation-2-command.json", "sha256": "d81a41fe8f934507ec9f558e355a809e89d760087f529be4f48a26c194425bc5", "exit_code": 0},
-  "report": {"path": "presentation-2/verification.json", "sha256": "b9738ec4aedfeec1476ba9ca46e307427b60b6cfdc3e1b737179c3cdb8a6c518"},
-  "post_check": {"path": "presentation-2-post-check.json", "sha256": "c6658a7d84f6a253213db26d89bea6f0b1e5ce1313d642d4250a3d8dd256d6cd"},
-  "authority": {"path": "presentation-authority-2.json", "sha256": "5885a8851378da98d6edeb34b6669a3d3895831787663393068b387ebdbab8b6", "digest": "b03c53bda6864dee50f609e6a3d70fdbc63e169d01def577015a915d81b3b446"},
+  "command": {
+    "path": "presentation-2-command.json",
+    "sha256": "d81a41fe8f934507ec9f558e355a809e89d760087f529be4f48a26c194425bc5",
+    "exit_code": 0
+  },
+  "report": {
+    "path": "presentation-2/verification.json",
+    "sha256": "b9738ec4aedfeec1476ba9ca46e307427b60b6cfdc3e1b737179c3cdb8a6c518"
+  },
+  "post_check": {
+    "path": "presentation-2-post-check.json",
+    "sha256": "c6658a7d84f6a253213db26d89bea6f0b1e5ce1313d642d4250a3d8dd256d6cd"
+  },
+  "authority": {
+    "path": "presentation-authority-2.json",
+    "sha256": "5885a8851378da98d6edeb34b6669a3d3895831787663393068b387ebdbab8b6",
+    "digest": "b03c53bda6864dee50f609e6a3d70fdbc63e169d01def577015a915d81b3b446"
+  },
   "packages": {
-    "cli": {"path": "/nix/store/5z52msv4pxsrjhyn6jd45z3qwfvl10nl-harbor-cad-0.1.0/bin/harbor-cad", "sha256": "3dba5e89ed0a16ecd667319ea7451845c51914d7436202d8394804b8047387d2"},
-    "runtime": {"path": "/nix/store/463v0y4a0a74lpp9vzsyfn9hgy969z2q-harbor-cad-native-runtime.json", "sha256": "4d4e09a374a7cf4614d39109c9fa0ae3bdd1a21d91d7b85b2a716f436f1b9721"},
-    "mcp": {"path": "/nix/store/dki06bn7xjiavla55lwlb5y0apai63df-harbor-cad-mcp/bin/harbor-cad-mcp", "sha256": "2c2d991dd8c349bcc2d00de7cb94ea70425748fe5e5716a5a9f7afc3c2f2eca0"}
+    "cli": {
+      "path": "/nix/store/5z52msv4pxsrjhyn6jd45z3qwfvl10nl-harbor-cad-0.1.0/bin/harbor-cad",
+      "sha256": "3dba5e89ed0a16ecd667319ea7451845c51914d7436202d8394804b8047387d2"
+    },
+    "runtime": {
+      "path": "/nix/store/463v0y4a0a74lpp9vzsyfn9hgy969z2q-harbor-cad-native-runtime.json",
+      "sha256": "4d4e09a374a7cf4614d39109c9fa0ae3bdd1a21d91d7b85b2a716f436f1b9721"
+    },
+    "mcp": {
+      "path": "/nix/store/dki06bn7xjiavla55lwlb5y0apai63df-harbor-cad-mcp/bin/harbor-cad-mcp",
+      "sha256": "2c2d991dd8c349bcc2d00de7cb94ea70425748fe5e5716a5a9f7afc3c2f2eca0"
+    }
   },
   "source_job": "bd46531a-2f1f-4a8b-a9ab-8bf49ed5f86f",
-  "device": {"pci": "0000:03:00.0", "render_node": "/dev/dri/renderD128", "compute_stage": false},
+  "device": {
+    "pci": "0000:03:00.0",
+    "render_node": "/dev/dri/renderD128",
+    "compute_stage": false
+  },
   "render_results": [
-    {"interface": "cli", "job": "53e59e28-af66-4032-8885-4823fc4023bb", "bundle_records": 26, "frames": 2, "physical_times_s": [0, 20]},
-    {"interface": "mcp", "job": "9c4c44ed-46e7-4a65-8e52-4afbc5d8eb07", "bundle_records": 30, "frames": 3, "physical_times_s": [0, 10, 20], "video": "h264_vaapi"}
+    {
+      "interface": "cli",
+      "job": "53e59e28-af66-4032-8885-4823fc4023bb",
+      "bundle_records": 26,
+      "frames": 2,
+      "physical_times_s": [0, 20]
+    },
+    {
+      "interface": "mcp",
+      "job": "9c4c44ed-46e7-4a65-8e52-4afbc5d8eb07",
+      "bundle_records": 30,
+      "frames": 3,
+      "physical_times_s": [0, 10, 20],
+      "video": "h264_vaapi"
+    }
   ],
   "independent_video_results": [
-    {"interface": "cli", "job": "374642ba-4da1-47dc-95ae-d1ee5df912cb", "bundle_records": 30, "frames": 2},
-    {"interface": "mcp", "job": "865bffc4-f4a1-4a97-b116-aa608b6a05bf", "bundle_records": 30, "frames": 2}
+    {
+      "interface": "cli",
+      "job": "374642ba-4da1-47dc-95ae-d1ee5df912cb",
+      "bundle_records": 30,
+      "frames": 2
+    },
+    {
+      "interface": "mcp",
+      "job": "865bffc4-f4a1-4a97-b116-aa608b6a05bf",
+      "bundle_records": 30,
+      "frames": 2
+    }
   ],
-  "video_format": {"codec": "h264", "encoder": "h264_vaapi", "width": 640, "height": 480, "pixel_format": "yuv420p", "fps": "24/1", "decode": "CPU verification"},
-  "checks": ["initialized EGL device identity", "exact distinct copied source/frame inodes", "source and frame mutation before acknowledgment rejected", "parent mutation after acknowledgment uses committed child bytes", "render and independent-video restart/retry preserve service invocation", "no CAD or solver stages", "source physical time and playback clock preserved independently", "owned complete-tree cancellation preserves science", "checksummed portable exports", "original B1 artifact hashes unchanged"],
-  "post_state": {"new_succeeded_jobs": 4, "new_cancelled_jobs": 1, "active_reservations": 0, "runtime_retentions": 0, "owned_services": "inactive/dead with empty control groups"},
+  "video_format": {
+    "codec": "h264",
+    "encoder": "h264_vaapi",
+    "width": 640,
+    "height": 480,
+    "pixel_format": "yuv420p",
+    "fps": "24/1",
+    "decode": "CPU verification"
+  },
+  "checks": [
+    "initialized EGL device identity",
+    "exact distinct copied source/frame inodes",
+    "source and frame mutation before acknowledgment rejected",
+    "parent mutation after acknowledgment uses committed child bytes",
+    "render and independent-video restart/retry preserve service invocation",
+    "no CAD or solver stages",
+    "source physical time and playback clock preserved independently",
+    "owned complete-tree cancellation preserves science",
+    "checksummed portable exports",
+    "original B1 artifact hashes unchanged"
+  ],
+  "post_state": {
+    "new_succeeded_jobs": 4,
+    "new_cancelled_jobs": 1,
+    "active_reservations": 0,
+    "runtime_retentions": 0,
+    "owned_services": "inactive/dead with empty control groups"
+  },
   "physical_validation": "unqualified",
   "qualification_boundary": "exact packages, synthetic source and observed single AMD device; changed runtimes and other scientific recipes need independent qualification"
 }

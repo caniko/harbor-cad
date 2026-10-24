@@ -21,15 +21,26 @@
     "energy_tolerance": 0.02,
     "maximum_temperature_error": 0.007558324480261552,
     "maximum_energy_error": 0.015384615389630334,
-    "spatial_errors_n2_n4_n8": [0.007558324480261552, 0.0019255569183769708, 0.0004858082789169774],
+    "spatial_errors_n2_n4_n8": [
+      0.007558324480261552, 0.0019255569183769708, 0.0004858082789169774
+    ],
     "temporal_convergence": {
       "scope": "successive temporal solution differences on one fixed mesh; independent continuum and energy acceptance remains required on every solve",
       "native_steps_s": [0.03125, 0.015625, 0.0078125],
-      "maximum_successive_temperature_differences_k": [0.001858940129864095, 0.0009295318611748371],
+      "maximum_successive_temperature_differences_k": [
+        0.001858940129864095, 0.0009295318611748371
+      ],
       "observed_order": 0.9999040849481661
     },
     "pre_output_rejections": 9,
-    "kernel_resources": {"memory_max_bytes": 2147483648, "memory_swap_max_bytes": 0, "memory_peak_bytes": 314224640, "cpu_usage_microseconds": 499865057, "cpu_max": "200000 100000", "pids_max": 128}
+    "kernel_resources": {
+      "memory_max_bytes": 2147483648,
+      "memory_swap_max_bytes": 0,
+      "memory_peak_bytes": 314224640,
+      "cpu_usage_microseconds": 499865057,
+      "cpu_max": "200000 100000",
+      "pids_max": 128
+    }
   },
   "repaired_standalone": {
     "build_revision": "c1a58dc3444b7a09ee99745d7b83a14aa340367e",
@@ -45,7 +56,14 @@
     "aligned_time_recheck_revision": "76fdcd44fff1180008da7cc6fb316999e52ddd22",
     "aligned_time_recheck": "/data/scratch/tmp/opencode/harbor-cad-filter-research-20261006/thermal-native-6-aligned-time-recheck.json",
     "aligned_time_recheck_sha256": "29a1c8b8320fc531712a2e8cfcf84bf1b0a92fc4ecb34af77eab9681f04673e8",
-    "kernel_resources": {"memory_max_bytes": 2147483648, "memory_swap_max_bytes": 0, "memory_peak_bytes": 226689024, "cpu_usage_microseconds": 502496099, "cpu_max": "200000 100000", "pids_max": 128},
+    "kernel_resources": {
+      "memory_max_bytes": 2147483648,
+      "memory_swap_max_bytes": 0,
+      "memory_peak_bytes": 226689024,
+      "cpu_usage_microseconds": 502496099,
+      "cpu_max": "200000 100000",
+      "pids_max": 128
+    },
     "physical_validation": "unqualified"
   },
   "worker": {
@@ -101,12 +119,41 @@
     "physical_validation": "unqualified"
   },
   "failed_attempts_preserved": [
-    {"attempt": "thermal-native-1", "cause": "right-endpoint heater ramp integrated 31 J instead of exact prescribed 30 J; both unchanged gates failed"},
-    {"attempt": "thermal-native-2", "cause": "native fixed-width time-card truncation rejected the deck"},
-    {"attempt": "thermal-native-3", "cause": "E13.6 native nodal-temperature serialization lost precision required by the early energy balance"},
-    {"attempt": "thermal-native-4", "cause": "all numerical gates passed but fixed-mesh continuum error cancellation invalidated the original temporal-refinement check", "diagnosis_sha256": "a4b78f9095ae429e61034f3a5ec35e95549b6372cfc9655f381ef1c9da38bfb7"},
-    {"attempt": "runtime-thermal-cpu-14", "cause": "precision patch targeted the wrong native archive-root path; corrected patch verified with zero fuzz"},
-    {"attempt": "thermal-worker-2", "cause": "CLI complete path passed but MCP cold n8/64-substep solve exceeded unchanged 180-second adapter timeout under a one-CPU quota; recorded 145348935 CPU microseconds, 35973256 throttled microseconds and native time 101.9219/120 seconds", "log_sha256": "2bcebc873c1b7ee60699d00fac72b4a6be80d8bdad6c86efa38f319488ce83ba", "resolution": "fresh worker attempt 3 requested and verified the same bounded two-CPU resource envelope as the native qualification; unchanged science/timeout/accuracy"}
+    {
+      "attempt": "thermal-native-1",
+      "cause": "right-endpoint heater ramp integrated 31 J instead of exact prescribed 30 J; both unchanged gates failed"
+    },
+    {
+      "attempt": "thermal-native-2",
+      "cause": "native fixed-width time-card truncation rejected the deck"
+    },
+    {
+      "attempt": "thermal-native-3",
+      "cause": "E13.6 native nodal-temperature serialization lost precision required by the early energy balance"
+    },
+    {
+      "attempt": "thermal-native-4",
+      "cause": "all numerical gates passed but fixed-mesh continuum error cancellation invalidated the original temporal-refinement check",
+      "diagnosis_sha256": "a4b78f9095ae429e61034f3a5ec35e95549b6372cfc9655f381ef1c9da38bfb7"
+    },
+    {
+      "attempt": "runtime-thermal-cpu-14",
+      "cause": "precision patch targeted the wrong native archive-root path; corrected patch verified with zero fuzz"
+    },
+    {
+      "attempt": "thermal-worker-2",
+      "cause": "CLI complete path passed but MCP cold n8/64-substep solve exceeded unchanged 180-second adapter timeout under a one-CPU quota; recorded 145348935 CPU microseconds, 35973256 throttled microseconds and native time 101.9219/120 seconds",
+      "log_sha256": "2bcebc873c1b7ee60699d00fac72b4a6be80d8bdad6c86efa38f319488ce83ba",
+      "resolution": "fresh worker attempt 3 requested and verified the same bounded two-CPU resource envelope as the native qualification; unchanged science/timeout/accuracy"
+    }
   ],
-  "limitations": ["synthetic prescribed inputs only", "constant properties within the approved material domain", "explicit missing/inapplicable moisture entry; no condensate mass", "no flow-to-convection conversion", "no contact, preload, seals or electronic boot reliability", "no hybrid/CUDA qualification", "a changed adapter/closure needs its own recorded qualification"]
+  "limitations": [
+    "synthetic prescribed inputs only",
+    "constant properties within the approved material domain",
+    "explicit missing/inapplicable moisture entry; no condensate mass",
+    "no flow-to-convection conversion",
+    "no contact, preload, seals or electronic boot reliability",
+    "no hybrid/CUDA qualification",
+    "a changed adapter/closure needs its own recorded qualification"
+  ]
 }
