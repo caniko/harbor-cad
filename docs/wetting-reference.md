@@ -79,6 +79,11 @@ Version-9 `case plan-wetting-reference INPUT.json` and simulation-profile MCP
 reference, authority-backed shared RAM/disk admission and an owned systemd tree.
 Old plans reject injected wetting capabilities, including null fields.
 
+HIP (unqualified): `backend: "hip"` plus an explicit `selection`
+(`role: compute`, PCI and UUID) plans the same recipe on that card with
+`runtime-wetting-worker-hip` and sandbox `harbor-cad-wetting-hip-single-kfd-v1`.
+See [GPU backends](gpu-backends.md#recipe-backends) for scope and pending gates.
+
 Before registering success, Rust re-parses every bounded native CSV, verifies
 the exact step/physical-time mapping and recorded field hashes, independently
 reconstructs complete Cartesian/material coverage, phase area and the whole

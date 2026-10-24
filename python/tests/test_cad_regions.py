@@ -81,6 +81,7 @@ def solid(name):
     return SimpleNamespace(
         Name=name,
         Label=name,
+        TypeId="Part::Feature",
         isDerivedFrom=lambda name: name == "Part::Feature",
         getParentGeoFeatureGroup=lambda: None,
         Shape=SimpleNamespace(

@@ -13,6 +13,9 @@ use std::{
 
 pub const SANDBOX_POLICY: &str = "harbor-cad-native-v2";
 pub const HIP_SANDBOX_POLICY: &str = "harbor-cad-native-hip-single-kfd-v1";
+/// Direct-evidence exclusion of a second live KFD GPU. Recorded as the applied
+/// policy when `from_topology` admits the selected GPU alongside a foreign one.
+pub const KFD_EXCLUSION_POLICY: &str = "harbor-cad-native-hip-kfd-exclusion-v1";
 pub const PRESENTATION_SANDBOX_POLICY: &str = "harbor-cad-presentation-v1";
 pub const FILTER_SANDBOX_POLICY: &str = "harbor-cad-filter-hip-single-kfd-v1";
 pub const FEM_SANDBOX_POLICY: &str = "harbor-cad-fem-cpu-v1";
@@ -39,8 +42,14 @@ fn sandbox_policy(plan: &ExecutionPlan) -> &'static str {
         crate::freezing::SANDBOX_POLICY
     } else if plan.contact.is_some() {
         CONTACT_SANDBOX_POLICY
-    } else if plan.wetting.is_some() {
-        WETTING_SANDBOX_POLICY
+    } else if let Some(spec) = &plan.wetting {
+        spec.sandbox_policy()
+    } else if let Some(recipe) = &plan.cad_solids {
+        if recipe.thermal.is_some() {
+            FEM_IMPORTED_SANDBOX_POLICY
+        } else {
+            CAD_MESH_SANDBOX_POLICY
+        }
     } else if plan.imported_fem.is_some() {
         FEM_IMPORTED_SANDBOX_POLICY
     } else if plan.cad_source.is_some() {

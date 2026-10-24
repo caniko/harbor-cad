@@ -398,6 +398,13 @@ This is CPU lifecycle/admission evidence; GPU VRAM and B1 remain independent.
 | B2 | Renderer/media RAM/CPU/wall/output measured; no qualified numerical GPU filter, per-process VRAM peak or complete topology/ghost-cell round trip |
 | C–F | Not implemented |
 
+This table is the 2026-10-05 snapshot and is superseded. Later scoped synthetic
+CPU, native and worker evidence for A1, B2 and C–F recipes is recorded in the
+[acceptance ledger](acceptance-ledger.md) requirement map and slices. As of
+2026-10-23 no A0–F gate is independently closed, further build/native
+qualification is held for the cache-security disposition, and the 2026-10-23
+design-loop/enclosure slice is source/CPU only.
+
 ### Execution binding, retention and importer qualification
 
 The latest lifecycle/importer slice is documented in

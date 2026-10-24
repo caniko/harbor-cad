@@ -1,0 +1,538 @@
+{
+  "schema_version": 1,
+  "classes": [
+    {
+      "id": "etsi-4-1",
+      "name": "ETSI EN 300 019-1-4 class 4.1: non-weatherprotected locations (most of Europe)",
+      "scope": "clause 4.1: applies to most of Europe; mild warm dry to cold temperate; combination of IEC 60721-3-4:1995 classes 4K2/4Z5/4Z7/4B1/4C2(4C3)/4S2/4M5. Standard climatic class (design severity), not site-specific weather.",
+      "low_air_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -33,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -33,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row a) Low air temperature class 4.1; NOTE 1: clear-night radiative cooling can take exposed surfaces 10-20 degC below air temperature (not in this value)",
+        "synthetic": false
+      },
+      "high_air_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 40,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 40,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row b) High air temperature class 4.1",
+        "synthetic": false
+      },
+      "low_relative_humidity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.15,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.15,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row c) Low relative humidity class 4.1 (15 %)",
+        "synthetic": false
+      },
+      "high_relative_humidity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1.0,
+            "unit": "1"
+          },
+          "high": {
+            "value": 1.0,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row d) High relative humidity class 4.1 (100 %)",
+        "synthetic": false
+      },
+      "solar_irradiance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1120.0,
+            "unit": "W/m2"
+          },
+          "high": {
+            "value": 1120.0,
+            "unit": "W/m2"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row k) Solar radiation class 4.1 (1 120 W/m2) ;; https://assets.vde-verlag.de/iec-normen/preview-pdf/info_iec60068-2-5%7Bed3.0%7Db.pdf | IEC 60068-2-5:2018 Ed. 3.0 Test Sa: Simulated solar radiation at ground level (publisher preview) | accessed 2026-10-24 | clause 4.2 Irradiance of solar radiation and Table 1 spectral irradiance (listed in the preview contents; cross-reference for the 1 120 W/m2 ground-level test irradiance) ;; https://www.jjrlab.com/news/what-is-iec-60068-2-5-2018-solar-radiation-test.html | JJR Lab: What is IEC 60068-2-5:2018 solar radiation test (secondary test-lab summary) | accessed 2026-10-24 | states IEC 60068-2-5 test irradiance 1120 W/m2 +-10 %, AM1.5 spectrum 290-2500 nm, UV 290-400 nm >= 27 W/m2 (secondary) ;; https://www.elementdefense.com/blog/solar-radiation-testing-in-accordance-with-method-505-of-mil-std-810 | Element: Solar Radiation Testing in Accordance with Method 505 of MIL-STD-810 (2016-05-17) | accessed 2026-10-24 | MIL-STD-810 Method 505 peak radiation intensity 1120 W/m2 (independent cross-reference)",
+        "synthetic": false
+      },
+      "wind_speed": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 50.0,
+            "unit": "m/s"
+          },
+          "high": {
+            "value": 50.0,
+            "unit": "m/s"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row m) Movement of surrounding air class 4.1 (50 m/s; a mechanical/structural severity, used here only for the cold-point forced-convection film)",
+        "synthetic": false
+      },
+      "wind_film": "forced-wind-50"
+    },
+    {
+      "id": "etsi-4-1e",
+      "name": "ETSI EN 300 019-1-4 class 4.1E: non-weatherprotected locations - extended",
+      "scope": "clause 4.2: covers most of Europe; mild warm dry to cold; climatic values match no IEC 60721-3-4 class (clause 4.2 NOTE: mean annual extremes -45/+45 degC). Standard climatic class (design severity), not site-specific weather.",
+      "low_air_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -45,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -45,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row a) Low air temperature class 4.1E; NOTE 1: clear-night radiative cooling can take exposed surfaces 10-20 degC below air temperature (not in this value)",
+        "synthetic": false
+      },
+      "high_air_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 45,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 45,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row b) High air temperature class 4.1E",
+        "synthetic": false
+      },
+      "low_relative_humidity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.08,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.08,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row c) Low relative humidity class 4.1E (8 %)",
+        "synthetic": false
+      },
+      "high_relative_humidity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1.0,
+            "unit": "1"
+          },
+          "high": {
+            "value": 1.0,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row d) High relative humidity class 4.1E (100 %)",
+        "synthetic": false
+      },
+      "solar_irradiance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1120.0,
+            "unit": "W/m2"
+          },
+          "high": {
+            "value": 1120.0,
+            "unit": "W/m2"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row k) Solar radiation class 4.1E (1 120 W/m2) ;; https://assets.vde-verlag.de/iec-normen/preview-pdf/info_iec60068-2-5%7Bed3.0%7Db.pdf | IEC 60068-2-5:2018 Ed. 3.0 Test Sa: Simulated solar radiation at ground level (publisher preview) | accessed 2026-10-24 | clause 4.2 Irradiance of solar radiation and Table 1 spectral irradiance (listed in the preview contents; cross-reference for the 1 120 W/m2 ground-level test irradiance) ;; https://www.jjrlab.com/news/what-is-iec-60068-2-5-2018-solar-radiation-test.html | JJR Lab: What is IEC 60068-2-5:2018 solar radiation test (secondary test-lab summary) | accessed 2026-10-24 | states IEC 60068-2-5 test irradiance 1120 W/m2 +-10 %, AM1.5 spectrum 290-2500 nm, UV 290-400 nm >= 27 W/m2 (secondary) ;; https://www.elementdefense.com/blog/solar-radiation-testing-in-accordance-with-method-505-of-mil-std-810 | Element: Solar Radiation Testing in Accordance with Method 505 of MIL-STD-810 (2016-05-17) | accessed 2026-10-24 | MIL-STD-810 Method 505 peak radiation intensity 1120 W/m2 (independent cross-reference)",
+        "synthetic": false
+      },
+      "wind_speed": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 50.0,
+            "unit": "m/s"
+          },
+          "high": {
+            "value": 50.0,
+            "unit": "m/s"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row m) Movement of surrounding air class 4.1E (50 m/s; a mechanical/structural severity, used here only for the cold-point forced-convection film)",
+        "synthetic": false
+      },
+      "wind_film": "forced-wind-50"
+    },
+    {
+      "id": "etsi-4-2l",
+      "name": "ETSI EN 300 019-1-4 class 4.2L: non-weatherprotected locations - extremely cold",
+      "scope": "clause 4.3: extremely cold climates world-wide; combination of IEC 60721-3-4:1995 classes 4K4L/4Z5/4Z7/4B1/4C2(4C3)/4S2/4M5. Standard climatic class (design severity), not site-specific weather.",
+      "low_air_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -65,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -65,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row a) Low air temperature class 4.2L; NOTE 1: clear-night radiative cooling can take exposed surfaces 10-20 degC below air temperature (not in this value)",
+        "synthetic": false
+      },
+      "high_air_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 35,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 35,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row b) High air temperature class 4.2L",
+        "synthetic": false
+      },
+      "low_relative_humidity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.2,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.2,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row c) Low relative humidity class 4.2L (20 %)",
+        "synthetic": false
+      },
+      "high_relative_humidity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1.0,
+            "unit": "1"
+          },
+          "high": {
+            "value": 1.0,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row d) High relative humidity class 4.2L (100 %)",
+        "synthetic": false
+      },
+      "solar_irradiance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1120.0,
+            "unit": "W/m2"
+          },
+          "high": {
+            "value": 1120.0,
+            "unit": "W/m2"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row k) Solar radiation class 4.2L (1 120 W/m2) ;; https://assets.vde-verlag.de/iec-normen/preview-pdf/info_iec60068-2-5%7Bed3.0%7Db.pdf | IEC 60068-2-5:2018 Ed. 3.0 Test Sa: Simulated solar radiation at ground level (publisher preview) | accessed 2026-10-24 | clause 4.2 Irradiance of solar radiation and Table 1 spectral irradiance (listed in the preview contents; cross-reference for the 1 120 W/m2 ground-level test irradiance) ;; https://www.jjrlab.com/news/what-is-iec-60068-2-5-2018-solar-radiation-test.html | JJR Lab: What is IEC 60068-2-5:2018 solar radiation test (secondary test-lab summary) | accessed 2026-10-24 | states IEC 60068-2-5 test irradiance 1120 W/m2 +-10 %, AM1.5 spectrum 290-2500 nm, UV 290-400 nm >= 27 W/m2 (secondary) ;; https://www.elementdefense.com/blog/solar-radiation-testing-in-accordance-with-method-505-of-mil-std-810 | Element: Solar Radiation Testing in Accordance with Method 505 of MIL-STD-810 (2016-05-17) | accessed 2026-10-24 | MIL-STD-810 Method 505 peak radiation intensity 1120 W/m2 (independent cross-reference)",
+        "synthetic": false
+      },
+      "wind_speed": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 50.0,
+            "unit": "m/s"
+          },
+          "high": {
+            "value": 50.0,
+            "unit": "m/s"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row m) Movement of surrounding air class 4.2L (50 m/s; a mechanical/structural severity, used here only for the cold-point forced-convection film)",
+        "synthetic": false
+      },
+      "wind_film": "forced-wind-50"
+    },
+    {
+      "id": "etsi-4-2h",
+      "name": "ETSI EN 300 019-1-4 class 4.2H: non-weatherprotected locations - extremely warm dry",
+      "scope": "clause 4.4: extremely warm dry climates world-wide; combination of IEC 60721-3-4:1995 classes 4K4H/4Z5/4Z7/4B1(4B2)/4C2(4C3)/4S2(4S3)/4M5. Standard climatic class (design severity), not site-specific weather.",
+      "low_air_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -20,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -20,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row a) Low air temperature class 4.2H; NOTE 1: clear-night radiative cooling can take exposed surfaces 10-20 degC below air temperature (not in this value)",
+        "synthetic": false
+      },
+      "high_air_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 55,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 55,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row b) High air temperature class 4.2H",
+        "synthetic": false
+      },
+      "low_relative_humidity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.04,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.04,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row c) Low relative humidity class 4.2H (4 %)",
+        "synthetic": false
+      },
+      "high_relative_humidity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1.0,
+            "unit": "1"
+          },
+          "high": {
+            "value": 1.0,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row d) High relative humidity class 4.2H (100 %)",
+        "synthetic": false
+      },
+      "solar_irradiance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1120.0,
+            "unit": "W/m2"
+          },
+          "high": {
+            "value": 1120.0,
+            "unit": "W/m2"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row k) Solar radiation class 4.2H (1 120 W/m2) ;; https://assets.vde-verlag.de/iec-normen/preview-pdf/info_iec60068-2-5%7Bed3.0%7Db.pdf | IEC 60068-2-5:2018 Ed. 3.0 Test Sa: Simulated solar radiation at ground level (publisher preview) | accessed 2026-10-24 | clause 4.2 Irradiance of solar radiation and Table 1 spectral irradiance (listed in the preview contents; cross-reference for the 1 120 W/m2 ground-level test irradiance) ;; https://www.jjrlab.com/news/what-is-iec-60068-2-5-2018-solar-radiation-test.html | JJR Lab: What is IEC 60068-2-5:2018 solar radiation test (secondary test-lab summary) | accessed 2026-10-24 | states IEC 60068-2-5 test irradiance 1120 W/m2 +-10 %, AM1.5 spectrum 290-2500 nm, UV 290-400 nm >= 27 W/m2 (secondary) ;; https://www.elementdefense.com/blog/solar-radiation-testing-in-accordance-with-method-505-of-mil-std-810 | Element: Solar Radiation Testing in Accordance with Method 505 of MIL-STD-810 (2016-05-17) | accessed 2026-10-24 | MIL-STD-810 Method 505 peak radiation intensity 1120 W/m2 (independent cross-reference)",
+        "synthetic": false
+      },
+      "wind_speed": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 50.0,
+            "unit": "m/s"
+          },
+          "high": {
+            "value": 50.0,
+            "unit": "m/s"
+          }
+        },
+        "provenance": "https://www.etsi.org/deliver/etsi_EN/300001_300099/3000190104/02.02.01_60/en_3000190104v020201p.pdf | ETSI EN 300 019-1-4 V2.2.1 (2014-04) Environmental conditions and environmental tests for telecommunications equipment; Part 1-4: Classification of environmental conditions; Stationary use at non-weatherprotected locations | accessed 2026-10-24 | clause 5.1 Table 1 row m) Movement of surrounding air class 4.2H (50 m/s; a mechanical/structural severity, used here only for the cold-point forced-convection film)",
+        "synthetic": false
+      },
+      "wind_film": "forced-wind-50"
+    }
+  ],
+  "films": [
+    {
+      "id": "natural-still-air",
+      "name": "External natural convection, still air, vertical plate 0.1-0.5 m",
+      "wind_speed": null,
+      "coefficient": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 2.2,
+            "unit": "W/(m2*K)"
+          },
+          "high": {
+            "value": 5.7,
+            "unit": "W/(m2*K)"
+          }
+        },
+        "provenance": "https://help.mayahtt.com/tmg/topics/tmg_theory/free_convection_correlations.html | Maya HTT Simcenter TMG theory: Free convection correlations (Churchill-Chu vertical plate) | accessed 2026-10-24 | laminar Churchill-Chu Nu = 0.68 + 0.67 Ra^(1/4)/[1+(0.492/Pr)^(9/16)]^(4/9) ;; https://thermal.mayahtt.com/tmwiz/convect/natural/vp-isot/about.htm | Maya HTT TMWiz: natural convection, isothermal vertical plate (Churchill & Chu 1975; Incropera & DeWitt 3rd ed. eq. 9.26/9.27) | accessed 2026-10-24 | same correlation, laminar range Ra < 1e9 ;; https://www.me.psu.edu/cimbala/me420/Links/Table_A_9_CC_Properties_of_Air.pdf | Cengel & Cimbala Table A-9 Properties of air at 1 atm pressure (Penn State ME420 link) | accessed 2026-10-24 | k, alpha, nu, Pr at film temperatures 20-80 degC ;; derivation: L 0.1-0.5 m, surface-air dT 5-30 K, beta = 1/T_film, g 9.81 m/s2 -> Ra 3.2e6-2.8e7 (laminar); h = Nu k/L = 2.26-5.65 W/(m2*K), rounded outward; convective part only (radiation is modelled separately)",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "forced-wind-50",
+      "name": "External forced convection, parallel flow over a 0.1-0.5 m plate at 50 m/s",
+      "wind_speed": {
+        "value": 50.0,
+        "unit": "m/s"
+      },
+      "coefficient": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 86.0,
+            "unit": "W/(m2*K)"
+          },
+          "high": {
+            "value": 188.0,
+            "unit": "W/(m2*K)"
+          }
+        },
+        "provenance": "https://www.et.byu.edu/~vps/ME340/TABLES/7.1.pdf | BYU ME340 Table 7.1 Flat plate in parallel flow (Incropera correlations 7.30, 7.38) | accessed 2026-10-24 | eq 7.30 laminar average Nu = 0.664 Re^(1/2) Pr^(1/3) (Re < 5e5); eq 7.38 mixed Nu = (0.037 Re^(4/5) - 871) Pr^(1/3); Re_cr 5e5 ;; https://www.me.psu.edu/cimbala/me420/Links/Table_A_9_CC_Properties_of_Air.pdf | Cengel & Cimbala Table A-9 Properties of air at 1 atm pressure (Penn State ME420 link) | accessed 2026-10-24 | k, nu, Pr at film temperatures -100..+20 degC ;; derivation: V 50 m/s (ETSI EN 300 019-1-4 Table 1 row m), L 0.1-0.5 m -> Re 3.3e5-4.3e6; h = Nu k/L = 86.4-187.8 W/(m2*K), rounded outward; idealised flat plate, no bluff-body or turbulence-intensity effects",
+        "synthetic": false
+      }
+    }
+  ],
+  "internal_films": [
+    {
+      "id": "enclosed-cavity-natural",
+      "name": "Internal natural convection on cavity surfaces of a small closed electronics enclosure (laminar, 0.02-0.15 m surfaces)",
+      "wind_speed": null,
+      "coefficient": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1.2,
+            "unit": "W/(m2*K)"
+          },
+          "high": {
+            "value": 8.2,
+            "unit": "W/(m2*K)"
+          }
+        },
+        "provenance": "https://www.electronics-cooling.com/2001/08/simplified-formula-for-estimating-natural-convection-heat-transfer-coefficient-on-a-flat-plate/ | R. E. Simons, Simplified formula for estimating natural convection heat transfer coefficient on a flat plate, Electronics Cooling (2001-08-01), after McAdams (1954) | accessed 2026-10-24 | laminar Nu = C Ra^(1/4): vertical C 0.59, horizontal heated up 0.54, heated down (or cooled up) 0.27; no nearby surfaces, laminar only ;; https://thermal.mayahtt.com/tmwiz/convect/natural/vp-isot/about.htm | Maya HTT TMWiz: natural convection, isothermal vertical plate (Churchill & Chu 1975; Incropera & DeWitt eq. 9.26/9.27) | accessed 2026-10-24 | laminar Churchill-Chu Nu = 0.68 + 0.670 Ra^(1/4)/[1+(0.492/Pr)^(9/16)]^(4/9), valid down to Ra -> 0 ;; https://www.me.psu.edu/cimbala/me420/Links/Table_A_9_CC_Properties_of_Air.pdf | Cengel & Cimbala Table A-9 Properties of air at 1 atm pressure (Penn State ME420 link) | accessed 2026-10-24 | k, alpha, nu, Pr at film temperatures 40-100 degC ;; derivation: inside surfaces L 0.02-0.15 m, surface-to-cavity-air dT 2-20 K, film 40-100 degC (hot design point 40 degC upward), beta = 1/T_film, g 9.81 m/s2 -> Ra 5.6e2-5.3e6; vertical Churchill-Chu 2.48-8.17 W/(m2*K); heated-down McAdams (only where 1e5 <= Ra <= 1e10) 1.23-3.03 W/(m2*K); range rounded outward 1.2-8.2. Convective part only: cavity radiation, conduction across thin gaps and forced flow are not credited, so the low end is conservative (low) for interior air and board temperatures. A sealed cavity with nearby walls departs from isolated-plate boundary layers; this is an engineering bound, not a measured enclosure value.",
+        "synthetic": false
+      }
+    }
+  ],
+  "electronics": [
+    {
+      "id": "component-limit-industrial",
+      "name": "Default component temperature limit: upper end of the industrial temperature grade (-40 to +85 degC); a conservative default, not a product limit",
+      "dimension": "temperature",
+      "value": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 85,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 85,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://onlinedocs.microchip.com/oxy/GUID-D7090430-8C77-4611-BE14-1E6C9D0B117F-en-US-1/GUID-87171942-2C1D-41F6-9FA7-947EC3D11DE1.html | Microchip AN3539 Migrating from the ATECC508A to the ATECC608B, 1.1.13 Enhanced Temperature Range | accessed 2026-10-24 | 'specified over the standard industrial range of -40 degC to +85 degC' (ambient operating range) ;; https://onlinedocs.microchip.com/oxy/GUID-CD7D5B53-9E11-46D9-93FD-B61B8712109B-en-US-3/GUID-D274977D-6A7E-436A-B482-77989CDA69DA.html | Microchip dsPIC33A high-performance digital signal controller datasheet, Qualification | accessed 2026-10-24 | 'AEC-Q100 REV G (Grade 3: -40 degC to +85 degC)' corroborates the same 85 degC upper end ;; DEFAULT, not product data: grade codes are manufacturer-specific (check the limiting part's datasheet) and a grade is an ambient operating range; applying it to the hotter of the board peak and the internal air is conservative for a part graded industrial or wider",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "pcb-fr4-copper-in-plane",
+      "name": "Effective in-plane thermal conductivity of FR-4 boards with continuous copper layers",
+      "dimension": "thermal_conductivity",
+      "value": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 8.1,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 17.4,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://www.electronics-cooling.com/1995/10/thermal-conductivity-of-printed-wiring-boards/ | J. E. Graebner, Thermal Conductivity of Printed Wiring Boards, Electronics Cooling (1995-10-01) | accessed 2026-10-24 | measured in-plane 8.1-15.9 W/(m*K) on multilayer boards with continuous copper layers (a board without continuous copper planes measured 0.81); kappa_P = 0.8 + 350 Z_Cu/Z ;; https://www.electronics-cooling.com/1998/05/conduction-heat-transfer-in-a-printed-circuit-board/ | Conduction Heat Transfer in a Printed Circuit Board, Electronics Cooling (1998-05-01) | accessed 2026-10-24 | typical 1.59 mm four-layer board (two internal planes and two trace layers of 35 um, 70 um equivalent continuous copper; Cu 390, FR-4 0.25 W/(m*K)) computes to k in-plane 17.4 W/(m*K) ;; design use: the low end 8.1 W/(m*K) is a lower bound on in-plane conduction only for boards with continuous copper planes (a board requirement; Graebner measured 0.81 without them, where the isotropic through-plane low end must be used instead)",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "pcb-fr4-copper-through-plane",
+      "name": "Effective through-plane (normal) thermal conductivity of FR-4 boards with copper layers; its low end is the conservative through-plane design value",
+      "dimension": "thermal_conductivity",
+      "value": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.26,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 0.81,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://www.electronics-cooling.com/1998/05/conduction-heat-transfer-in-a-printed-circuit-board/ | Conduction Heat Transfer in a Printed Circuit Board, Electronics Cooling (1998-05-01) | accessed 2026-10-24 | series (through-plane) rule for the typical four-layer board gives k through-plane 0.26 W/(m*K) ;; https://www.electronics-cooling.com/1995/10/thermal-conductivity-of-printed-wiring-boards/ | J. E. Graebner, Thermal Conductivity of Printed Wiring Boards, Electronics Cooling (1995-10-01) | accessed 2026-10-24 | measured perpendicular 0.64-0.81 W/(m*K); kappa_N = [1.69 (1 - Z_Cu/Z) + 0.0026 Z_Cu/Z]^-1 ;; design use: the low end 0.26 W/(m*K) lies below every in-plane and through-plane value cited here, so it is a lower bound along the board normal and, used isotropically, in every direction (conservative for board temperatures). Orthotropic boards pair it with the in-plane low end (pcb-fr4-copper-in-plane); isotropic use understates in-plane spreading (8.1-17.4) 30-70x",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "pcb-surface-emissivity",
+      "name": "Infrared emissivity of populated board surfaces: metal (coating-dependent) to plastic/solder mask; its low end is the conservative cavity-radiation value",
+      "dimension": "dimensionless",
+      "value": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.15,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.9,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.flir.com/en-ca/support/instruments2/what-emissivity-settings-should-i-use-when-looking-at-pcbs-and-electronics/ | FLIR support: What emissivity settings should I use when looking at PCBs and electronics? | accessed 2026-10-24 | 'For plastic surfaces, use an emissivity of 0.9'; for metal surfaces 'the emissivity should be about 0.15 (depending on the metal and its coating)' ;; design use: the low end 0.15 assumes no worse than FLIR's metal value over the board faces; boards dominated by polished bare metal (unplated shield cans, bare copper pours) can be lower (a board requirement); a thermography setting, not a measured board emissivity",
+        "synthetic": false
+      }
+    }
+  ]
+}

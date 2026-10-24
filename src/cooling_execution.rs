@@ -258,7 +258,9 @@ impl crate::contracts::ExecutionPlan {
             atmosphere: None,
             atmospheric_transport: None,
             cad_variant: None,
+            cad_sheet_variant: None,
             cad_transport: None,
+            cad_solids: None,
             observation: ObservationPlan {
                 retained_times_s: spec.times_s(),
                 metrics: vec![],

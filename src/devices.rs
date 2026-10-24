@@ -5,7 +5,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 #[path = "hip_identity.rs"]
 mod hip_identity;
-pub use hip_identity::{HipIdentity, HipSandbox};
+pub use hip_identity::{HipIdentity, HipSandbox, KernelIdentity, KfdExclusion};
 use std::{
     collections::BTreeSet,
     fs,
@@ -132,6 +132,22 @@ const DRM_PCI_ATTRIBUTES: [&str; 6] = [
     "uevent",
 ];
 
+/// Render (EGL) and media (VAAPI) stages see only their selected render node,
+/// its read-only sysfs metadata and the driver tree; never `/dev/kfd` or another card.
+pub const RENDER_SANDBOX_POLICY: &str = "harbor-cad-render-drm-single-node-v1";
+pub const MEDIA_SANDBOX_POLICY: &str = "harbor-cad-media-drm-single-node-v1";
+
+/// Compute never uses this path: HIP takes `HipSandbox`, CUDA has no qualified mount policy.
+pub fn drm_policy(role: Role, backend: &str) -> Result<&'static str> {
+    match (role, backend) {
+        (Role::Render, "egl") => Ok(RENDER_SANDBOX_POLICY),
+        (Role::Media, "vaapi") => Ok(MEDIA_SANDBOX_POLICY),
+        _ => Err(invalid(
+            "single-node DRM sandbox requires render/EGL or media/VAAPI",
+        )),
+    }
+}
+
 #[derive(Debug, Serialize)]
 pub struct DrmSandbox {
     pci: String,
@@ -201,10 +217,36 @@ impl DrmSandbox {
             sysfs_alias,
         })
     }
-    /// Append only a verified render node and read-only selected-device metadata.
-    pub fn apply(&self, command: &mut Command) {
+    /// Append only a verified render node, read-only selected-device metadata,
+    /// the driver tree and the stage's policy id; returns that id.
+    pub fn apply(&self, role: Role, backend: &str, command: &mut Command) -> Result<&'static str> {
+        let policy = drm_policy(role, backend)?;
         self.apply_compute(command);
-        command.args(["--ro-bind", "/run/opengl-driver", "/run/opengl-driver"]);
+        command.args([
+            "--ro-bind",
+            "/run/opengl-driver",
+            "/run/opengl-driver",
+            "--setenv",
+            "HARBOR_CAD_DRM_POLICY",
+            policy,
+        ]);
+        Ok(policy)
+    }
+    /// The adapter's in-sandbox view must name the policy and show only this node.
+    pub fn verify_receipt(&self, policy: &str, receipt: &serde_json::Value) -> Result<()> {
+        let sandbox = &receipt["sandbox"];
+        let name = self.node.file_name().and_then(|n| n.to_str());
+        if sandbox["policy"] != policy
+            || sandbox["render_node"].as_str() != self.node.to_str()
+            || sandbox["visible_dri"] != serde_json::json!(["by-path", name])
+            || sandbox["visible_by_path"] != serde_json::json!([format!("pci-{}-render", self.pci)])
+            || sandbox["kfd_visible"] != false
+        {
+            return Err(Error::Unqualified(
+                "render/media receipt lacks single selected DRM node sandbox evidence".into(),
+            ));
+        }
+        Ok(())
     }
     pub(crate) fn apply_compute(&self, command: &mut Command) {
         command.args(["--dev-bind"]).arg(&self.node).arg(&self.node);
@@ -259,7 +301,10 @@ mod tests {
         assert!(DrmSandbox::render_alias("0000:0A:00.0").is_err());
         let binding = DrmSandbox::from_sysfs(pci, node, libc::makedev(226, 128), sys).unwrap();
         let mut command = std::process::Command::new("bwrap");
-        binding.apply(&mut command);
+        assert_eq!(
+            binding.apply(Role::Render, "egl", &mut command).unwrap(),
+            RENDER_SANDBOX_POLICY
+        );
         let args: Vec<_> = command
             .get_args()
             .map(|s| s.to_string_lossy().into_owned())
@@ -273,6 +318,11 @@ mod tests {
         assert!(!read_only.contains(&device.to_string_lossy().into_owned()));
         assert!(!read_only.contains(&sys.to_string_lossy().into_owned()));
         assert_eq!(args.windows(3).filter(|a| a[0] == "--dev-bind").count(), 1);
+        assert!(!args.iter().any(|a| a == "/dev/kfd"));
+        assert!(
+            args.windows(3)
+                .any(|a| a == ["--setenv", "HARBOR_CAD_DRM_POLICY", RENDER_SANDBOX_POLICY])
+        );
         assert!(
             DrmSandbox::from_sysfs("0000:04:00.0", node, libc::makedev(226, 128), sys).is_err()
         );
@@ -292,5 +342,83 @@ mod tests {
         symlink("/etc/passwd", device.join("vendor")).unwrap();
         assert!(DrmSandbox::from_sysfs(pci, node, libc::makedev(226, 128), sys).is_err());
         assert!(DrmSandbox::resolve("../invalid").is_err());
+    }
+
+    #[test]
+    fn render_and_media_select_distinct_single_node_policies_and_verify_receipts() {
+        assert_eq!(
+            drm_policy(Role::Render, "egl").unwrap(),
+            RENDER_SANDBOX_POLICY
+        );
+        assert_eq!(
+            drm_policy(Role::Media, "vaapi").unwrap(),
+            MEDIA_SANDBOX_POLICY
+        );
+        for (role, backend) in [
+            (Role::Compute, "hip"),
+            (Role::Compute, "cuda"),
+            (Role::Render, "vaapi"),
+            (Role::Media, "egl"),
+        ] {
+            assert!(drm_policy(role, backend).is_err(), "{role:?} {backend}");
+        }
+        let binding = DrmSandbox {
+            pci: "0000:03:00.0".into(),
+            node: "/dev/dri/renderD128".into(),
+            sysfs_device: "/sys/devices/pci0000:00/0000:03:00.0".into(),
+            sysfs_render: "/sys/devices/pci0000:00/0000:03:00.0/drm/renderD128".into(),
+            sysfs_alias: "/sys/dev/char/226:128".into(),
+        };
+        let mut command = Command::new("bwrap");
+        assert_eq!(
+            binding.apply(Role::Media, "vaapi", &mut command).unwrap(),
+            MEDIA_SANDBOX_POLICY
+        );
+        assert!(
+            binding
+                .apply(Role::Compute, "hip", &mut Command::new("bwrap"))
+                .is_err()
+        );
+        let receipt = serde_json::json!({"sandbox": {
+            "policy": MEDIA_SANDBOX_POLICY,
+            "render_node": "/dev/dri/renderD128",
+            "visible_dri": ["by-path", "renderD128"],
+            "visible_by_path": ["pci-0000:03:00.0-render"],
+            "kfd_visible": false,
+        }});
+        binding
+            .verify_receipt(MEDIA_SANDBOX_POLICY, &receipt)
+            .unwrap();
+        assert!(
+            binding
+                .verify_receipt(RENDER_SANDBOX_POLICY, &receipt)
+                .is_err()
+        );
+        for (key, value) in [
+            ("render_node", serde_json::json!("/dev/dri/renderD129")),
+            (
+                "visible_dri",
+                serde_json::json!(["by-path", "renderD128", "renderD129"]),
+            ),
+            (
+                "visible_by_path",
+                serde_json::json!(["pci-0000:03:00.0-render", "pci-0000:7a:00.0-render"]),
+            ),
+            ("kfd_visible", serde_json::json!(true)),
+        ] {
+            let mut changed = receipt.clone();
+            changed["sandbox"][key] = value;
+            assert!(
+                binding
+                    .verify_receipt(MEDIA_SANDBOX_POLICY, &changed)
+                    .is_err(),
+                "{key}"
+            );
+        }
+        assert!(
+            binding
+                .verify_receipt(MEDIA_SANDBOX_POLICY, &serde_json::json!({}))
+                .is_err()
+        );
     }
 }

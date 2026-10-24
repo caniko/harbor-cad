@@ -207,13 +207,18 @@ def planar_vertex_bounds(gmsh, dim, tag):
     )
 
 
-def mesh(spec, geometry=None, *, exact_planar_vertices=False):
+def gmsh_api():
     # This exact module path is substituted by Nix. It owns its compatible native
     # library; no ambient Python/Qt/loader search-path injection is needed.
     sys.path.insert(0, "@gmsh_module@")
     gmsh = importlib.import_module("gmsh")
     if gmsh.__version__ != "@gmsh_version@":
         raise ValueError("exact Gmsh ABI/version required")
+    return gmsh
+
+
+def mesh(spec, geometry=None, *, exact_planar_vertices=False):
+    gmsh = gmsh_api()
     gmsh.initialize(["harbor-cad-fem", "-nopopup"], readConfigFiles=False)
     try:
         gmsh.option.setNumber("General.NumThreads", 1)

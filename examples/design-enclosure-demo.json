@@ -1,0 +1,551 @@
+{
+  "schema_version": 1,
+  "name": "outdoor_enclosure_demo",
+  "provenance": "SYNTHETIC DEMO, not design evidence. Same chain as design-enclosure.json with explicitly synthetic declared inputs (synthetic: true) so the variant -> mesh -> enclosure thermal loop can be exercised end to end; status and export list these inputs under synthetic_inputs and prefix the statement with SYNTHETIC. The window is declared with synthetic optical values because the W1 library has no pc-uv solar absorptance. The PCB limit of 358.15 K is a synthetic demo requirement. Replace source_job with an authorized enclosure_fixture job.",
+  "seed": 11,
+  "space": {
+    "continuous": [
+      {
+        "name": "wall",
+        "low": 2.0,
+        "high": 6.0,
+        "step": 0.5,
+        "unit": "mm"
+      },
+      {
+        "name": "fin_count",
+        "low": 4.0,
+        "high": 8.0,
+        "step": 1.0,
+        "unit": "1"
+      },
+      {
+        "name": "fin_height",
+        "low": 5.0,
+        "high": 25.0,
+        "step": 1.0,
+        "unit": "mm"
+      },
+      {
+        "name": "length",
+        "low": 180.0,
+        "high": 240.0,
+        "step": 5.0,
+        "unit": "mm"
+      },
+      {
+        "name": "height",
+        "low": 60.0,
+        "high": 100.0,
+        "step": 5.0,
+        "unit": "mm"
+      }
+    ],
+    "categorical": [
+      {
+        "name": "route",
+        "choices": [
+          "al-6061-t6__cnc-3axis-al",
+          "pa12-mjf__mjf-pa12",
+          "al-5052-h32__sheet-metal-laser-brake"
+        ]
+      }
+    ]
+  },
+  "objective": {
+    "kind": "minimize",
+    "terms": [
+      {
+        "metric": "unit_cost_high_usd",
+        "weight": 1.0
+      }
+    ]
+  },
+  "constraints": [
+    {
+      "metric": "temperature_margin_k",
+      "op": "ge",
+      "limit": 10.0,
+      "unit": "K",
+      "safety_factor": null
+    },
+    {
+      "metric": "manufacturability_violations",
+      "op": "le",
+      "limit": 0.0,
+      "unit": "1",
+      "safety_factor": null
+    },
+    {
+      "metric": "pcb_max_temperature_k",
+      "op": "le",
+      "limit": 358.15,
+      "unit": "K",
+      "safety_factor": null
+    }
+  ],
+  "budget": {
+    "max_evaluations": 32,
+    "max_wall_seconds": 172800,
+    "max_artifact_bytes": 30064771072
+  },
+  "fidelity": {
+    "screen": "screen"
+  },
+  "templates": {
+    "screen": [
+      {
+        "role": "variant",
+        "plan_request": {
+          "operation": "plan_cad_variant",
+          "request": {
+            "schema_version": 2,
+            "source_job": "00000000-0000-0000-0000-000000000000",
+            "sheet_name": "Params",
+            "parameters": {
+              "wall": {
+                "$param": "wall",
+                "unit": "mm"
+              },
+              "fin_count": {
+                "$param": "fin_count",
+                "unit": "1"
+              },
+              "fin_height": {
+                "$param": "fin_height",
+                "unit": "mm"
+              },
+              "length": {
+                "$param": "length",
+                "unit": "mm"
+              },
+              "height": {
+                "$param": "height",
+                "unit": "mm"
+              }
+            },
+            "regions": [
+              "gasket",
+              "housing",
+              "lid",
+              "pcb",
+              "window"
+            ],
+            "geometry_tolerance": {
+              "value": 1e-05,
+              "unit": "m"
+            },
+            "provenance": "design-loop candidate of the synthetic enclosure_fixture Params sheet"
+          }
+        },
+        "max_artifact_bytes": 268435456
+      },
+      {
+        "role": "mesh",
+        "after": "variant",
+        "plan_request": {
+          "operation": "plan_cad_solid_mesh",
+          "request": {
+            "source_job": {
+              "$job": "variant"
+            },
+            "regions": [
+              "gasket",
+              "housing",
+              "lid",
+              "pcb",
+              "window"
+            ],
+            "mesh": {
+              "characteristic_length_max_m": 0.006,
+              "element_order": 1,
+              "max_elements": 200000,
+              "volume_relative_tolerance": 0.01,
+              "min_quality": 0.05,
+              "geometry_tolerance_m": 1e-05
+            }
+          }
+        },
+        "max_artifact_bytes": 134217728
+      },
+      {
+        "role": "thermal",
+        "after": "mesh",
+        "plan_request": {
+          "operation": "plan_enclosure_thermal",
+          "request": {
+            "mesh_job": {
+              "$job": "mesh"
+            },
+            "spec": {
+              "schema_version": 1,
+              "materials": {
+                "gasket": {
+                  "kind": "library",
+                  "id": "epdm"
+                },
+                "housing": {
+                  "kind": "library",
+                  "id": {
+                    "$param": "route"
+                  }
+                },
+                "lid": {
+                  "kind": "library",
+                  "id": {
+                    "$param": "route"
+                  }
+                },
+                "pcb": {
+                  "kind": "declared",
+                  "conductivity": {
+                    "availability": "known",
+                    "value": {
+                      "$input": "pcb_conductivity"
+                    },
+                    "provenance": "synthetic demo envelope input pcb_conductivity",
+                    "synthetic": true
+                  }
+                },
+                "window": {
+                  "kind": "declared",
+                  "conductivity": {
+                    "availability": "known",
+                    "value": {
+                      "value": 0.2,
+                      "unit": "W/(m*K)"
+                    },
+                    "provenance": "synthetic demo window value; not sourced material data",
+                    "synthetic": true
+                  },
+                  "emissivity": {
+                    "availability": "known",
+                    "value": {
+                      "value": 0.8,
+                      "unit": "1"
+                    },
+                    "provenance": "synthetic demo window value; not sourced material data",
+                    "synthetic": true
+                  },
+                  "solar_absorptance": {
+                    "availability": "known",
+                    "value": {
+                      "value": 0.1,
+                      "unit": "1"
+                    },
+                    "provenance": "synthetic demo window value; not sourced material data",
+                    "synthetic": true
+                  }
+                }
+              },
+              "heat_source_region": "pcb",
+              "heat_source_power": {
+                "availability": "known",
+                "value": {
+                  "$input": "pcb_power_w"
+                },
+                "provenance": "synthetic demo envelope input pcb_power_w",
+                "synthetic": true
+              },
+              "ambient_temperature": {
+                "availability": "known",
+                "value": {
+                  "$input": "ambient_max_k"
+                },
+                "provenance": "synthetic demo envelope input ambient_max_k",
+                "synthetic": true
+              },
+              "film_coefficient": {
+                "availability": "known",
+                "value": {
+                  "$input": "film_coefficient"
+                },
+                "provenance": "synthetic demo envelope input film_coefficient",
+                "synthetic": true
+              },
+              "exposed_regions": [
+                "housing",
+                "lid",
+                "window"
+              ],
+              "internal_film_coefficient": {
+                "availability": "known",
+                "value": {
+                  "$input": "internal_film_coefficient"
+                },
+                "provenance": "synthetic demo envelope input internal_film_coefficient",
+                "synthetic": true
+              },
+              "solar": {
+                "irradiance": {
+                  "availability": "known",
+                  "value": {
+                    "$input": "solar_irradiance"
+                  },
+                  "provenance": "synthetic demo envelope input solar_irradiance",
+                  "synthetic": true
+                },
+                "direction": [
+                  0.0,
+                  -0.5,
+                  0.8660254037844386
+                ]
+              },
+              "radiation": true,
+              "energy_balance_tolerance": 0.001
+            }
+          }
+        },
+        "max_artifact_bytes": 536870912
+      }
+    ]
+  },
+  "metric_sources": [
+    {
+      "metric": "quantity",
+      "unit": "1",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "known",
+          "value": 50.0,
+          "provenance": "pilot build quantity from the product requirement (10-100 units); a requirement, not a physical value",
+          "synthetic": false
+        }
+      }
+    },
+    {
+      "metric": "pcb_power_w",
+      "unit": "W",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "known",
+          "value": 5.0,
+          "provenance": "synthetic demo value chosen only to exercise the loop; not a measurement or specification",
+          "synthetic": true
+        }
+      }
+    },
+    {
+      "metric": "ambient_max_k",
+      "unit": "K",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "known",
+          "value": 313.15,
+          "provenance": "synthetic demo value chosen only to exercise the loop; not a measurement or specification",
+          "synthetic": true
+        }
+      }
+    },
+    {
+      "metric": "film_coefficient",
+      "unit": "W/(m2*K)",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "known",
+          "value": 8.0,
+          "provenance": "synthetic demo value chosen only to exercise the loop; not a measurement or specification",
+          "synthetic": true
+        }
+      }
+    },
+    {
+      "metric": "internal_film_coefficient",
+      "unit": "W/(m2*K)",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "known",
+          "value": 3.0,
+          "provenance": "synthetic demo value chosen only to exercise the loop; not a measurement or specification",
+          "synthetic": true
+        }
+      }
+    },
+    {
+      "metric": "solar_irradiance",
+      "unit": "W/m2",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "known",
+          "value": 800.0,
+          "provenance": "synthetic demo value chosen only to exercise the loop; not a measurement or specification",
+          "synthetic": true
+        }
+      }
+    },
+    {
+      "metric": "pcb_conductivity",
+      "unit": "W/(m*K)",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "known",
+          "value": 5.0,
+          "provenance": "synthetic demo value chosen only to exercise the loop; not a measurement or specification",
+          "synthetic": true
+        }
+      }
+    },
+    {
+      "metric": "max_temperature_k",
+      "unit": "K",
+      "source": {
+        "kind": "job",
+        "role": "thermal",
+        "artifact": "stages/fem-imported/fem-imported-receipt.json",
+        "pointer": "/regions/housing/max_k"
+      }
+    },
+    {
+      "metric": "pcb_max_temperature_k",
+      "unit": "K",
+      "source": {
+        "kind": "job",
+        "role": "thermal",
+        "artifact": "stages/fem-imported/fem-imported-receipt.json",
+        "pointer": "/regions/pcb/max_k"
+      }
+    },
+    {
+      "metric": "volume_m3",
+      "unit": "m3",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/volume_m3"
+      }
+    },
+    {
+      "metric": "xmin_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/bounds_m/0"
+      }
+    },
+    {
+      "metric": "xmax_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/bounds_m/1"
+      }
+    },
+    {
+      "metric": "ymin_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/bounds_m/2"
+      }
+    },
+    {
+      "metric": "ymax_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/bounds_m/3"
+      }
+    },
+    {
+      "metric": "zmin_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/bounds_m/4"
+      }
+    },
+    {
+      "metric": "zmax_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/bounds_m/5"
+      }
+    },
+    {
+      "metric": "min_wall_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/housing/min_wall_m"
+      }
+    },
+    {
+      "metric": "unit_cost_high_usd",
+      "unit": "USD",
+      "source": {
+        "kind": "provider",
+        "name": "unit_cost_high_usd",
+        "params": [
+          "route"
+        ]
+      }
+    },
+    {
+      "metric": "unit_cost_low_usd",
+      "unit": "USD",
+      "source": {
+        "kind": "provider",
+        "name": "unit_cost_low_usd",
+        "params": [
+          "route"
+        ]
+      }
+    },
+    {
+      "metric": "mass_kg",
+      "unit": "kg",
+      "source": {
+        "kind": "provider",
+        "name": "mass_kg",
+        "params": [
+          "route"
+        ]
+      }
+    },
+    {
+      "metric": "manufacturability_violations",
+      "unit": "1",
+      "source": {
+        "kind": "provider",
+        "name": "manufacturability_violations",
+        "params": [
+          "route"
+        ]
+      }
+    },
+    {
+      "metric": "temperature_margin_k",
+      "unit": "K",
+      "source": {
+        "kind": "provider",
+        "name": "temperature_margin_k",
+        "params": [
+          "route"
+        ]
+      }
+    }
+  ]
+}

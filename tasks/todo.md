@@ -1,214 +1,77 @@
-# Completion task packets
+# Completion tasks
 
-See [plan.md](plan.md) for host/admission policy and shared ownership. These are
-16 logical assignments, **not registered or running agent sessions**. All sessions,
-remote physical worktree paths and effective policies remain unassigned pending
-native transport/campaign qualification. No framework is exempt from MCP coverage.
+See [plan.md](plan.md) for decisions, the phase order and boundaries. Each task
+counts as done only with implementation, focused tests, MCP coverage through the
+shared worker and source-bound evidence. Native evidence is tracked separately.
+Do not weaken scientific gates, bypass hooks or leases, or change hosts outside
+the operator-assisted cache scope and the user-authorized Phase 4 boot step.
 
-For every role: read the applicable spec/ledger section, relevant files and one
-existing verified pattern only. Work in one small independently usable slice;
-leave unrelated changes alone. Acceptance is implementation + focused tests +
-framework MCP tests + source-bound handoff, with native evidence separate.
-No pushes, host changes, upstream changes or weakened scientific gates.
+## Workstreams — source level (done at `f738aed`)
 
-## Dispatch prerequisites — coordinator / Atlas
+- [x] W1 material/process library, estimate-only cost and screens; `materials list|show`, `cost estimate`, MCP `materials_list`/`cost_estimate`.
+- [x] W2 spreadsheet-alias CAD variants (v2) and the synthetic `enclosure_fixture` seed. Only a FreeCAD 1.1.3 development smoke, as reported by the coordinator. The packaged gate needs FreeCAD ≥1.1.4.
+- [x] W3 bounded design loop: `design init|validate|plan|submit|propose|status|export` and five MCP tools.
+- [x] W4 `results correlate` / MCP `results_correlate`.
+- [x] W5 harbor-rs PR #20 merged (`29073b5`, `lib.mkCachePin`, nix-cache-pin `0.3.0` = `a69647e`); consumer patch prepared.
+- [x] W7 wetting HIP implemented (unqualified); typed CPU-only refusal for freezing/retained cooling; render/compute routing documented.
+- [x] W8 chained templates, manufacturing providers, calibration and enclosure example envelopes.
+- [x] W9 general-solid mesh and steady enclosure thermal; `verify_enclosure_thermal_cpu.py` 4/4 with the pure-Python reference solver.
+- [x] W10 documentation close-out of W1–W9 (`7034bdf`).
+- [x] W11 ETSI EN 300 019-1-4 classes, film ranges, finishes and `sourced` metrics; the pilot envelope uses the class 4.1 hot/cold points.
+- [x] W11b conservative window solar bound, compatible `MATERIAL__PROCESS__FINISH` triples, sourced cavity film, component margin from the hotter of board and internal air.
+- [x] W12 MCP `cad_plan_solid_mesh`/`enclosure_thermal_plan` (69 → 71 tools); render/media single-node DRM policies (native run pending).
+- [x] W13a KFD multi-GPU exclusion receipt gate and `scripts/verify_kfd_exclusion.py` (mocked-ioctl tests only; not run).
+- [x] W13b Canix `5df6b230d` opt-in `igpu-amdgpu` boot entry (local, not activated; default boot proven identical by evaluation).
+- [x] W14 PCB power sweep (1 W/15 W superposition), `max_supported_pcb_power_w`, cost vs supported-power Pareto, cited 85 °C and FR-4 defaults.
+- [x] W15 linearized exterior radiation and orthotropic board lower bounds; reference-solver ablation (window none → 10.42 W, opaque lid 2.04 → 11.10 W).
+- [x] W16 multi-start pattern search with edge-following (40-seed sweep: worst 27.7 % → 11.7 %, median 5.3 % → 0 %, exact 6 → 34/40).
+- [x] W17 cavity radiation lower bound with a strict postcondition; it fails on the analogue, so the pilot leaves it off.
+- [x] Source gate at `f738aed` (ambient Cargo 1.100, not pinned 1.94): treefmt clean, Clippy `-D warnings`, 284 Rust / 300 Python tests, Ruff; both enclosure examples validate; MCP matrix 71 tools.
+- [x] W18 documentation refresh: spec §10, the 2026-10-24 ledger slice, this plan and the handoff.
 
-- [x] Verify direct `can@dnomad:1337` destination and existing OpenCode service.
-- [x] Inspect installed native command surface; record missing campaign/transport.
-- [x] Check current baseline and preserve the newer registry-Fleetix change.
-- [ ] Obtain qualified native campaign/transport frontend through its external owner.
-- [x] Transfer/resolve Harbor-CAD through native workspace handling; verify bytes (`303bff2`, canonical Nomad adoption; staged source retained).
-- [x] Supply exact locked Python source-check environment and matching CLI; verify on Nomad without remote compilation (`06ce6ec`, 15 scoped real MCP/protocol checks passed; Atlas cold suite 223 passed).
-- [ ] Observe existing sessions, effective policies and physical context on both hosts.
-- [ ] Declare resource reserves/capacity from fresh observations before admission.
-- [ ] Register exact 16 owners/worktrees once and persist native requests before delivery.
+## Phase 0 — cache security (operator-assisted)
 
-## 01 — Shared worker coordinator — Atlas
+- History: v1 `operator-unified.sh` was refused at root-plan line 8 (`operator-Eke6ZHo4`, sudo exports `XDG_CONFIG_DIRS`); host unchanged.
+- [ ] Operator runs `operator-unified-v2.sh` (SHA-256 `acb15b70…0e9e044`) in a quiet window (`pgrep -c -x nix-daemon` = 1). The first v2 attempt `operator-by6AgK4k` was refused at the quiet-window guard; host unchanged.
+- [ ] Verify checksums, failed logs, generation/config hashes, the daemon drain/identity and effective policy: retired trust absent, `require-sigs=true`.
+- [ ] Triage the running-system inventory and the `lantian:` provenance (also signed by `cache.nixos.org-1`, or a local build; read-only NAR hash comparison). Any path signed only by `lantian` stops the work.
+- [ ] Record the pre-authorized disposition only if every check passes. Confirm the Nix-token rotation.
 
-**First slice:** Reconcile strict framework capability/qualification contracts with
-the current worker without changing historical approvals.
-**Files:** `src/{contracts,worker,main,lib,admission,execution,lifecycle,storage}.rs`,
-shared runtime/resource/sandbox modules and `scripts/native_worker_campaign.py`.
-- [ ] Keep one dispatch/lifecycle implementation and explicit independent approvals.
-- [ ] Integrate domain contract deltas in small compatible batches; preserve idempotency.
-- [x] Read-only CLI/MCP execution preflight reuses submission's pre-staging checks; no approval, retention, reservation or execution (`8f77e2c`, source gate and clean-runtime `c8-35/preflight`).
-- [x] Verify `cargo test --locked --jobs 2 --test worker --test contracts --test lifecycle` (included in the complete 222-Rust/224-Python source gate).
-**Consumes:** Each domain's narrow integration handoff; no initial dependency.
+## Phase 3 — after disposition
 
-## 02 — MCP platform and conformance — Nomad
+- [ ] Apply the cache-pin patch; run `nix flake lock --option substitute false` (user approval).
+- [ ] Run `nix eval .#cachePinMeta --json`; the policy check needs caches `["https://cache.nixos.org"]`.
+- [ ] Run `canix repo update cache-pin nixpkgs` to move to the newest fully cached revision, and record the report.
+- [ ] Run `canix cache binary build` for `default`, `mcp`, `python-test-environment`, `runtime-{cpu,hip}`, `openlb-hip`, `filter-hip`, `wetting-native-{cpu,hip}`, `runtime-wetting-worker-hip`, the CAD/mesh/FEM/thermal runtimes (CalculiX) and `gui`; GC-root each qualified output.
+- [ ] Run `scripts/check_cpu.py` in the pinned devShell.
+- [ ] Run the native gates `verify_native_hip`, `verify_openlb_hip`, `verify_filter_hip`, `verify_hip_sandbox`, `verify_wetting_hip`, `verify_cad_variant_worker`, `verify_study_worker`, `verify_egl_fields`/`verify_vaapi` (DRM policies) and `verify_enclosure_thermal_cpu.py --ccx`.
+- [ ] Run the enclosure demo loop (`examples/design-enclosure-demo.json`, inputs labelled synthetic), then the real loop (`examples/design-enclosure.json`) and export the winner with the copper-plane board requirement.
 
-**First slice:** Enumerate actual tools/profiles and implement the executable
-framework-to-tool matrix, catching campaign/profile mismatches before native work.
-**Files:** `python/harbor_cad_mcp/`, central protocol/conformance tests.
-- [ ] Compose domain modules without native imports or a second worker/scheduler.
-- [ ] Test real SDK discovery, schema/error parity and allowed/denied profiles.
-- [x] Check all static shared campaign tool/profile pairs against real SDK discovery, including finite profile loops (25 sites / 26 pairs; Atlas source checks, not a Nomad dispatch).
-- [x] Reconcile all 61 registered tools / 139 allowed profile pairs against the executable 28-framework matrix at `862af55`; real-client discovery, schema, denied profiles and ten typed worker-refusal probes pass without native programs on `PATH`. At that revision PaStiX4CalculiX/PaRSEC were missing and three optional integrations deferred; this is not native or full framework qualification.
-- [x] Verify `python -m pytest -q python/tests/test_protocol.py python/tests/test_native_campaign_api.py python/tests/test_retained_cooling_protocol.py` using the locked check environment (included in the 225-case Python suite).
-**Consumes:** Domain-owned MCP tool contracts; current registrations suffice initially.
+## Phase 4 — iGPU activation (user authorizes the host step)
 
-## 03 — Build and dependency infrastructure — Atlas
+- [ ] `canix host rebuild boot atlas` from a clean deployable Canix trunk containing `5df6b230d`; reboot into `igpu-amdgpu` (fallback: the default entry). Check Immich ROCm ML.
+- [ ] Run `verify_kfd_exclusion.py` and install the receipt via `authority install`; run iGPU `verify_egl_fields`/`verify_vaapi`; rerun `verify_native_hip`.
+- [ ] Run B1 concurrently: iGPU render/media with dGPU OpenLB-HIP.
 
-**First slice:** Reconcile registry Fleetix 0.6.0 with Nix GPU contracts and refresh
-only affected exact-source packaging/evidence, not previously qualified runtimes.
-**Files:** Locks, `Cargo.toml`, `pyproject.toml`, `flake.nix`, `nix/`, dependency
-manifest and generated CI. Domain package changes flow through this owner.
-- [ ] Preserve isolated Python/native ABIs, immutable pins and narrow unfree policy.
-- [ ] Expose meaningful package/framework readiness through the shared MCP worker.
-- [ ] Obtain the external Canix owner's inherited-cache trust/provenance disposition before further build/native qualification; the owner-confirmed `lantian` server incident is recorded in the factorization-readiness evidence, not repaired here.
-- [x] Exact-plan package/source/policy preflight through all four MCP profiles; matching lightweight CLI/MCP privately published. Broader framework-specific capability inventory remains separate.
-- [x] Expose compiled lock/source provenance through existing `doctor` on CLI/all MCP profiles, without native imports/evaluation or readiness promotion (`1eaaf52`; 222 Rust / 226 Python source and exact Nix package/check gates; clean all-profile inspection passed).
-- [x] Verify `python scripts/check_cpu.py`; realize current CLI/MCP/cooling worker production outputs through guarded Canix (`303bff2`, source gate 3 and `c8-34`; no broader package qualification inferred).
-**Consumes:** Domain package/ABI deltas; no initial dependency.
+## Phase 5 — closure
 
-## 04 — FreeCAD — Nomad
+- [ ] Do the independent A0–F closure review. Preserve the coarse enthalpy/Stefan failures, missing physical inputs and the Paperclip audit.
+- [ ] Refresh the handoff, the ledger and `tasks/`. Push only with user authorization.
 
-**First slice:** Audit current controlled-copy/region/import coverage against the
-remaining CAD applicability requirements and add one missing verified vertical slice.
-**Files:** `src/cad*.rs` excluding mesh/optical transport, `adapters/freecad_bridge.py`,
-`adapters/{cad_variant,import_policy}.py`, corresponding tests and framework MCP module.
-- [ ] Preserve original documents, world placement and semantic region identities.
-- [ ] Keep opening documents inside the patched importer sandbox and approved DAG.
-- [ ] Verify `python/tests/test_cad_regions.py`, `test_cad_variant.py`, `test_import_policy.py`; own native CAD campaign receipts.
-**Consumes:** Shared contract integration only when needed; existing fixtures work now.
+## Open product inputs and limits
 
-## 05 — Gmsh mesh — Nomad
+- [ ] Replace the cited defaults with product data: the limiting part's temperature limit and the real board stack-up. The in-plane 8.1 W/(m·K) bound requires at least one continuous copper plane, which the operator confirmed for the pilot PCB. The 0.15 board emissivity, used only by the cavity bound, is also a board requirement.
+- [ ] ETSI classes are design severities, not site weather. A real site needs its own cited class. Gap/interface conduction stays uncredited.
+- [ ] pc-uv glazing has no sourced solar transmittance/absorptance split, so it uses the conservative cavity-deposit bound. `pigment-white-polymer` optics are missing.
+- [ ] Supported-power figures so far come from the pure-Python reference analogue, not CalculiX.
+- [ ] Proposer residual: worst 11.7 % gap over the 40-seed sweep, with a surrogate as the upgrade path. The `min_wall_m` one-point-per-face screen and the ray-based exterior-face selection are unqualified.
+- [ ] Remaining spec work: hybrid FEM/fill-in estimates, format/topology/ghost round trips, GPU spectral transport, logout/reboot and solver resume, hosted CI. CUDA is unqualified. Physical/product validation is unqualified for every recipe.
 
-**First slice:** Cover a missing imported-CAD physical-group/correspondence rejection
-and expose mesh quality/correspondence through scoped MCP results.
-**Files:** `src/cad_mesh.rs`, `adapters/cad_mesh.py`, mesh tests, framework MCP module.
-- [ ] Bind mesh to approved original geometry, units, transforms and semantic groups.
-- [ ] Verify topology/Jacobians and refuse ambiguous or unsupported correspondence.
-- [ ] Verify `python/tests/test_cad_mesh*.py`; own native mesh evidence.
-**Consumes:** Role 4 CAD receipts; request shared FEM helper changes from role 10.
+## Superseded role packets
 
-## 06 — OpenLB flow / HIP — Nomad
-
-**First slice:** Reconcile allocated-flow resource/observation coverage and identify
-one supported bounded improvement without silently changing the science.
-**Files:** `adapters/openlb.cpp`, HIP identity driver, flow/backend tests and MCP module.
-- [ ] Keep Float64, explicit formulation/Mach bounds and HIP device/CPU parity evidence.
-- [ ] Preserve separate compute/EGL/media routing and single-KFD qualification scope.
-- [ ] Verify flow/HIP identity and refusal tests; own queued native HIP measurements.
-**Consumes:** Role 1 resource/dispatch integration and role 3 packages, not initial analysis.
-
-## 07 — OpenLB wetting / retention — Nomad
-
-**First slice:** Verify retained-source contracts and meaningful wetting/retention
-MCP inspection against existing original-field fixtures.
-**Files:** `src/wetting*.rs`, `adapters/openlb_wetting.cpp`, wetting/retention adapters/tests/MCP module.
-- [ ] Preserve original phase/history, conservative extrusion, units and explicit applicability.
-- [ ] Refuse moving/unverifiable sources rather than inventing cooling initial state.
-- [ ] Verify `python/tests/test_wetting_reference.py`, `test_wetting_native_guard.py`, `test_retention_campaign.py`; own wetting native evidence.
-**Consumes:** Existing qualified sources; coordinate shared staging with role 1.
-
-## 08 — Freezing / retained cooling — Nomad
-
-**First slice:** Reconcile the completed exact V18 worker lifecycle gate and
-deliver framework-scoped cooling inspection/MCP coverage against its originals.
-**Files:** `src/{freezing*,retained_cooling,cooling*}.rs`, cooling/freezing adapters,
-`scripts/verify_retained_cooling_worker.py`, focused tests and MCP module.
-- [ ] Preserve stationary equal-property scope, original water fraction and all fixed gates.
-- [x] Before-ack retention, source loss, restart/idempotency, cancellation/death and export/release evidence pass `c8-34` with original CSV/VTK queries. Completed by Atlas coordinator while owner registration remains blocked; not a Nomad dispatch receipt.
-- [ ] Verify `python/tests/test_retained_cooling*.py`, `test_freezing*.py`; run the exact newly captured worker campaign on Atlas.
-**Consumes:** Role 7 closed originals, role 3 matching packages; no baseline source replacement.
-
-## 09 — Thermal / moisture / snow — Nomad
-
-**First slice:** Assemble the missing combined cold/wet moisture-risk report from
-verified thermal histories, preserving missing/inapplicable branches.
-**Files:** Thermal/transfer/moisture/snow modules, `adapters/thermal_history.py`,
-corresponding tests and domain MCP module; not shared `fem_reference.py`.
-- [ ] Preserve explicit material domains, physical times and conservative coupling.
-- [ ] Never infer convection from velocity or snow deposition/flow from prescribed coverage.
-- [ ] Verify `python/tests/test_thermal*.py`, `test_snow*.py`; own focused native receipts.
-**Consumes:** Existing thermal originals; shared helper requests go to role 10.
-
-## 10 — Mechanics / contact / factorization — Nomad
-
-**First slice:** Audit compatible CalculiX/PaStiX/PaRSEC contracts and implement
-honest factorization/resource readiness and contact MCP inspection.
-**Files:** FEM/imported/contact/thermal-contact modules and adapters, including sole
-ownership of `adapters/fem_reference.py`; mechanical tests and MCP module.
-- [ ] Keep CPU references independent; CUDA remains best-effort/unqualified without evidence.
-- [ ] Bound fill-in/workspace estimates; preserve missing gasket/material data.
-- [ ] Verify `python/tests/test_fem*.py`, `test_contact_reference.py`, `test_thermal_contact.py`; own native FEM/contact evidence.
-**Consumes:** Role 9 temperature-transfer contract and role 3 packages when integrating.
-
-Coordinator continuation, not a Nomad owner turn: read-only candidate inspection
-now exposes pinned modified PaStiX/PaRSEC compatibility/build/ILP64 blockers and
-unknown resource estimates through `doctor`/`backend_list`. CPU planning parity
-and strict no-fallback checks pass in the 228-case Python source gate. Exact
-lightweight packages, affected Nix checks and clean packaged stdio conformance
-pass at `96563f4`; source hashes and terminal empty trees are reconciled in the
-[scoped evidence](../docs/evidence/fem-factorization-readiness-20261020.json).
-Inherited-cache dependency-security review remains external. This does not
-complete factorization/resource or independent domain qualification above.
-
-## 11 — Atmospheric radiation — Nomad
-
-**First slice:** Add framework-scoped libRadtran source/input/output inspection and
-verify conformance against retained angular originals without rerunning old campaigns.
-**Files:** Atmosphere fields/source/transfer modules and adapter, focused tests/MCP module.
-- [ ] Preserve direct/diffuse angular/spectral units, immutable source and boundary gates.
-- [ ] Expose explicit synthetic scope and separate execution/refinement/physical statuses.
-- [ ] Verify `python/tests/test_atmosphere*.py`; own native atmosphere evidence.
-**Consumes:** Existing `c8-26` receipts; role 12 consumes versioned source handoffs.
-
-## 12 — Optical transport / exposure — Nomad
-
-**First slice:** Expose meaningful Mitsuba/Dr.Jit scene/source/transport inspection
-and independent power/dose queries for the supported original-facet workflows.
-**Files:** Spectral/CAD-optical/atmospheric-transport modules and adapters/tests/MCP module.
-- [ ] Preserve original facet order, fixed native precision screens and unknown ageing.
-- [ ] Keep unsupported curved/mixed/transmitting/interreflection and GPU paths explicit.
-- [ ] Verify `python/tests/test_spectral*.py`, `test_cad_spectral*.py`, `test_atmospheric_spectral*.py`; own native optics evidence.
-**Consumes:** Roles 4/11 exact sources and role 3 compatible packages; existing fixtures suffice initially.
-
-## 13 — GPU numerical analysis — Nomad
-
-**First slice:** Extend exact VTK field/association/round-trip coverage and expose
-the qualified Viskores/Kokkos filter allowlist with its real backend restrictions.
-**Files:** `src/{fields,filters}.rs`, `adapters/filters/`, numeric-format/filter tests/MCP module.
-- [ ] Own shared array/association contracts; coordinate—not duplicate—with role 14.
-- [ ] Preserve precision/topology/IDs/ghosts/units and independent numerical GPU evidence.
-- [ ] Verify `cargo test --locked --jobs 2 --test retained_fields`; own queued native filter evidence.
-**Consumes:** Domain original formats and existing qualified filter fixtures.
-
-## 14 — Scientific visualization — Nomad
-
-**First slice:** Verify ParaView/EGL retained-field render recipes and truthful
-format support/limitations through scoped MCP, independent of numerical filtering.
-**Files:** `src/{frames,presentation}.rs`, `adapters/paraview_bridge.py`, render tests/MCP module.
-- [ ] Keep fixed scales, units, physical-time labels and selected EGL identity.
-- [ ] Treat Catalyst/Conduit/VTKHDF as optional; no placeholders masquerading as support.
-- [ ] Verify `python/tests/test_render_contract.py`; own queued native render evidence.
-**Consumes:** Role 13 association contracts and role 3 exact packages.
-
-## 15 — Hardware media — Nomad
-
-**First slice:** Cover FFmpeg/VAAPI frame/timestamp/selected-device inspection and
-the approved registered-frame video interface through real MCP clients.
-**Files:** `adapters/video_bridge.py`, video-specific tests and MCP module;
-shared frame contract changes go through role 14.
-- [ ] Keep encoding independent of compute/render and scientific originals lossless.
-- [ ] Verify actual decode, labels, timestamps and bounded staging—not codec listings.
-- [ ] Verify `python/tests/test_video_contract.py`; own queued native media receipts.
-**Consumes:** Role 14 registered frames; existing manufactured sequences suffice initially.
-
-## 16 — Independent qualification / product closure — Atlas
-
-**First slice:** Map every remaining A0–F requirement to domain-owned evidence,
-missing physical inputs or explicit unsupported capability; review stale claims.
-**Files:** Acceptance/qualification/product docs and independent cross-domain checks.
-- [ ] Review exact source/package/hardware evidence without promoting synthetic/CPU scope.
-- [ ] Reconcile framework MCP coverage, recovery/resource measurements and coupled recipes.
-- [ ] Verify current full source gate and independent cross-domain checks; preserve all failed campaigns and the Paperclip audit.
-**Consumes:** Every role's versioned evidence; audit existing ledger immediately.
-
-## Integration checkpoints
-
-- [ ] Initial dispatch: native command/transport/workspace/policy/resource/context prerequisites pass.
-- [ ] After each small batch: affected tests, framework MCP matrix and source identity pass.
-- [ ] Before a native campaign: matching newly committed capture/packages and independent approval pass.
-- [ ] Closure: A0–F reconciliation and fresh complete idle/no-pending/no-leak observations pass.
+The 16 role packets of revision 1 are superseded and were never dispatched. Their
+completed items and evidence references are preserved at `e271596:tasks/todo.md`
+and in the ledger. Examples: the read-only execution preflight at `8f77e2c`, the
+61-tool matrix at `862af55`, build provenance at `1eaaf52`, retained cooling
+`c8-30`/`c8-34`, the portable checks at `06ce6ec`, and factorization readiness at
+`96563f4`.

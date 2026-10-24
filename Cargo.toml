@@ -27,3 +27,7 @@ tempfile = "3.24"
 
 [lints.clippy]
 all = "warn"
+
+# Debug test runners hash the worker binary per job; keep that hash fast.
+[profile.dev.package.sha2]
+opt-level = 3

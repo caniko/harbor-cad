@@ -58,3 +58,70 @@ The shared campaign API regression includes this entrypoint. A real stdio MCP
 client/worker test checks its CAD profile and expected refusal path; source gate
 21 passes all 189 Python cases. These tests repaired a missing shared call and
 the original inspection's plan-only MCP response shape before native execution.
+
+## Version 2: spreadsheet-alias variants
+
+A request with `schema_version: 2` goes through the same `cad variant` /
+`cad_plan_variant` entrypoint and becomes a version-16 plan carrying
+`cad_sheet_variant` instead of `cad_variant` (exactly one of the two):
+
+```json
+{"schema_version": 2, "source_job": "<uuid>", "sheet_name": "Params",
+ "parameters": {"wall": {"value": 3.0, "unit": "mm"}, "fin_count": {"value": 10, "unit": "1"}},
+ "regions": ["housing", "lid"], "geometry_tolerance": {"value": 1e-5, "unit": "m"},
+ "provenance": "..."}
+```
+
+Planning opens no document. The source job must have registered `sheets.json`
+alias evidence, written by the importer whenever a document contains a
+`Spreadsheet::Sheet`. It must list exactly one sheet, with the requested name.
+Only aliases that already exist may be set; at most 32 per request. Values are
+lengths (`m`, `mm`, `nm`, 1e-5 to 10 m) or dimensionless (`1`, 0 to 1e6), and
+must keep the alias's registered dimension. The adapter writes cell text from
+these validated numbers only; caller text never reaches FreeCAD. Requested
+regions must be registered in the source job. An empty `parameters` map
+re-exports the baseline with metrics. Source identity, approval binding,
+distinct-inode staging, orphan recovery and historical byte rechecks reuse the
+version-1 path.
+
+Expressions are the edit mechanism, so v2 replaces the "no expressions"
+guarantee with "only Spreadsheet cells change". Before editing, the native side
+requires every object to be valid, not touched and error-free, and every
+requested region to match its registered bounds, volume and placement. It then
+snapshots every non-sheet object's type, expression bindings and unbound,
+non-output input properties, plus every sheet cell's contents and alias. It
+sets only the approved alias cells and compares the snapshot before
+recomputing: other objects must be identical and other cells unchanged. After
+`recompute()` it refuses any invalid, touched or errored object, any change to
+non-computed state, and any alias value that did not land exactly. It then
+saves `variant.FCStd` and re-exports the named regions through the inspection
+path (BREP, STL, `regions.json`, `brep-manifest.json`).
+
+`cad-variant-recompute.json` (schema 2) records the cell changes and the
+original (`before`) and recomputed (`after`) bounds, volume and transform per
+region. `after` also carries `surface_area_m2` and `min_wall_m`. The wall
+estimate fires one inward face-normal ray per face, from the centroid of the
+face's largest tessellation triangle, and reports the shortest material chord
+starting at that probe. It is deterministic and bounded to 2048 faces. It can
+miss a thin spot away from those probes, so treat it as a screening value, not
+a guaranteed minimum. Before publication, Rust checks that every requested
+region is present, that volumes are finite and positive and no larger than
+their bounding box, that bounds are ordered and agree with `regions.json`, that
+area satisfies the isoperimetric bound, and that `min_wall_m` is positive and
+no larger than the smallest extent.
+
+### Enclosure seed fixture
+
+`harbor-cad cad enclosure-fixture` plans the fixed `enclosure_fixture` bridge
+operation; submit it with `job submit`. It builds a deterministic ~200×150×80 mm
+outdoor enclosure from native Part primitives and booleans only, with no Python
+feature proxies. Every dimension is an expression on the single `Params` sheet:
+length, width, height, wall, fin_count, fin_height, fin_pitch, fin_thickness,
+groove_width, groove_depth, lid_overlap, window_width, window_height,
+drain_diameter, boss_count and pcb_power_area_side. The named solids are
+`housing` (shell, back fins, PCB bosses, rim groove, drain hole), `lid`
+(overlapping skirt, window aperture), `gasket` (ring filling the groove),
+`window` (pane), `pcb` (heat-source block) and `mount` (L wall bracket). Fins
+and bosses use fixed slots (16 and 4); higher counts clamp. The fixture is
+synthetic geometry, not a validated product design.
+`examples/enclosure-variant.json` is a v2 request template for it.

@@ -6,12 +6,15 @@ import importlib.util
 import io
 import json
 import math
+import os
 import stat
 import subprocess
 import sys
 from pathlib import Path
 
 POLICY = "harbor-cad-wetting-cpu-v1"
+HIP_POLICY = "harbor-cad-wetting-hip-single-kfd-v1"
+SELECTION = {"role", "backend", "pci", "backend_uuid"}
 FIELDS = {
     "schema_version",
     "synthetic",
@@ -37,18 +40,40 @@ FIELDS = {
 }
 
 
+def device_selection(spec):
+    """CPU carries no device; HIP carries exactly one explicit PCI/UUID compute card."""
+    if spec.get("backend") == "cpu" and "selection" not in spec:
+        return None
+    selection = spec.get("selection")
+    if (
+        spec.get("backend") != "hip"
+        or not isinstance(selection, dict)
+        or set(selection) != SELECTION
+        or selection["role"] != "compute"
+        or selection["backend"] != "hip"
+        or not all(
+            isinstance(selection[key], str) and selection[key]
+            for key in ("pci", "backend_uuid")
+        )
+    ):
+        raise ValueError(
+            "explicit CPU or exact HIP PCI/UUID compute wetting selection required"
+        )
+    return selection
+
+
 def validate(spec):
     if (
-        set(spec) != FIELDS
+        set(spec) - {"selection"} != FIELDS
         or type(spec["schema_version"]) is not int
         or spec["schema_version"] != 1
         or spec["synthetic"] is not True
-        or spec["backend"] != "cpu"
         or spec["formulation"] != "well_balanced_contact_angle_2d"
     ):
         raise ValueError(
-            "exact synthetic CPU planar diffuse-interface wetting contract required"
+            "exact synthetic planar diffuse-interface wetting contract required"
         )
+    device_selection(spec)
     for key in FIELDS - {
         "synthetic",
         "backend",
@@ -291,6 +316,43 @@ def check_output_directory(root):
             )
 
 
+def hip_sandbox(fem, selection, request_path, dev=Path("/dev"), sys_root=Path("/sys")):
+    """Worker HIP sandbox: only the selected render node, KFD and selected sysfs metadata."""
+    if not os.environ.get("HARBOR_CAD_WETTING_POLICY"):
+        return None
+    if os.environ["HARBOR_CAD_WETTING_POLICY"] != HIP_POLICY:
+        raise ValueError("exact HIP wetting sandbox policy required")
+    mounts = set(
+        fem.read_regular("/wetting-runtime-closure.txt", 2 * 1024**2)
+        .decode()
+        .splitlines()
+    )
+    if set(map(str, Path("/nix/store").iterdir())) != mounts:
+        raise ValueError("HIP wetting sandbox must expose only its operation closure")
+    alias = dev / "dri/by-path" / f"pci-{selection['pci']}-render"
+    node = alias.resolve() if alias.is_symlink() else None
+    checks = {
+        "operation_closure_only": True,
+        "selected_gpu_nodes_only": node is not None
+        and (dev / "kfd").is_char_device()
+        and node.is_char_device()
+        and {p.name for p in (dev / "dri").iterdir()} == {"by-path", node.name}
+        and [p.name for p in (dev / "dri/by-path").iterdir()] == [alias.name],
+        "selected_sysfs_only": {p.name for p in sys_root.iterdir()}
+        <= {"bus", "dev", "devices"},
+        "no_host_home": set(Path("/home").iterdir()) == {Path("/home/worker")},
+        "no_session_bus": not Path("/run/user").exists()
+        and "DBUS_SESSION_BUS_ADDRESS" not in os.environ,
+        "no_worker_socket": not list(Path("/work").glob("*.sock")),
+        "network_namespace_isolated": os.readlink("/proc/self/ns/net")
+        != os.environ["HARBOR_CAD_HOST_NETNS"],
+        "descriptor_readonly": os.statvfs(request_path).f_flag & os.ST_RDONLY != 0,
+    }
+    if not all(checks.values()):
+        raise ValueError("HIP wetting sandbox boundary failed")
+    return {"policy": HIP_POLICY, "checks": checks}
+
+
 def main():
     if len(sys.argv) != 3 or sys.argv[1] != "reference":
         raise ValueError("usage: harbor-cad-wetting reference request.json")
@@ -300,11 +362,18 @@ def main():
     raw = fem.read_regular(sys.argv[2], 65536)
     spec = fem.strict_json(raw)
     validate(spec)
-    sandbox = fem.cpu_sandbox(
-        "HARBOR_CAD_WETTING_POLICY", POLICY, "/wetting-runtime-closure.txt", sys.argv[2]
-    )
+    selection = device_selection(spec)
+    if selection is None:
+        sandbox = fem.cpu_sandbox(
+            "HARBOR_CAD_WETTING_POLICY",
+            POLICY,
+            "/wetting-runtime-closure.txt",
+            sys.argv[2],
+        )
+    else:
+        sandbox = hip_sandbox(fem, selection, sys.argv[2])
     if sandbox is None:
-        raise ValueError("operation-specific CPU wetting sandbox required")
+        raise ValueError("operation-specific wetting sandbox required")
     check_output_directory(Path.cwd())
     with Path("process.log").open("xb") as log:
         process = subprocess.run(
@@ -324,9 +393,17 @@ def main():
         receipt["request"] != spec
         or receipt["executed"] is not True
         or receipt["source_revision"] != "145cd54810b468f4b6fd3ed86b10644264841578"
-        or receipt["backend"] != "cpu"
+        or receipt["backend"] != spec["backend"]
         or receipt["precision"] != "float64"
         or receipt["software_fallback"] is not False
+        or (
+            selection is not None
+            and (
+                receipt.get("pci") != selection["pci"]
+                or receipt.get("backend_uuid") != selection["backend_uuid"]
+                or receipt.get("gpu_kernel_completion_verified") is not True
+            )
+        )
     ):
         raise ValueError(
             "native wetting execution or exact science/source identity failed"

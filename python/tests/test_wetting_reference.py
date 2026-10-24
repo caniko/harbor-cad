@@ -111,6 +111,38 @@ def test_explicit_si_mapping_and_nonpromotion_of_real_water_air_ratio():
             bridge.validate({**spec, key: value})
 
 
+def test_hip_requires_exact_compute_card_and_cpu_never_carries_a_device(
+    monkeypatch,
+):
+    bridge, spec = module(), request()
+    selection = {
+        "role": "compute",
+        "backend": "hip",
+        "pci": "0000:03:00.0",
+        "backend_uuid": "GPU-" + "ab" * 16,
+    }
+    hip = {**spec, "backend": "hip", "selection": selection}
+    assert bridge.validate(hip) == bridge.validate(spec)
+    assert bridge.device_selection(hip) == selection
+    assert bridge.device_selection(spec) is None
+    for changed in (
+        {**spec, "backend": "hip"},
+        {**spec, "selection": selection},
+        {**hip, "backend": "cuda"},
+        {**hip, "selection": {**selection, "role": "render"}},
+        {**hip, "selection": {**selection, "backend": "vulkan"}},
+        {**hip, "selection": {**selection, "backend_uuid": ""}},
+        {**hip, "selection": {**selection, "ordinal": 0}},
+    ):
+        with pytest.raises(ValueError):
+            bridge.validate(changed)
+    monkeypatch.delenv("HARBOR_CAD_WETTING_POLICY", raising=False)
+    assert bridge.hip_sandbox(None, selection, "request.json") is None
+    monkeypatch.setenv("HARBOR_CAD_WETTING_POLICY", bridge.POLICY)
+    with pytest.raises(ValueError, match="HIP wetting sandbox policy"):
+        bridge.hip_sandbox(None, selection, "request.json")
+
+
 def test_phase_mass_and_angle_failures_do_not_change_explicit_acceptance():
     bridge, spec = module(), request()
     check = bridge.assess_field(spec, cap(spec))
@@ -188,3 +220,39 @@ def test_worker_log_cannot_alias_data_or_be_a_directory(tmp_path, kind):
         os.link(target, log)
     with pytest.raises(ValueError):
         bridge.check_output_directory(stage)
+
+
+def test_hip_parity_gate_holds_phase_to_float64_and_geometry_exactly(
+    tmp_path, monkeypatch
+):
+    scripts = Path(__file__).resolve().parents[2] / "scripts"
+    monkeypatch.syspath_prepend(str(scripts))
+    source = importlib.util.spec_from_file_location(
+        "wetting_hip_gate", scripts / "verify_wetting_hip.py"
+    )
+    gate = importlib.util.module_from_spec(source)
+    source.loader.exec_module(gate)
+    spec = request()
+    data = cap(spec).decode()
+    cpu, hip = tmp_path / "cpu", tmp_path / "hip"
+    for root in (cpu, hip):
+        root.mkdir()
+        (root / "wetting-0.csv").write_text(data)
+    agreement = gate.compare(cpu, hip, [0])
+    assert [a["agreement_passed"] for a in agreement] == [True, None, None]
+    lines = data.splitlines()
+    x, y, material, phi, u, v = lines[100].split(",")
+    for changed, message in (
+        (f"{x},{y},{material},{float(phi) + 1e-6!r},{u},{v}", "phi relative L2"),
+        (f"{x},{y},{3 - int(material)},{phi},{u},{v}", "coordinates/material"),
+    ):
+        (hip / "wetting-0.csv").write_text(
+            "\n".join([*lines[:100], changed, *lines[101:]]) + "\n"
+        )
+        with pytest.raises(ValueError, match=message):
+            gate.compare(cpu, hip, [0])
+    (hip / "wetting-0.csv").write_text(
+        "\n".join([*lines[:100], f"{x},{y},{material},{phi},1e-9,{v}", *lines[101:]])
+        + "\n"
+    )
+    assert gate.compare(cpu, hip, [0])[1]["absolute_l2_difference"] == 1e-9

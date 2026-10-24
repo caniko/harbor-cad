@@ -153,6 +153,14 @@ def main():
     source.loader.exec_module(fem)
     raw = fem.read_regular(sys.argv[2], 1024**2)
     spec = fem.strict_json(raw)
+    if spec.get("formulation") == "imported_general_solids":
+        source = importlib.util.spec_from_file_location(
+            "harbor_cad_solid_mesh", "@solid_mesh_bridge@"
+        )
+        solid = importlib.util.module_from_spec(source)
+        source.loader.exec_module(solid)
+        solid.main(raw, spec, fem, sys.argv[2])
+        return
     validate(spec)
     sandbox = fem.cpu_sandbox(
         "HARBOR_CAD_CAD_MESH_POLICY",

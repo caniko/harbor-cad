@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "name": "thermal_calibration",
+  "provenance": "Calibrate uncertain thermal inputs (film coefficient, conductivity) by minimizing the pooled RMSE of results correlate against one measured test log. Synthetic plane-wall thermal reference from tests/thermal_plan.rs; replace the spec, probe map and CSV with the physical test article. Calibrated values hold for this rig, test and sensor placement only.",
+  "seed": 3,
+  "space": {
+    "continuous": [
+      {
+        "name": "film",
+        "low": 20.0,
+        "high": 400.0,
+        "step": 10.0,
+        "unit": "W/(m2*K)"
+      },
+      {
+        "name": "conductivity",
+        "low": 5.0,
+        "high": 60.0,
+        "step": 1.0,
+        "unit": "W/(m*K)"
+      }
+    ],
+    "categorical": []
+  },
+  "objective": {
+    "kind": "minimize",
+    "terms": [
+      {
+        "metric": "rmse",
+        "weight": 1.0
+      }
+    ]
+  },
+  "constraints": [],
+  "budget": {
+    "max_evaluations": 24,
+    "max_wall_seconds": 86400,
+    "max_artifact_bytes": 12884901888
+  },
+  "fidelity": {
+    "screen": "screen"
+  },
+  "templates": {
+    "screen": [
+      {
+        "role": "thermal",
+        "plan_request": {
+          "operation": "plan_thermal_reference",
+          "spec": {
+            "schema_version": 1,
+            "synthetic": true,
+            "backend": "cpu",
+            "formulation": "plane_wall_robin",
+            "size_m": [
+              0.02,
+              0.01,
+              0.01
+            ],
+            "resolution": 4,
+            "geometry_tolerance_m": 1e-06,
+            "initial_temperature_k": 293.15,
+            "density_kg_m3": 7800.0,
+            "specific_heat_j_kg_k": 500.0,
+            "conductivity_w_m_k": {
+              "$param": "conductivity",
+              "si": "thermal_conductivity"
+            },
+            "material_temperature_domain_k": [
+              240.0,
+              320.0
+            ],
+            "convection_w_m2_k": {
+              "$param": "film",
+              "si": "heat_transfer_coefficient"
+            },
+            "duration_s": 120.0,
+            "max_step_s": 1.0,
+            "integration_substeps": 64,
+            "observation_times_s": [
+              10.0,
+              60.0,
+              120.0
+            ],
+            "ambient_history": [
+              [
+                0.0,
+                253.15
+              ],
+              [
+                60.0,
+                253.15
+              ],
+              [
+                120.0,
+                273.15
+              ]
+            ],
+            "heater_history": [
+              [
+                0.0,
+                0.0
+              ],
+              [
+                60.0,
+                0.0
+              ],
+              [
+                120.0,
+                1.0
+              ]
+            ],
+            "numerical_tolerance": 0.02,
+            "energy_tolerance": 0.02,
+            "geometry_provenance": "synthetic reference box",
+            "material_provenance": "synthetic constant-property solid; conductivity is a calibration parameter",
+            "history_provenance": "prescribed synthetic cold soak and heater ramp",
+            "convection_provenance": "calibration parameter film; no velocity conversion",
+            "moisture_risk": {
+              "assessment": "missing",
+              "reason": "no humidity"
+            }
+          }
+        },
+        "max_artifact_bytes": 536870912
+      }
+    ]
+  },
+  "metric_sources": [
+    {
+      "metric": "rmse",
+      "unit": "K",
+      "source": {
+        "kind": "correlation",
+        "role": "thermal",
+        "request": {
+          "schema_version": 1,
+          "measurement_csv": "chamber/run.csv",
+          "dimension": "temperature",
+          "probe_map": {
+            "tc1": {
+              "association": "node",
+              "node_id": 1
+            }
+          },
+          "time_offset_s": 0.0,
+          "time_window": [
+            10.0,
+            120.0
+          ],
+          "tolerance": {
+            "abs": {
+              "value": 1.0,
+              "unit": "delta_degC"
+            },
+            "rel": 0.0
+          },
+          "provenance": {
+            "test_id": "replace with the physical test id",
+            "rig": "replace with the climate chamber or rig",
+            "sensor_type": "replace with the sensor type",
+            "sensor_accuracy": {
+              "value": 0.5,
+              "unit": "K"
+            },
+            "date": "replace with the test date"
+          }
+        }
+      }
+    }
+  ]
+}

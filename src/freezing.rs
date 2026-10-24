@@ -5,6 +5,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 pub const SANDBOX_POLICY: &str = "harbor-cad-freezing-cpu-v1";
+/// Freezing and retained cooling stay CPU-only at OpenLB 145cd548 (see docs/gpu-backends.md).
+pub const GPU_REFUSAL: &str = "OpenLB total-enthalpy solidification is CPU-only: the pinned GPU CI builds no TotalEnthalpy/phase-change example, and the native energy ledger reads populations on the host between collide and stream every step; no GPU fallback";
 const FIELD_UNITS: &str =
     "i:1,j:1,x_m:m,y_m:m,material:1,specific_enthalpy_j_kg:J/kg,temperature_k:K,liquid_fraction:1";
 
@@ -135,8 +137,10 @@ impl crate::contracts::ExecutionPlan {
             atmosphere: None,
             atmospheric_transport: None,
             cad_variant: None,
+            cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
             stages: vec![
                 Stage {
                     id: "freezing".into(),
@@ -264,6 +268,9 @@ impl FreezingReferenceSpec {
 
     pub fn scale(&self) -> Result<FreezingScale> {
         let positive = |v: f64| v.is_finite() && v > 0.;
+        if self.backend != "cpu" {
+            return Err(crate::Error::Unqualified(GPU_REFUSAL.into()));
+        }
         let n = u64::from(self.resolution);
         let span = self.melting_temperature_k - self.cold_wall_temperature_k;
         let domain = self.material_temperature_domain_k;

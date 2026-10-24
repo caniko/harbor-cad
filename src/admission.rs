@@ -53,6 +53,29 @@ pub fn shared_root() -> Result<PathBuf> {
     safe_path(&home, ".local/state/harbor-cad/admission")
 }
 
+/// The installed same-user KFD exclusion receipt, if any. Read-only over the
+/// authoritative admission policy — the same trusted store `authority install`
+/// writes — so a second live KFD GPU is admitted by operator policy alone,
+/// never by an ad-hoc file beside a job. Absent store/policy yields `None`.
+pub fn installed_kfd_exclusion() -> Result<Option<crate::devices::KfdExclusion>> {
+    let root = shared_root()?;
+    let db = root.join("admission.sqlite3");
+    if !db.exists() {
+        return Ok(None);
+    }
+    private_dir(&root)?;
+    regular_private(&safe_path(&root, "admission.sqlite3")?)?;
+    let connection = Connection::open_with_flags(&db, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+    let data: Option<String> = connection
+        .query_row("SELECT authority FROM policy WHERE id=1", [], |r| r.get(0))
+        .optional()?;
+    let Some(data) = data else {
+        return Ok(None);
+    };
+    let authority: HostAuthority = serde_json::from_str(&data)?;
+    Ok(authority.kfd_exclusion)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 struct Reservation {
     root: String,

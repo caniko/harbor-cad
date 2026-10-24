@@ -57,6 +57,7 @@ fn archived_source(store: &Store) -> (String, ExecutionPlan) {
         overrides: vec![],
         native_runtimes: vec![runtime.into()],
         allowed_input_roots: vec![profile.allowed_input_root.clone()],
+        kfd_exclusion: None,
     };
     let authorization =
         ExecutionAuthorization::capture(&source_plan, &profile, &binding, &authority).unwrap();

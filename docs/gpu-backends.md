@@ -95,6 +95,24 @@ validation still need their own gates.
    selected-node containment and durable CLI/MCP B1, with retained-field hashes,
    worker restart, cancellation and runtime/reservation release. Multi-GPU KFD
    isolation and physical-validation statuses remain separate.
+   - **Multi-GPU KFD exclusion (`harbor-cad-native-hip-kfd-exclusion-v1`).**
+     When a second GPU is bound to amdgpu, `from_topology` admits the selected
+     card beside the foreign one only with an installed `HostAuthority`
+     `kfd_exclusion` receipt that matches the exact running kernel
+     (release + `/proc/version` digest), the selected PCI and the foreign-PCI
+     set; otherwise it keeps the single-KFD refusal. The receipt's direct
+     evidence — foreign `ACQUIRE_VM`/`ALLOC_MEMORY_OF_GPU`/`CREATE_QUEUE` all
+     `EINVAL`, selected card as positive control — is produced in Phase 4 by:
+
+     ```sh
+     python3 scripts/verify_kfd_exclusion.py \
+       --selected-pci 0000:03:00.0 --foreign-pci 0000:7d:00.0 \
+       --kfd-source /nix/store/<kernel>-dev/.../include/uapi/linux/kfd_ioctl.h \
+       --output /absolute/new/exclusion-directory
+     ```
+
+     It is on security hold until the opt-in amdgpu boot entry binds the iGPU;
+     the exclusion logic is unit-tested with a mocked ioctl layer meanwhile.
 5. Advance HIP/Kokkos numerical filters only against an exact compatible
    ParaView/VTK/Viskores set. EGL rendering and VAAPI media retain their own
    selected devices and receipts.
@@ -103,3 +121,71 @@ Version-1 approvals retain their serialization. B1 planning now accepts explicit
 `hip` or `cuda` compute selections; `rocm` is not a backend alias and `vulkan`
 cannot silently select another solver. Existing historical execution bindings
 continue to name their original packages and policy.
+
+## Recipe backends
+
+Status 2026-10-23, from source inspection of OpenLB `145cd548` only. Nothing
+below has been built or run on the card yet.
+
+| Recipe | Backend | Why |
+|---|---|---|
+| Airflow channel (`openlb`) | HIP qualified for the scoped fixture; CUDA best-effort | See above. |
+| Planar wetting (`openlb_wetting`) | CPU; **HIP implemented, unqualified** | Upstream GPU CI (`.ci/build_cuda_only.sh`) builds `examples/multiComponent/contactAngle2d`, the example this driver wraps. CUDA is not offered: the driver has no CUDA device-identity code. |
+| Solidification (`openlb_freezing`) | CPU only; typed `Unqualified` refusal | Upstream GPU CI builds no `TotalEnthalpy` example (`stefanMelting2d` and `galliumMelting2d` are absent). The driver's energy ledger also reads populations on the host between `collide()` and `AndStream()` every step. Porting either would mean new numerical code to qualify. |
+| Retained cooling (`openlb_retained_cooling`) | CPU only; the plan cannot request a GPU | Same total-enthalpy stack, plus Bouzidi half-link post-processors applied to host cells after every stream. |
+| FEM (CalculiX) | CPU | No HIP sparse direct solver is integrated. SPOOLES is CPU-only, and the CUDA PaStiX/PaRSEC candidates are inspection-only. |
+| Spectral (Mitsuba/Dr.Jit) | CPU | Dr.Jit has no HIP backend. |
+
+The HIP wetting driver follows the airflow driver. It selects and verifies the
+PCI/UUID card before allocating anything and rejects a silent CPU block. Its
+receipt carries the same device, compiled-runtime and kernel-completion fields,
+which the worker checks with `HipIdentity::verify_receipt`. Two GPU-specific
+corrections keep the CPU numerics unchanged:
+
+- Upstream initialization mixes host and device stages, so the driver replays
+  them in the CPU order with explicit transfers.
+- The Simulation context, which uploads host state, is re-entered only after
+  retained observations, never on every step.
+
+Plans put the selection both in the descriptor and on the stage
+(`GpuRequirement::Required`). They reserve VRAM equal to the host allowance, as
+airflow does. A packaged backend that differs from the plan is refused, and
+there is no CPU fallback. CPU descriptors omit `selection`, so their digests
+are unchanged.
+
+Phase-B qualification for wetting, after the security hold:
+
+1. Build `.#wetting-native-cpu`, `.#wetting-native-hip` and
+   `.#runtime-wetting-worker-hip` through `canix cache binary build`.
+2. Run `scripts/verify_wetting_hip.py --cpu-native … --hip-native … --pci
+   0000:03:00.0 --uuid GPU-… --output …` inside the bounded service. It
+   requires phase relative L2 ≤ 1e-10 against CPU, exact coordinates and
+   material IDs, the unchanged mass and angle gates, and six identity or
+   fallback rejections that must happen before any output. Velocity is a
+   diagnostic.
+3. Run the worker B1-style gate with the HIP runtime.
+
+**Routing.** Each role names its own PCI, and reservations are per physical
+card, so Render (EGL) and Media (VAAPI) can name a different card from
+Compute. The Granite Ridge iGPU (`0000:7d:00.0`) is bound to `vfio-pci`, so it
+has no render node today. Binding it to `amdgpu` would add a second KFD GPU
+node, and the qualified single-KFD-GPU HIP policy would then refuse every HIP
+compute stage. Concurrent iGPU render/media with dGPU HIP compute therefore
+needs the multi-GPU KFD exclusion gate first. Until then, the iGPU can serve
+Render/Media only on a host with no HIP compute.
+
+**Render/media sandbox.** EGL and VAAPI stages run under
+`harbor-cad-render-drm-single-node-v1` and
+`harbor-cad-media-drm-single-node-v1` (`DrmSandbox::apply` in
+`src/devices.rs`). Bubblewrap's fresh `/dev` receives only the selected
+`/dev/dri/renderD*` node and its `by-path` alias, the selected PCI/DRM sysfs
+attributes and `/run/opengl-driver`. They never get `/dev/kfd` or another
+card. The adapter reads the policy from `HARBOR_CAD_DRM_POLICY` and lists
+`/dev/dri`. It refuses unless it sees exactly that node and no KFD, and
+records the result as `sandbox` in its receipt. The worker refuses a receipt
+whose policy, node or listing differs. With one visible node, ParaView's EGL
+device index can map only to that node. The current display is still checked
+after every render. There is no CPU or other-GPU fallback. The policy has
+not yet been run natively: `scripts/verify_egl_fields.py` and
+`scripts/verify_vaapi.py` assert it. Single-node visibility is one precondition
+for the iGPU routing above. The KFD exclusion gate is still required.

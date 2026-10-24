@@ -2,6 +2,7 @@
 //! Worker ownership/admission and multi-GPU exclusion remain separate gates.
 use clap::Parser;
 use harbor_cad::{
+    contracts::Role,
     devices::{DrmSandbox, HipSandbox},
     lifecycle::NativeProcess,
     resources::{card_reservation_root, try_reserve_cards},
@@ -106,17 +107,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ])
         .arg(&work)
         .args(["/work", "--chdir", "/work"]);
-    let binding = if args.operation == "openlb" {
+    let (binding, sandbox_policy) = if args.operation == "openlb" {
         let binding = HipSandbox::resolve(
             &args.pci,
             args.uuid.as_deref().ok_or("exact HIP UUID required")?,
         )?;
         binding.apply(&mut command);
-        serde_json::to_value(binding)?
+        (serde_json::to_value(binding)?, None)
     } else {
         let binding = DrmSandbox::resolve(&args.pci)?;
-        binding.apply(&mut command);
-        serde_json::to_value(binding)?
+        let policy = if args.operation == "render" {
+            binding.apply(Role::Render, "egl", &mut command)?
+        } else {
+            binding.apply(Role::Media, "vaapi", &mut command)?
+        };
+        (serde_json::to_value(binding)?, Some(policy))
     };
     if args.deny_render_node {
         command.args(["--tmpfs", "/dev/dri"]);
@@ -173,7 +178,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "{}",
         serde_json::json!({
-            "binding": binding, "cgroup": group, "memory_peak_bytes": peak_bytes,
+            "binding": binding, "sandbox_policy": sandbox_policy, "cgroup": group, "memory_peak_bytes": peak_bytes,
             "cpu_usage_usec": cpu_usage_usec, "scope": "entire owned probe service",
             "physical_card_reservation": "production shared anchor held",
         })

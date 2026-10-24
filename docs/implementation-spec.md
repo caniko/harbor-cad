@@ -105,6 +105,7 @@ Use whole-device flow/thermal models and local gap/wetting submodels. Estimate a
 | Snow | Prescribed coverage, insulation and blocked openings | Snow deposition or adhesion |
 | Retained water → freeze | Conservative state transfer; phase fractions, temperature, energy balance | Expansion pressure, fracture or freeze–thaw lifetime |
 | Solar / UV | Angular direct/diffuse inputs, surface irradiance and time-integrated dose | Material lifetime without calibration |
+| Enclosure steady thermal | Conformal Gmsh mesh of registered closed solids; CalculiX steady conduction with declared power, film, optional solar/radiation and a lumped internal-air node; recomputed energy balance | Transients, internal convection, condensation, contact resistance or product thermal acceptance |
 
 Start with one-way transfers. Record source/destination regions, units, orientation, interpolation and conservation losses. **Velocity alone does not supply a convection coefficient:** use documented measurements/correlations or validated thermal-flow data with heat flux and wall/reference temperatures; reject ill-conditioned conversions.
 
@@ -149,6 +150,9 @@ harbor-cad case init|validate|plan
 harbor-cad job submit|status|logs|cancel
 harbor-cad results describe|sample|compare
 harbor-cad render | video | artifact list|export
+harbor-cad cad solid-mesh|enclosure-fixture | enclosure-thermal
+harbor-cad results correlate | materials list|show | cost estimate
+harbor-cad design init|validate|plan|submit|propose|status|export
 harbor-cad-mcp --profile cad|simulation|results|all
 ```
 
@@ -172,3 +176,134 @@ Finish vertical slices, not placeholder adapters. One owner controls schemas/loc
 CI covers formatting/lints, builds, schemas, CPU references, applicability rejection, units, source immutability, paths and export round trips. Lifecycle tests cover idempotency, disconnect, worker crash, cancellation, partial writes and disk exhaustion. Hardware qualification independently tests mixed/ambiguous routes, actual execution, JIT/sandbox compatibility and rejected software fallback. Never run untrusted PR code on trusted GPU hosts carrying secrets/private models.
 
 Unavailable hardware is **unqualified**, not passed or a reason to stop unblocked work. Handoffs report changed files, immutable pins, exact commands/outcomes, artifact paths, device evidence, unsupported combinations and missing physical inputs. B1 completes integration, not environmental certification; engineering completion requires each recipe's evidence gates.
+
+## 10. Product design loop and realism
+
+The first product is an outdoor wall/pole-mounted electronics enclosure at pilot
+volume (10–100 units). The following extend §4–§9; they never relax them.
+
+**Design loop** ([design-loop.md](design-loop.md)). One approval digest over a
+canonical envelope bounds a whole search: at most 8 continuous grid parameters
+and 2 categorical choices, ≤32 evaluations, ≤3 refinements, explicit wall-time
+and artifact budgets. Every child is an ordinary immutable job through the normal
+submission, binding, staging and admission path; the loop never schedules or
+executes anything itself. Chained children are planning requests on a fixed
+allowlist, derived through the same dispatch as CLI/MCP planning, keyed
+idempotently by design, envelope digest, candidate, role and upstream job, and
+re-derived identically after restart. Failed upstreams or refused derivations
+block dependents. Template substitution is strict and unit-checked. Unknown
+metrics are unknown and unknown constraints never pass. Ranking is
+feasibility-first. Exports label each constraint `simulated`,
+`estimated`/`calibrated`, `prescribed`, `measured` or `unknown`; any synthetic
+input is listed and prefixes the export statement with `SYNTHETIC`.
+
+**Materials and cost** ([materials-and-cost.md](materials-and-cost.md)). Material
+and process data are sourced `PhysicalInput` ranges with URL, title and access
+date, or explicit `missing` with a reason; nothing is defaulted. Unit cost,
+manufacturability and service margins are estimate-only screens with stated
+assumptions and price years, not quotes or qualified properties. Any missing
+input yields a null total and an `unknown` check, never a pass.
+
+**Design conditions and finishes** ([design-conditions.md](design-conditions.md)).
+The ETSI EN 300 019-1-4 outdoor climatic classes, cited external film
+coefficients and surface-finish optics are strict, cited data. Each class
+yields a hot design point (high ambient, peak solar, low film) and a cold
+design point (low ambient, no solar, high film). A finish overrides an opaque
+material's optics, while transparent glazing stays refused. Design metrics
+reference these values as `sourced` keys. They are classification severities,
+not site weather.
+
+**Measured-data correlation and calibration** ([correlation.md](correlation.md)).
+Score a bounded measured CSV under the profile's input root against one
+succeeded, numerically verified thermal history: SI conversion, explicit probe
+mapping, time offset and inclusive window, interpolation without extrapolation,
+per-probe and pooled error metrics, and sensor accuracy reported, not absorbed.
+Calibration is an ordinary design envelope whose objective is that pooled RMSE.
+Agreement and calibrated values hold only for that rig, test and sensor placement;
+they never upgrade the source job's qualification.
+
+**Enclosure thermal recipe** ([enclosure-thermal.md](enclosure-thermal.md)).
+Mesh registered closed solids conformally with pinned single-thread Gmsh, reject
+overlaps and non-reproducing mesh bytes, and bind the thermal plan to the
+succeeded mesh job's digests. Every physical value is a declared or sourced
+input; library materials take the conservative range end. Rust recomputes
+per-region statistics and every energy term from the native field before
+publication; energy-balance error and air-node residual stay within the
+approved tolerance (≤1e-3). Exterior-face selection by ray escape is a labelled
+heuristic. Native CalculiX execution, mesh quality on real geometry and physical
+validation are separate gates.
+
+**Supported-power sweep** ([design-loop.md](design-loop.md)). PCB dissipation is
+a swept design quantity, not an operator input. Two `power_sweep` solves at the
+ends of the declared range (pilot 1 W and 15 W) give per-criterion chords; the
+PCB peak and the internal air are each bounded against the component limit
+(components sit between them), and the housing peak against the route's
+conservative service limit less the required margin. `max_supported_pcb_power_w`
+is the smallest crossing, clamped to the range, and is unknown when the low end
+already fails or a temperature does not rise with power. Superposition is
+allowed only for a linear model: `power_sweep` with T⁴ radiation is refused.
+The refine tier verifies the result with a third solve within 0.5 K, otherwise
+the metric is unknown. `pareto_metric` reports cost vs supported power. The
+85 °C industrial-grade limit and the FR-4/copper board conductivities are cited
+conservative defaults, not product data; replace them with the limiting part's
+datasheet and the real stack-up.
+
+**Conservative bounds** ([enclosure-thermal.md](enclosure-thermal.md)). A credit
+that is not a direct physical model must be a provable bound, labelled
+`conservative_bound` in the receipt's applicability and in the export's
+`conservative_bounds` (statement prefix `CONSERVATIVE BOUND`), or no credit is
+given. Each uses low-end optics and conductivities; a missing sourced value
+yields no credit, never a default.
+
+- Transparent glazing under solar refuses unless
+  `transparent_solar: "deposit_incident_in_cavity"` deposits all irradiance
+  incident on the pane's sun-facing faces into the internal air node.
+- Exterior radiation, `radiation: "linearized_lower_bound"`: h_r = 4εσTa³ added
+  to the exterior film. The tangent of the convex T⁴ bounds grey exchange from
+  below for any T; the receipt reports the coldest exterior node and the claim
+  is refused if it is below ambient.
+- Orthotropic board: a declared axis-aligned plate takes its through-plane value
+  along its thinnest axis and its in-plane value along the others. The pilot's
+  in-plane 8.1 W/(m·K) bounds conduction only for a board with at least one
+  continuous copper plane. That is a **board requirement**, confirmed by the
+  operator for the pilot PCB on 2026-10-24; a board without one uses the
+  isotropic 0.26 W/(m·K).
+- Cavity radiation, `cavity_radiation: "linearized_lower_bound"`: a two-surface
+  ε_eff from low-end interior emissivities and h_cr = 4ε_effσTa³ through one
+  radiation node. It is credited only when the receipt's postcondition holds
+  (minimum board-surface node ≥ maximum wall node ≥ ambient); the adapter and
+  Rust both refuse otherwise and the metric stays unknown.
+- The component margin uses the hotter of the board peak and the internal air.
+  The internal cavity film is the cited low end of `enclosed-cavity-natural`.
+  The route categorical lists only compatible `MATERIAL__PROCESS__FINISH`
+  triples.
+
+**Proposer** ([design-loop.md](design-loop.md)). After the screen, up to three
+pattern searches start from the best screening points ranked
+feasibility-first and split the remaining screen budget without extra
+evaluations. At the step floor, an edge step follows an active constraint by a
+secant on known margins. Every proposal is a pure function of the envelope and
+the stored candidates, so a restarted worker regenerates the same sequence. A
+design whose searches do not all converge ends `budget_exhausted`. A surrogate
+remains the upgrade path.
+
+**Render/media DRM sandbox** ([gpu-backends.md](gpu-backends.md)). EGL and VAAPI
+stages run under `harbor-cad-render-drm-single-node-v1` and
+`harbor-cad-media-drm-single-node-v1`: the sandbox `/dev` holds only the
+selected render node and its `by-path` alias, never `/dev/kfd` or another
+card. The adapter attests its view in receipt `sandbox`, and the worker refuses
+a receipt whose policy, node or listing is missing or differs. There is no CPU
+or other-GPU fallback. Adapters from earlier packages do not emit this
+evidence, so native render/media needs newly built packages and stays
+unqualified until it is rerun.
+
+**Multi-GPU KFD exclusion** ([host-authority.md](host-authority.md)). HIP compute
+beside a second amdgpu-bound GPU is admitted only with an installed
+`HostAuthority` `kfd_exclusion` receipt (`harbor-cad-native-hip-kfd-exclusion-v1`)
+that matches the exact running kernel (release and `/proc/version` digest), the
+selected PCI and the foreign-PCI set. Any drift restores the single-KFD
+refusal, and there is no environment bypass. `scripts/verify_kfd_exclusion.py`
+produces the evidence: foreign `ACQUIRE_VM`, `ALLOC_MEMORY_OF_GPU` and
+`CREATE_QUEUE` each return `EINVAL`, with the selected card as positive control.
+It has not run, because the iGPU stays on `vfio-pci` until an opt-in amdgpu boot
+entry is active.

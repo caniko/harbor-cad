@@ -294,6 +294,7 @@ pub enum StageOperation {
     Render,
     Video,
     Bundle,
+    EnclosureFixture,
 }
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -436,9 +437,13 @@ pub struct ExecutionPlan {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cad_variant: Option<crate::cad_variant::CadVariantSpec>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub cad_sheet_variant: Option<crate::cad_sheet_variant::CadSheetVariantSpec>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cad_transport: Option<crate::cad_transport::CadSpectralTransportSpec>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub retained_cooling: Option<crate::cooling_execution::CoolingExecutionSpec>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cad_solids: Option<crate::enclosure_thermal::CadSolidsRecipe>,
 }
 
 // Decode versions explicitly: v1's field set remains strict, and v2 requires
@@ -485,10 +490,20 @@ struct ExecutionPlanRecord {
     atmospheric_transport: Option<crate::atmospheric_transport::AtmosphericTransportSpec>,
     #[serde(default, deserialize_with = "cad_variant_spec")]
     cad_variant: Option<crate::cad_variant::CadVariantSpec>,
+    #[serde(default, deserialize_with = "cad_sheet_variant_spec")]
+    cad_sheet_variant: Option<crate::cad_sheet_variant::CadSheetVariantSpec>,
     #[serde(default, deserialize_with = "cad_transport_spec")]
     cad_transport: Option<crate::cad_transport::CadSpectralTransportSpec>,
     #[serde(default, deserialize_with = "cooling_execution_spec")]
     retained_cooling: Option<crate::cooling_execution::CoolingExecutionSpec>,
+    #[serde(default, deserialize_with = "cad_solids_spec")]
+    cad_solids: Option<crate::enclosure_thermal::CadSolidsRecipe>,
+}
+
+fn cad_solids_spec<'de, D: serde::Deserializer<'de>>(
+    decoder: D,
+) -> std::result::Result<Option<crate::enclosure_thermal::CadSolidsRecipe>, D::Error> {
+    crate::enclosure_thermal::CadSolidsRecipe::deserialize(decoder).map(Some)
 }
 
 fn cooling_execution_spec<'de, D: serde::Deserializer<'de>>(
@@ -507,6 +522,11 @@ fn atmospheric_transport_spec<'de, D: serde::Deserializer<'de>>(
     decoder: D,
 ) -> std::result::Result<Option<crate::atmospheric_transport::AtmosphericTransportSpec>, D::Error> {
     crate::atmospheric_transport::AtmosphericTransportSpec::deserialize(decoder).map(Some)
+}
+fn cad_sheet_variant_spec<'de, D: serde::Deserializer<'de>>(
+    decoder: D,
+) -> std::result::Result<Option<crate::cad_sheet_variant::CadSheetVariantSpec>, D::Error> {
+    crate::cad_sheet_variant::CadSheetVariantSpec::deserialize(decoder).map(Some)
 }
 fn cad_variant_spec<'de, D: serde::Deserializer<'de>>(
     decoder: D,
@@ -599,6 +619,14 @@ impl<'de> Deserialize<'de> for ExecutionPlan {
     fn deserialize<D: serde::Deserializer<'de>>(decoder: D) -> std::result::Result<Self, D::Error> {
         use serde::de::Error;
         let plan = ExecutionPlanRecord::deserialize(decoder)?;
+        if plan.cad_solids.is_some() {
+            if !crate::enclosure_thermal::envelope(&plan) {
+                return Err(D::Error::custom(
+                    "strict source-bound version-7/8 general-solid mesh or enclosure thermal recipe required",
+                ));
+            }
+            return Ok(plan);
+        }
         if plan.retained_cooling.is_some() {
             if !plan.retained_cooling_envelope() {
                 return Err(D::Error::custom(
@@ -615,7 +643,7 @@ impl<'de> Deserialize<'de> for ExecutionPlan {
             }
             return Ok(plan);
         }
-        if plan.cad_variant.is_some() {
+        if plan.cad_variant.is_some() || plan.cad_sheet_variant.is_some() {
             if !plan.cad_variant_envelope() {
                 return Err(D::Error::custom(
                     "strict source-bound version-16 CAD variant required",
@@ -727,8 +755,8 @@ impl JsonSchema for ExecutionPlan {
             {"if":{"properties":{"schema_version":{"const":5}}},"then":{"required":["fem"],"properties":{"fem":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["thermal"]}]}}},
             {"if":{"properties":{"schema_version":{"const":6}}},"then":{"required":["thermal"],"properties":{"thermal":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]}]}},"else":{"not":{"required":["thermal"]}}},
             {"if":{"properties":{"schema_version":{"enum":[1,2,3,4]}}},"then":{"required":["case"],"properties":{"case":{"type":"object"}},"not":{"required":["fem"]}}},
-            {"if":{"properties":{"schema_version":{"enum":[7,8]}}},"then":{"required":["cad_source"],"properties":{"cad_source":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]},{"required":["thermal"]}]}},"else":{"not":{"required":["cad_source"]}}},
-            {"if":{"properties":{"schema_version":{"const":8}}},"then":{"required":["imported_fem"],"properties":{"imported_fem":{"type":"object"}}},"else":{"not":{"required":["imported_fem"]}}},
+            {"if":{"properties":{"schema_version":{"enum":[7,8]}}},"then":{"oneOf":[{"required":["cad_source"]},{"required":["cad_solids"]}],"properties":{"cad_source":{"type":"object"},"cad_solids":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]},{"required":["thermal"]}]}},"else":{"not":{"anyOf":[{"required":["cad_source"]},{"required":["cad_solids"]}]}}},
+            {"if":{"properties":{"schema_version":{"const":8}}},"then":{"oneOf":[{"required":["imported_fem"]},{"required":["cad_solids"]}],"properties":{"imported_fem":{"type":"object"}}},"else":{"not":{"required":["imported_fem"]}}},
             {"if":{"properties":{"schema_version":{"const":9}}},"then":{"required":["wetting"],"properties":{"wetting":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]},{"required":["thermal"]},{"required":["cad_source"]},{"required":["imported_fem"]},{"required":["contact"]}]}},"else":{"not":{"required":["wetting"]}}},
             {"if":{"properties":{"schema_version":{"const":10}}},"then":{"required":["contact"],"properties":{"contact":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]},{"required":["thermal"]},{"required":["cad_source"]},{"required":["imported_fem"]},{"required":["wetting"]}]}},"else":{"not":{"required":["contact"]}}},
             {"if":{"properties":{"schema_version":{"const":11}}},"then":{"required":["thermal_contact"],"properties":{"thermal_contact":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]},{"required":["thermal"]},{"required":["cad_source"]},{"required":["imported_fem"]},{"required":["wetting"]},{"required":["contact"]}]}},"else":{"not":{"required":["thermal_contact"]}}},
@@ -748,7 +776,7 @@ impl JsonSchema for ExecutionPlan {
             conditions.push(serde_json::json!(
                 {"if":{"properties":{"schema_version":{"const":15}}},"then":{"required":["atmospheric_transport"],"properties":{"atmospheric_transport":{"type":"object"}},"not":{"anyOf":[{"required":["case"]},{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]},{"required":["thermal"]},{"required":["cad_source"]},{"required":["imported_fem"]},{"required":["wetting"]},{"required":["contact"]},{"required":["thermal_contact"]},{"required":["freezing"]},{"required":["spectral"]},{"required":["atmosphere"]}]}},"else":{"not":{"required":["atmospheric_transport"]}}}
             ));
-            conditions.push(serde_json::json!({"if":{"properties":{"schema_version":{"const":16}}},"then":{"required":["cad_variant","case"],"properties":{"cad_variant":{"type":"object"},"case":{"type":"object"}},"not":{"anyOf":[{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]},{"required":["thermal"]},{"required":["cad_source"]},{"required":["imported_fem"]},{"required":["wetting"]},{"required":["contact"]},{"required":["thermal_contact"]},{"required":["freezing"]},{"required":["spectral"]},{"required":["atmosphere"]},{"required":["atmospheric_transport"]}]}},"else":{"not":{"required":["cad_variant"]}}}));
+            conditions.push(serde_json::json!({"if":{"properties":{"schema_version":{"const":16}}},"then":{"required":["case"],"oneOf":[{"required":["cad_variant"]},{"required":["cad_sheet_variant"]}],"properties":{"cad_variant":{"type":"object"},"cad_sheet_variant":{"type":"object"},"case":{"type":"object"}},"not":{"anyOf":[{"required":["source"]},{"required":["frames"]},{"required":["filter"]},{"required":["fem"]},{"required":["thermal"]},{"required":["cad_source"]},{"required":["imported_fem"]},{"required":["wetting"]},{"required":["contact"]},{"required":["thermal_contact"]},{"required":["freezing"]},{"required":["spectral"]},{"required":["atmosphere"]},{"required":["atmospheric_transport"]}]}},"else":{"not":{"anyOf":[{"required":["cad_variant"]},{"required":["cad_sheet_variant"]}]}}}));
         }
         if let Some(conditions) = schema
             .get_mut("allOf")
@@ -771,6 +799,8 @@ impl JsonSchema for ExecutionPlan {
                 "atmosphere",
                 "atmospheric_transport",
                 "cad_variant",
+                "cad_sheet_variant",
+                "cad_solids",
             ]
             .map(|key| serde_json::json!({"required":[key]}));
             conditions.push(serde_json::json!({"if":{"properties":{"schema_version":{"const":17}}},"then":{"required":["cad_transport"],"properties":{"cad_transport":{"type":"object"}},"not":{"anyOf":prohibited}},"else":{"not":{"required":["cad_transport"]}}}));
@@ -805,6 +835,7 @@ impl ExecutionPlan {
             && self.atmosphere.is_none()
             && self.atmospheric_transport.is_none()
             && self.cad_variant.is_none()
+            && self.cad_sheet_variant.is_none()
             && self.cad_transport.is_none()
     }
     fn cad_transport_envelope(&self) -> bool {
@@ -826,10 +857,11 @@ impl ExecutionPlan {
             && self.atmosphere.is_none()
             && self.atmospheric_transport.is_none()
             && self.cad_variant.is_none()
+            && self.cad_sheet_variant.is_none()
     }
     fn cad_variant_envelope(&self) -> bool {
         self.schema_version == 16
-            && self.cad_variant.is_some()
+            && (self.cad_variant.is_some() != self.cad_sheet_variant.is_some())
             && self.case.is_some()
             && self.source.is_none()
             && self.frames.is_none()
@@ -978,6 +1010,12 @@ impl ExecutionPlan {
             .ok_or_else(|| invalid("fluid/CAD case required for this operation"))
     }
     pub fn science_id(&self) -> Result<String> {
+        if let Some(recipe) = &self.cad_solids {
+            if !crate::enclosure_thermal::envelope(self) {
+                return Err(invalid("independent v7/v8 general-solid recipe required"));
+            }
+            return digest(recipe);
+        }
         if let Some(spec) = &self.retained_cooling {
             if !self.retained_cooling_envelope() {
                 return Err(invalid(
@@ -997,6 +1035,12 @@ impl ExecutionPlan {
         if let Some(spec) = &self.cad_variant {
             if !self.cad_variant_envelope() {
                 return Err(invalid("independent v16 controlled CAD variant required"));
+            }
+            return digest(&(self.channel_case()?.science_id()?, spec));
+        }
+        if let Some(spec) = &self.cad_sheet_variant {
+            if !self.cad_variant_envelope() {
+                return Err(invalid("independent v16 spreadsheet CAD variant required"));
             }
             return digest(&(self.channel_case()?.science_id()?, spec));
         }
@@ -1102,8 +1146,10 @@ impl ExecutionPlan {
             atmosphere: None,
             atmospheric_transport: None,
             cad_variant: None,
+            cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
             stages: vec![
                 Stage {
                     id: "filter".into(),
@@ -1181,8 +1227,10 @@ impl ExecutionPlan {
             atmosphere: None,
             atmospheric_transport: None,
             cad_variant: None,
+            cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
             stages: vec![
                 Stage {
                     id: "video".into(),
@@ -1309,8 +1357,10 @@ impl ExecutionPlan {
             atmosphere: None,
             atmospheric_transport: None,
             cad_variant: None,
+            cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
         };
         crate::estimates::minimum(&plan)?.apply(&mut plan);
         plan.validate()?;
@@ -1360,8 +1410,10 @@ impl ExecutionPlan {
             atmosphere: None,
             atmospheric_transport: None,
             cad_variant: None,
+            cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
         };
         plan.validate()?;
         Ok(plan)
@@ -1423,8 +1475,10 @@ impl ExecutionPlan {
             atmosphere: None,
             atmospheric_transport: None,
             cad_variant: None,
+            cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
         };
         plan.validate()?;
         Ok(plan)
@@ -1502,8 +1556,10 @@ impl ExecutionPlan {
             atmosphere: None,
             atmospheric_transport: None,
             cad_variant: None,
+            cad_sheet_variant: None,
             cad_transport: None,
             retained_cooling: None,
+            cad_solids: None,
         };
         crate::estimates::minimum(&plan)?.apply(&mut plan);
         plan.validate()?;
@@ -1596,10 +1652,13 @@ impl ExecutionPlan {
         if let Some(fem) = &self.fem {
             fem.validate()?;
         }
-        if (self.retained_cooling.is_some() && !self.retained_cooling_envelope())
+        if (self.cad_solids.is_some() && !crate::enclosure_thermal::envelope(self))
+            || (self.retained_cooling.is_some() && !self.retained_cooling_envelope())
             || (self.cad_transport.is_some() && !self.cad_transport_envelope())
-            || (self.cad_variant.is_some() && !self.cad_variant_envelope())
-            || !(self.retained_cooling_envelope()
+            || ((self.cad_variant.is_some() || self.cad_sheet_variant.is_some())
+                && !self.cad_variant_envelope())
+            || !(crate::enclosure_thermal::envelope(self)
+                || self.retained_cooling_envelope()
                 || self.cad_transport_envelope()
                 || self.cad_variant_envelope()
                 || self.atmospheric_transport_envelope()
@@ -1666,8 +1725,29 @@ impl ExecutionPlan {
         if let Some(spec) = &self.cad_transport {
             spec.validate_plan(self)?;
         }
-        if let Some(spec) = &self.cad_variant {
+        let variant = if let Some(spec) = &self.cad_variant {
             spec.validate()?;
+            let regions = vec![spec.request.region_name.clone()];
+            let synthetic = spec.source.geometry.synthetic;
+            Some((
+                regions,
+                synthetic,
+                &spec.document,
+                &spec.request.geometry_tolerance,
+            ))
+        } else if let Some(spec) = &self.cad_sheet_variant {
+            spec.validate()?;
+            let regions = spec.request.regions.clone();
+            Some((
+                regions,
+                spec.source.synthetic,
+                &spec.document,
+                &spec.request.geometry_tolerance,
+            ))
+        } else {
+            None
+        };
+        if let Some((regions, synthetic, document, tolerance)) = variant {
             let case = self.channel_case()?;
             if self.policy == "ci"
                 || self.stages.len() != 2
@@ -1687,17 +1767,19 @@ impl ExecutionPlan {
                 || !self.observation.preview_times_s.is_empty()
                 || !self.observation.checkpoint_times_s.is_empty()
                 || self.observation.preview_may_drop
-                || case.regions != [spec.request.region_name.clone()]
-                || case.geometry.synthetic != spec.source.geometry.synthetic
+                || case.regions != regions
+                || case.geometry.synthetic != synthetic
                 || case.geometry.source != "source-document.FCStd"
-                || case.geometry.sha256.as_deref() != Some(spec.document.sha256.as_str())
-                || case.geometry_tolerance.si("length")?
-                    != spec.request.geometry_tolerance.si("length")?
+                || case.geometry.sha256.as_deref() != Some(document.sha256.as_str())
+                || case.geometry_tolerance.si("length")? != tolerance.si("length")?
             {
                 return Err(invalid(
                     "strict source-bound controlled CPU CAD-copy variant DAG and original region context required",
                 ));
             }
+        }
+        if self.cad_solids.is_some() {
+            crate::enclosure_thermal::validate_plan(self)?;
         }
         if let Some(source) = &self.cad_source {
             source.validate()?;
@@ -1793,9 +1875,11 @@ impl ExecutionPlan {
                 || !self.observation.checkpoint_times_s.is_empty()
                 || !self.observation.preview_times_s.is_empty()
                 || self.observation.preview_may_drop
+                || serde_json::to_value(&self.stages[0].selection)?
+                    != serde_json::to_value(&wetting.selection)?
             {
                 return Err(invalid(
-                    "exact independent CPU planar wetting DAG and retained native observations required",
+                    "exact independent planar wetting DAG, approved compute selection and retained native observations required",
                 ));
             }
         }
@@ -1974,13 +2058,22 @@ impl ExecutionPlan {
                     "freezing operation requires independent version-12 recipe",
                 ));
             }
-            if matches!(stage.operation, StageOperation::FemImported) && self.imported_fem.is_none()
+            if matches!(stage.operation, StageOperation::FemImported)
+                && self.imported_fem.is_none()
+                && self
+                    .cad_solids
+                    .as_ref()
+                    .and_then(|recipe| recipe.thermal.as_ref())
+                    .is_none()
             {
                 return Err(invalid(
                     "imported FEM requires a source-bound version-8 recipe",
                 ));
             }
-            if matches!(stage.operation, StageOperation::CadMesh) && self.cad_source.is_none() {
+            if matches!(stage.operation, StageOperation::CadMesh)
+                && self.cad_source.is_none()
+                && self.cad_solids.is_none()
+            {
                 return Err(invalid(
                     "imported CAD mesh requires a source-bound version-7 recipe",
                 ));
@@ -2023,9 +2116,9 @@ impl ExecutionPlan {
                 ));
             }
             let op_name = serde_json::to_string(&stage.operation)?;
-            if !operations.insert(op_name)
-                && !(self.thermal_contact.is_some()
-                    && stage.operation == StageOperation::ThermalReference)
+            if !(operations.insert(op_name)
+                || (self.thermal_contact.is_some()
+                    && stage.operation == StageOperation::ThermalReference))
             {
                 return Err(invalid(
                     "one stage per fixed-output adapter operation required",
@@ -2076,6 +2169,16 @@ impl ExecutionPlan {
                     "CAD inspection requires a scoped relative source and lowercase SHA-256 approval",
                 ));
             }
+            if stage.operation == StageOperation::EnclosureFixture
+                && (self.policy == "ci"
+                    || !self.channel_case()?.geometry.synthetic
+                    || self.channel_case()?.applicability.formulation != "enclosure_fixture"
+                    || self.channel_case()?.regions != crate::cad_sheet_variant::ENCLOSURE_REGIONS)
+            {
+                return Err(invalid(
+                    "synthetic enclosure fixture requires its fixed named regions and systemd policy",
+                ));
+            }
             let expected_role = match stage.operation {
                 StageOperation::Openlb if stage.gpu != GpuRequirement::CpuOnly => {
                     Some(Role::Compute)
@@ -2083,6 +2186,9 @@ impl ExecutionPlan {
                 StageOperation::Render => Some(Role::Render),
                 StageOperation::Video => Some(Role::Media),
                 StageOperation::NumericalFilter => Some(Role::Compute),
+                StageOperation::WettingReference if stage.gpu != GpuRequirement::CpuOnly => {
+                    Some(Role::Compute)
+                }
                 _ => None,
             };
             if let Some(role) = expected_role {
@@ -2327,7 +2433,7 @@ pub enum Operation {
         request: Box<crate::cad_source::CadMeshRequest>,
     },
     PlanCadVariant {
-        request: Box<crate::cad_variant::CadVariantRequest>,
+        request: Box<crate::cad_sheet_variant::AnyCadVariantRequest>,
     },
     PlanCadSpectralTransport {
         request: Box<crate::cad_transport::CadSpectralTransportRequest>,
@@ -2476,6 +2582,37 @@ pub enum Operation {
     CadRegions {
         job_id: String,
     },
+    ResultsCorrelate {
+        request: Box<crate::correlation::CorrelationRequest>,
+    },
+    MaterialsList {},
+    CostEstimate {
+        request: Box<crate::manufacturing::CostRequest>,
+    },
+    DesignPlan {
+        envelope: Box<crate::design::DesignEnvelope>,
+    },
+    DesignSubmit {
+        envelope: Box<crate::design::DesignEnvelope>,
+        approved_digest: String,
+        idempotency_key: String,
+    },
+    DesignPropose {
+        design_id: String,
+        candidate: Box<crate::design::ExternalCandidate>,
+    },
+    DesignStatus {
+        design_id: String,
+    },
+    DesignExport {
+        design_id: String,
+    },
+    PlanCadSolidMesh {
+        request: Box<crate::enclosure_thermal::SolidMeshRequest>,
+    },
+    PlanEnclosureThermal {
+        request: Box<crate::enclosure_thermal::EnclosureThermalRequest>,
+    },
 }
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -2525,6 +2662,12 @@ pub fn schemas() -> serde_json::Value {
     schemas["BuildProvenance"] =
         serde_json::json!(schemars::schema_for!(crate::provenance::BuildProvenance));
     schemas["StudyRequest"] = serde_json::json!(schemars::schema_for!(crate::study::StudyRequest));
+    schemas["SolidMeshRequest"] = serde_json::json!(schemars::schema_for!(
+        crate::enclosure_thermal::SolidMeshRequest
+    ));
+    schemas["EnclosureThermalRequest"] = serde_json::json!(schemars::schema_for!(
+        crate::enclosure_thermal::EnclosureThermalRequest
+    ));
     schemas["PreparedStudy"] =
         serde_json::json!(schemars::schema_for!(crate::study::PreparedStudy));
     schemas["AtmosphericReferenceSpec"] = serde_json::json!(schemars::schema_for!(
@@ -2644,5 +2787,26 @@ pub fn schemas() -> serde_json::Value {
         serde_json::json!(schemars::schema_for!(crate::cad_variant::CadVariantRequest));
     schemas["CadVariantSpec"] =
         serde_json::json!(schemars::schema_for!(crate::cad_variant::CadVariantSpec));
+    schemas["CorrelationRequest"] = serde_json::json!(schemars::schema_for!(
+        crate::correlation::CorrelationRequest
+    ));
+    schemas["CorrelationReport"] =
+        serde_json::json!(schemars::schema_for!(crate::correlation::CorrelationReport));
+    schemas["CostRequest"] =
+        serde_json::json!(schemars::schema_for!(crate::manufacturing::CostRequest));
+    schemas["CostReport"] =
+        serde_json::json!(schemars::schema_for!(crate::manufacturing::CostReport));
+    schemas["DesignEnvelope"] =
+        serde_json::json!(schemars::schema_for!(crate::design::DesignEnvelope));
+    schemas["ExternalCandidate"] =
+        serde_json::json!(schemars::schema_for!(crate::design::ExternalCandidate));
+    schemas["DesignStatus"] = serde_json::json!(schemars::schema_for!(crate::design::DesignStatus));
+    schemas["DesignReport"] = serde_json::json!(schemars::schema_for!(crate::design::DesignReport));
+    schemas["CadSheetVariantRequest"] = serde_json::json!(schemars::schema_for!(
+        crate::cad_sheet_variant::CadSheetVariantRequest
+    ));
+    schemas["CadSheetVariantSpec"] = serde_json::json!(schemars::schema_for!(
+        crate::cad_sheet_variant::CadSheetVariantSpec
+    ));
     schemas
 }

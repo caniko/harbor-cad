@@ -90,6 +90,37 @@ enum Commands {
         #[arg(long)]
         job: Option<String>,
     },
+    /// Sourced material and process data (typical ranges, not qualified properties).
+    Materials {
+        #[command(subcommand)]
+        command: Materials,
+    },
+    /// Local estimate-only unit cost and manufacturability screen; not a quote.
+    Cost {
+        #[command(subcommand)]
+        command: Cost,
+    },
+    /// Bounded approval-bound design loop over ordinary worker jobs.
+    Design {
+        #[command(subcommand)]
+        command: Design,
+    },
+    /// Plan steady enclosure conduction on a succeeded general-solid mesh job.
+    EnclosureThermal {
+        request: PathBuf,
+    },
+}
+#[derive(Subcommand)]
+enum Materials {
+    List,
+    /// Show the full sourced record of a material or process id.
+    Show {
+        id: String,
+    },
+}
+#[derive(Subcommand)]
+enum Cost {
+    Estimate { request: PathBuf },
 }
 #[derive(Subcommand)]
 enum Authority {
@@ -292,6 +323,13 @@ enum Cad {
         id: String,
         destination: PathBuf,
     },
+    /// Plan the fixed synthetic enclosure seed (Params sheet + named solids); submit with job submit.
+    EnclosureFixture {
+        #[arg(long, default_value = "research")]
+        policy: String,
+    },
+    /// Plan conformal multi-region tetrahedral meshing of registered closed solids.
+    SolidMesh { request: PathBuf },
 }
 #[derive(Subcommand)]
 enum Results {
@@ -358,6 +396,10 @@ enum Results {
     PlanAtmosphericTransport {
         request: PathBuf,
     },
+    /// Score measured test series (CSV under the worker input root) against a registered thermal history.
+    Correlate {
+        request: PathBuf,
+    },
 }
 #[derive(Subcommand)]
 enum Artifact {
@@ -373,6 +415,39 @@ enum Artifact {
         state: PathBuf,
         id: String,
         destination: PathBuf,
+    },
+}
+#[derive(Subcommand)]
+enum Design {
+    /// Print the CI-runnable analytical example envelope with a known optimum.
+    Init,
+    /// Validate an envelope and its strict template substitution; no worker.
+    Validate {
+        file: PathBuf,
+    },
+    /// Print the envelope approval digest; submission requires --approve.
+    Plan {
+        file: PathBuf,
+    },
+    /// Persist the approved design intent and submit its first candidate.
+    Submit {
+        file: PathBuf,
+        #[arg(long)]
+        approve: String,
+        #[arg(long)]
+        idempotency_key: String,
+    },
+    /// Evaluate an external candidate within the approved bounds and budget.
+    Propose {
+        id: String,
+        candidate: PathBuf,
+    },
+    Status {
+        id: String,
+    },
+    /// Report the winner, its child jobs and per-constraint evidence labels.
+    Export {
+        id: String,
     },
 }
 fn read<T: serde::de::DeserializeOwned>(path: &std::path::Path) -> Result<T> {
@@ -614,6 +689,16 @@ fn run(cli: Cli) -> Result<()> {
                     &serde_json::json!({"exported":destination,"artifacts":count,"uploads":false}),
                 );
             }
+            Cad::EnclosureFixture { policy } => {
+                let plan = ExecutionPlan::enclosure_fixture(policy)?;
+                return print(&serde_json::json!({"approval_digest":plan.id()?,"plan":plan}));
+            }
+            Cad::SolidMesh { request } => Operation::PlanCadSolidMesh {
+                request: Box::new(read(&request)?),
+            },
+        },
+        Commands::EnclosureThermal { request } => Operation::PlanEnclosureThermal {
+            request: Box::new(read(&request)?),
         },
         Commands::Job { command } => match command {
             Job::Preflight { plan } => Operation::ExecutionPreflight { plan: read(&plan)? },
@@ -683,6 +768,9 @@ fn run(cli: Cli) -> Result<()> {
             Results::PlanAtmosphericTransport { request } => Operation::PlanAtmosphericTransport {
                 request: Box::new(read(&request)?),
             },
+            Results::Correlate { request } => Operation::ResultsCorrelate {
+                request: Box::new(read(&request)?),
+            },
         },
         Commands::Render { request } => Operation::PlanPresentation {
             request: read(&request)?,
@@ -710,6 +798,57 @@ fn run(cli: Cli) -> Result<()> {
                     &serde_json::json!({"exported":destination,"artifacts":count,"uploads":false}),
                 );
             }
+        },
+        Commands::Materials { command } => {
+            let library = harbor_cad::manufacturing::Library::builtin()?;
+            return match command {
+                Materials::List => print(&library.summary()),
+                Materials::Show { id } => match library.material(&id) {
+                    Ok(material) => print(material),
+                    Err(_) => print(
+                        library
+                            .process(&id)
+                            .map_err(|_| invalid(format!("unknown material or process {id}")))?,
+                    ),
+                },
+            };
+        }
+        Commands::Cost {
+            command: Cost::Estimate { request },
+        } => {
+            let library = harbor_cad::manufacturing::Library::builtin()?;
+            return print(&harbor_cad::manufacturing::evaluate(
+                &library,
+                &read(&request)?,
+            )?);
+        }
+        Commands::Design { command } => match command {
+            Design::Init => return print(&harbor_cad::design::example()?),
+            Design::Validate { file } => {
+                return print(&harbor_cad::design::prepare(&read(&file)?, None)?);
+            }
+            Design::Plan { file } => {
+                let envelope: harbor_cad::design::DesignEnvelope = read(&file)?;
+                let prepared = harbor_cad::design::prepare(&envelope, None)?;
+                return print(
+                    &serde_json::json!({"approval_digest":prepared.approval_digest,"plan":envelope,"prepared":prepared}),
+                );
+            }
+            Design::Submit {
+                file,
+                approve,
+                idempotency_key,
+            } => Operation::DesignSubmit {
+                envelope: Box::new(read(&file)?),
+                approved_digest: approve,
+                idempotency_key,
+            },
+            Design::Propose { id, candidate } => Operation::DesignPropose {
+                design_id: id,
+                candidate: Box::new(read(&candidate)?),
+            },
+            Design::Status { id } => Operation::DesignStatus { design_id: id },
+            Design::Export { id } => Operation::DesignExport { design_id: id },
         },
     };
     let socket = cli

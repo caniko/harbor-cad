@@ -1,9 +1,16 @@
 //! Source-backed ROCm 7.2.3 identity for the single-KFD-GPU policy candidate.
 use super::DrmSandbox;
-use crate::{Error, Result, contracts::invalid, resources::pci_key};
-use serde::Serialize;
+use crate::{
+    Error, Result,
+    contracts::invalid,
+    execution::{HIP_SANDBOX_POLICY, KFD_EXCLUSION_POLICY},
+    resources::pci_key,
+};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     fs::{self, OpenOptions},
     io::Read,
     os::unix::fs::{FileTypeExt, MetadataExt, OpenOptionsExt},
@@ -22,6 +29,109 @@ pub struct HipIdentity {
     pub unique_id: u64,
     pub generation: u64,
     pub qualified: bool,
+    /// Which policy admitted this device: the single-KFD-GPU policy when the host
+    /// exposes one live GPU, or the exclusion policy when a verified receipt bound
+    /// a second live KFD GPU out of reach.
+    pub applied_policy: String,
+}
+
+/// Running-kernel identity a KFD exclusion receipt is bound to. `/proc/version`
+/// pins the exact build (compiler, config, timestamp); the release alone is not
+/// enough to tie direct ioctl evidence to the kernel it was observed on.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct KernelIdentity {
+    pub release: String,
+    pub proc_version_sha256: String,
+}
+
+impl KernelIdentity {
+    pub fn current() -> Result<Self> {
+        let release = fs::read_to_string("/proc/sys/kernel/osrelease")?
+            .trim()
+            .to_string();
+        let proc_version = fs::read("/proc/version")?;
+        if release.is_empty() || proc_version.is_empty() {
+            return Err(invalid("running-kernel identity unavailable"));
+        }
+        Ok(Self {
+            release,
+            proc_version_sha256: format!("{:x}", Sha256::digest(&proc_version)),
+        })
+    }
+}
+
+/// Operator-installed, direct-evidence exclusion of a second live KFD GPU. Bound
+/// to the exact running kernel, the selected compute card and the foreign card
+/// set, and the exclusion policy. Carried on `HostAuthority`, so it travels the
+/// same install/verify trust path as every other authoritative device fact.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct KfdExclusion {
+    pub schema_version: u32,
+    pub policy: String,
+    pub kernel: KernelIdentity,
+    pub selected_pci: String,
+    pub foreign_pcis: Vec<String>,
+}
+
+impl KfdExclusion {
+    /// Canonical self-consistency, independent of any observed topology.
+    pub fn validate(&self) -> Result<()> {
+        if self.schema_version != 1 || self.policy != KFD_EXCLUSION_POLICY {
+            return Err(invalid("KFD exclusion receipt version/policy mismatch"));
+        }
+        if pci_key(&self.selected_pci)? != self.selected_pci {
+            return Err(invalid("KFD exclusion selected PCI must be canonical"));
+        }
+        if self.kernel.release.is_empty()
+            || self.kernel.proc_version_sha256.len() != 64
+            || !self
+                .kernel
+                .proc_version_sha256
+                .bytes()
+                .all(|b| b.is_ascii_hexdigit())
+        {
+            return Err(invalid("KFD exclusion kernel identity required"));
+        }
+        let mut foreign = BTreeSet::new();
+        if self.foreign_pcis.is_empty() || self.foreign_pcis.len() > 64 {
+            return Err(invalid("one or more foreign KFD PCI cards required"));
+        }
+        for pci in &self.foreign_pcis {
+            if pci_key(pci)? != *pci || *pci == self.selected_pci || !foreign.insert(pci) {
+                return Err(invalid(
+                    "foreign KFD PCI cards must be canonical, distinct and exclude the selected card",
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    /// Verify the receipt against a live observation: exact running kernel, the
+    /// exact selected card, and the exact foreign-card set. Any drift refuses.
+    pub fn verify(
+        &self,
+        kernel: &KernelIdentity,
+        selected_pci: &str,
+        foreign: &BTreeSet<String>,
+    ) -> Result<()> {
+        self.validate()?;
+        if &self.kernel != kernel {
+            return Err(Error::Unqualified(
+                "KFD exclusion receipt is bound to a different running kernel".into(),
+            ));
+        }
+        if self.selected_pci != selected_pci
+            || self.foreign_pcis.iter().cloned().collect::<BTreeSet<_>>() != *foreign
+        {
+            return Err(Error::Unqualified(
+                "KFD exclusion receipt does not match the observed selected/foreign KFD cards"
+                    .into(),
+            ));
+        }
+        Ok(())
+    }
 }
 
 /// Qualification candidate; mounting a shared KFD is limited to a host with
@@ -179,17 +289,40 @@ impl HipIdentity {
         if fs::canonicalize(kfd_sys)? != Path::new("/sys/devices/virtual/kfd/kfd") {
             return Err(invalid("KFD character-device/sysfs mismatch"));
         }
-        Self::from_topology(
+        // A second live KFD GPU is admitted only by a verified exclusion receipt
+        // installed on the authoritative same-user policy; this is the same trust
+        // path as every other authoritative device fact, never ad-hoc file trust.
+        let kernel = KernelIdentity::current()?;
+        // A missing or unreadable policy store means no installed exclusion, so
+        // the single-KFD-GPU policy applies and a second live GPU fails closed.
+        let exclusion = crate::admission::installed_kfd_exclusion().unwrap_or(None);
+        Self::from_topology_checked(
             Path::new("/sys/devices/virtual/kfd/kfd/topology"),
             pci,
             libc::minor(fs::metadata(&drm.node)?.rdev()),
             attribute(&drm.sysfs_device.join("unique_id"))?.trim(),
+            Some(&kernel),
+            exclusion.as_ref(),
         )
     }
 
-    /// Parse a complete observed topology. This deliberately rejects another
-    /// GPU rather than treating visibility variables as access enforcement.
+    /// Single-KFD-GPU parse: rejects any second live GPU. Preserved for callers
+    /// and tests that assert the default refusal with no exclusion receipt.
     pub fn from_topology(root: &Path, pci: &str, minor: u32, pci_unique_id: &str) -> Result<Self> {
+        Self::from_topology_checked(root, pci, minor, pci_unique_id, None, None)
+    }
+
+    /// Parse a complete observed topology. A second live KFD GPU is rejected
+    /// unless a verified exclusion receipt binds the exact kernel, selected card
+    /// and foreign-card set; visibility variables are never access enforcement.
+    pub fn from_topology_checked(
+        root: &Path,
+        pci: &str,
+        minor: u32,
+        pci_unique_id: &str,
+        kernel: Option<&KernelIdentity>,
+        exclusion: Option<&KfdExclusion>,
+    ) -> Result<Self> {
         if pci_key(pci)? != pci {
             return Err(invalid("canonical HIP PCI identity required"));
         }
@@ -200,6 +333,7 @@ impl HipIdentity {
         }
         let generation = number(&root.join("generation_id"))?;
         let mut gpu = None;
+        let mut foreign = BTreeSet::new();
         let mut count = 0;
         for entry in fs::read_dir(root.join("nodes"))? {
             count += 1;
@@ -223,9 +357,6 @@ impl HipIdentity {
             if id == 0 && *simd == 0 {
                 continue;
             }
-            if gpu.is_some() {
-                return Err(Error::Unqualified("single-KFD-GPU policy rejects another exposed compute device; multi-GPU exclusion unqualified".into()));
-            }
             let get = |key| {
                 p.get(key)
                     .copied()
@@ -233,6 +364,31 @@ impl HipIdentity {
             };
             let domain = get("domain")?;
             let location = get("location_id")?;
+            if id == 0
+                || id > u32::MAX as u64
+                || domain > u16::MAX as u64
+                || location > u16::MAX as u64
+            {
+                return Err(invalid("bounded KFD GPU identity required"));
+            }
+            let node_pci = format!(
+                "{domain:04x}:{:02x}:{:02x}.{}",
+                location >> 8,
+                (location >> 3) & 31,
+                location & 7
+            );
+            // A live GPU node that is not the selected card is a foreign compute
+            // device. Its exact PCI is recorded for the exclusion-receipt check;
+            // the selected card still gets the full identity correlation below.
+            if node_pci != pci {
+                if !foreign.insert(node_pci) {
+                    return Err(invalid("duplicate foreign KFD PCI card"));
+                }
+                continue;
+            }
+            if gpu.is_some() {
+                return Err(invalid("duplicate selected KFD PCI card"));
+            }
             let target = get("gfx_target_version")?;
             let architecture = format!(
                 "gfx{}{:x}{:x}",
@@ -240,17 +396,7 @@ impl HipIdentity {
                 target / 100 % 100,
                 target % 100
             );
-            if id == 0
-                || id > u32::MAX as u64
-                || *simd == 0
-                || domain > u16::MAX as u64
-                || location > u16::MAX as u64
-                || format!(
-                    "{domain:04x}:{:02x}:{:02x}.{}",
-                    location >> 8,
-                    (location >> 3) & 31,
-                    location & 7
-                ) != pci
+            if *simd == 0
                 || get("vendor_id")? != 0x1002
                 || get("drm_render_minor")? != u64::from(minor)
                 || get("unique_id")? != unique_id
@@ -278,13 +424,29 @@ impl HipIdentity {
                 unique_id,
                 generation,
                 qualified: false,
+                applied_policy: HIP_SANDBOX_POLICY.into(),
             });
         }
         if number(&root.join("generation_id"))? != generation {
             return Err(invalid("KFD topology changed during identity correlation"));
         }
-        gpu.ok_or_else(|| {
+        let mut gpu = gpu.ok_or_else(|| {
             Error::Unqualified("selected HIP device has no live KFD topology identity".into())
-        })
+        })?;
+        if !foreign.is_empty() {
+            let kernel = kernel.ok_or_else(|| {
+                Error::Unqualified(
+                    "single-KFD-GPU policy rejects another exposed compute device; multi-GPU exclusion unqualified".into(),
+                )
+            })?;
+            let receipt = exclusion.ok_or_else(|| {
+                Error::Unqualified(
+                    "single-KFD-GPU policy rejects another exposed compute device; multi-GPU exclusion unqualified".into(),
+                )
+            })?;
+            receipt.verify(kernel, pci, &foreign)?;
+            gpu.applied_policy = KFD_EXCLUSION_POLICY.into();
+        }
+        Ok(gpu)
     }
 }

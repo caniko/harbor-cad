@@ -114,6 +114,11 @@ def build_server(profile: str) -> MCPServer:
             return await request("plan_cad_mesh", request=request_spec)
 
         @server.tool()
+        async def cad_plan_solid_mesh(request_spec: dict[str, Any]) -> dict[str, Any]:
+            """Plan a CPU Gmsh conformal tetrahedral mesh of 1-8 registered closed solids of one authorized CAD job; returns {approval_digest, plan}. No job is created; touching regions share interfaces, overlaps refuse. Not qualified."""
+            return await request("plan_cad_solid_mesh", request=request_spec)
+
+        @server.tool()
         async def cad_mesh_submit(
             plan: dict[str, Any], approved_digest: str, idempotency_key: str
         ) -> dict[str, Any]:
@@ -162,7 +167,7 @@ def build_server(profile: str) -> MCPServer:
 
         @server.tool()
         async def cad_plan_variant(variant: dict[str, Any]) -> dict[str, Any]:
-            """Approve one registered native box copy with explicit dimensions and preserved placement; no source document is opened while planning."""
+            """Approve one registered CAD copy: a native box with explicit dimensions (schema 1) or existing spreadsheet aliases with explicit units (schema 2); no source document is opened while planning."""
             return await request("plan_cad_variant", request=variant)
 
     if profile in {"cad", "results", "all"}:
@@ -205,6 +210,13 @@ def build_server(profile: str) -> MCPServer:
         async def fem_plan_imported(request_spec: dict[str, Any]) -> dict[str, Any]:
             """Plan a synthetic CPU static FEM reference from registered authorized world-space CAD."""
             return await request("plan_fem_imported", request=request_spec)
+
+        @server.tool()
+        async def enclosure_thermal_plan(
+            request_spec: dict[str, Any],
+        ) -> dict[str, Any]:
+            """Plan CPU CalculiX steady conduction on a succeeded general-solid mesh job; returns {approval_digest, plan}. No job is created. One effective well-mixed internal air node, no CFD or contact resistance; missing inputs refuse. Not validation."""
+            return await request("plan_enclosure_thermal", request=request_spec)
 
         @server.tool()
         async def case_plan_thermal_reference(spec: dict[str, Any]) -> dict[str, Any]:
@@ -456,6 +468,61 @@ def build_server(profile: str) -> MCPServer:
             if not 1 <= limit <= 100:
                 raise ValueError("artifact page limit 1..100 required")
             return await request("artifacts", job_id=job_id, after=after, limit=limit)
+
+        @server.tool()
+        async def results_correlate(request_spec: dict[str, Any]) -> dict[str, Any]:
+            """Score a bounded measured CSV (relative to the worker input root) against one registered thermal history: per-probe bias/MAE/RMSE/max error and tolerance pass, sensor accuracy reported separately. Linear interpolation inside the overlap only; correlation is not validation of untested conditions."""
+            return await request("results_correlate", request=request_spec)
+
+    if profile in {"simulation", "all"}:
+
+        @server.tool()
+        async def materials_list() -> dict[str, Any]:
+            """List sourced material/process ids and process rate bases; typical published ranges, not qualified properties."""
+            return await request("materials_list")
+
+        @server.tool()
+        async def cost_estimate(request_spec: dict[str, Any]) -> dict[str, Any]:
+            """Estimate per-unit USD low/high with breakdown and manufacturability screen; missing inputs stay missing. Not a supplier quote."""
+            return await request("cost_estimate", request=request_spec)
+
+    if profile in {"simulation", "all"}:
+
+        @server.tool()
+        async def design_plan(envelope: dict[str, Any]) -> dict[str, Any]:
+            """Validate a bounded design envelope and strict template substitution under the worker policy; return its approval digest. No job is created."""
+            return await request("design_plan", envelope=envelope)
+
+        @server.tool()
+        async def design_submit(
+            envelope: dict[str, Any], approved_digest: str, idempotency_key: str
+        ) -> dict[str, Any]:
+            """Persist an approved design intent; candidates run as ordinary worker jobs and the worker advances the bounded loop."""
+            return await request(
+                "design_submit",
+                envelope=envelope,
+                approved_digest=approved_digest,
+                idempotency_key=idempotency_key,
+            )
+
+        @server.tool()
+        async def design_propose(
+            design_id: str, candidate: dict[str, Any]
+        ) -> dict[str, Any]:
+            """Evaluate one on-grid in-bounds candidate exactly like a proposal; it consumes the approved evaluation budget."""
+            return await request(
+                "design_propose", design_id=design_id, candidate=candidate
+            )
+
+        @server.tool()
+        async def design_status(design_id: str) -> dict[str, Any]:
+            """Read iterations, metrics, feasibility, incumbent, Pareto set and budget use; completion is not physical validation."""
+            return await request("design_status", design_id=design_id)
+
+        @server.tool()
+        async def design_export(design_id: str) -> dict[str, Any]:
+            """Report the winner, its child job IDs and simulated/unknown/calibrated constraint evidence; never promotes qualification."""
+            return await request("design_export", design_id=design_id)
 
     return server
 

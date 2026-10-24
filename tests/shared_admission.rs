@@ -26,6 +26,7 @@ fn policy(root: &Path) -> HostAuthority {
         overrides: vec![],
         native_runtimes: vec![],
         allowed_input_roots: vec!["/nonexistent".into()],
+        kfd_exclusion: None,
     }
 }
 fn submit(store: &Store, host: &HostAuthority, key: &str) -> String {

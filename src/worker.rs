@@ -163,11 +163,16 @@ fn check_plan(plan: &ExecutionPlan, profile: &HostExecutionProfile) -> Result<()
             let executable = native.executable_for(&stage.operation, plan)?;
             if matches!(
                 stage.operation,
-                StageOperation::CadInspect | StageOperation::CadFixture
+                StageOperation::CadInspect
+                    | StageOperation::CadFixture
+                    | StageOperation::EnclosureFixture
             ) {
                 crate::sandbox::importer_mounts(native.importer_closure()?, Path::new(executable))?;
             }
-            if matches!(stage.operation, StageOperation::Openlb) {
+            if matches!(
+                stage.operation,
+                StageOperation::Openlb | StageOperation::WettingReference
+            ) {
                 let backend = stage
                     .selection
                     .as_ref()
@@ -465,8 +470,10 @@ fn submission_binding(
         || plan.retained_cooling.is_some()
         || plan.cad_transport.is_some()
         || plan.cad_variant.is_some()
+        || plan.cad_sheet_variant.is_some()
         || plan.thermal.is_some()
         || plan.cad_source.is_some()
+        || plan.cad_solids.is_some()
         || plan.wetting.is_some()
         || plan.freezing.is_some()
         || plan.spectral.is_some()
@@ -505,6 +512,9 @@ fn submission_binding(
     if let Some(spec) = &plan.cad_variant {
         crate::cad_variant::source(store, spec)?;
     }
+    if let Some(spec) = &plan.cad_sheet_variant {
+        crate::cad_sheet_variant::source(store, spec)?;
+    }
     if let Some(authority) = authority {
         authority.authorize(plan, profile)?;
     }
@@ -527,7 +537,9 @@ fn submission_binding(
             );
             if matches!(
                 stage.operation,
-                StageOperation::CadInspect | StageOperation::CadFixture
+                StageOperation::CadInspect
+                    | StageOperation::CadFixture
+                    | StageOperation::EnclosureFixture
             ) {
                 files.insert(
                     "cad_closure".into(),
@@ -743,13 +755,40 @@ fn dispatch(
             let plan = crate::cad_source::plan(store, *request, profile.policy.clone())?;
             Ok(serde_json::json!({"approval_digest":plan.id()?,"plan":plan}))
         }
+        Operation::PlanCadSolidMesh { request } => {
+            if authority.is_none() {
+                return Err(Error::Unqualified(
+                    "imported general-solid mesh requires authoritative admission".into(),
+                ));
+            }
+            let plan =
+                crate::enclosure_thermal::plan_mesh(store, *request, profile.policy.clone())?;
+            Ok(serde_json::json!({"approval_digest":plan.id()?,"plan":plan}))
+        }
+        Operation::PlanEnclosureThermal { request } => {
+            if authority.is_none() {
+                return Err(Error::Unqualified(
+                    "enclosure thermal requires authoritative admission".into(),
+                ));
+            }
+            let plan =
+                crate::enclosure_thermal::plan_thermal(store, *request, profile.policy.clone())?;
+            Ok(serde_json::json!({"approval_digest":plan.id()?,"plan":plan}))
+        }
         Operation::PlanCadVariant { request } => {
             if authority.is_none() {
                 return Err(Error::Unqualified(
                     "controlled CAD variants require authoritative admission".into(),
                 ));
             }
-            let plan = crate::cad_variant::plan(store, *request, profile.policy.clone())?;
+            let plan = match *request {
+                crate::cad_sheet_variant::AnyCadVariantRequest::Box(request) => {
+                    crate::cad_variant::plan(store, request, profile.policy.clone())?
+                }
+                crate::cad_sheet_variant::AnyCadVariantRequest::Sheet(request) => {
+                    crate::cad_sheet_variant::plan(store, request, profile.policy.clone())?
+                }
+            };
             Ok(serde_json::json!({"approval_digest":plan.id()?,"plan":plan}))
         }
         Operation::PlanFemImported { request } => {
@@ -838,11 +877,11 @@ fn dispatch(
                     }
                     Admission::open(&crate::admission::shared_root()?, authority)?
                         .retain_inputs(store, bytes, submit)?
-                } else if let Some(spec) = &plan.cad_variant {
+                } else if let Some(spec) = crate::cad_variant::original(&plan)? {
                     let bytes = spec
                         .document
                         .bytes
-                        .checked_add(spec.source.region_evidence.bytes)
+                        .checked_add(spec.regions.bytes)
                         .and_then(|b| b.checked_add(16 * 1024 * 1024))
                         .ok_or_else(|| invalid("CAD variant staging budget overflow"))?;
                     if bytes
@@ -851,6 +890,21 @@ fn dispatch(
                     {
                         return Err(Error::Resource(
                             "insufficient state-root capacity for immutable CAD variant staging"
+                                .into(),
+                        ));
+                    }
+                    Admission::open(&crate::admission::shared_root()?, authority)?
+                        .retain_inputs(store, bytes, submit)?
+                } else if let Some(recipe) = &plan.cad_solids {
+                    let bytes = crate::enclosure_thermal::staged_bytes(&recipe.source)?
+                        .checked_add(16 * 1024 * 1024)
+                        .ok_or_else(|| invalid("CAD solid staging budget overflow"))?;
+                    if bytes
+                        .checked_add(disk_bytes(&store.root, false)?)
+                        .is_none_or(|n| n > profile.max_disk_bytes)
+                    {
+                        return Err(Error::Resource(
+                            "insufficient state-root capacity for immutable CAD solid staging"
                                 .into(),
                         ));
                     }
@@ -1030,6 +1084,9 @@ fn dispatch(
         Operation::ResultsTransferAtmosphere { request } => Ok(serde_json::to_value(
             crate::atmosphere_transfer::prepare(store, &request)?,
         )?),
+        Operation::ResultsCorrelate { request } => Ok(serde_json::to_value(
+            crate::correlation::run(store, Path::new(&profile.allowed_input_root), &request)?,
+        )?),
         Operation::Describe { job_id } => {
             let plan = store.plan(&job_id)?;
             let binding = match store.execution_binding(&job_id) {
@@ -1045,6 +1102,53 @@ fn dispatch(
                 "artifacts":store.artifact_page(&job_id, None, default_artifact_limit())?,"arrays":"retained in artifacts; not embedded in responses"}),
             )
         }
+        Operation::MaterialsList {} => Ok(crate::manufacturing::Library::builtin()?.summary()),
+        Operation::CostEstimate { request } => Ok(serde_json::to_value(
+            crate::manufacturing::evaluate(&crate::manufacturing::Library::builtin()?, &request)?,
+        )?),
+        Operation::DesignPlan { envelope } => {
+            let prepared = crate::design::prepare(&envelope, Some(&profile.policy))?;
+            Ok(
+                serde_json::json!({"approval_digest":prepared.approval_digest,"plan":envelope,"prepared":prepared}),
+            )
+        }
+        Operation::DesignSubmit {
+            envelope,
+            approved_digest,
+            idempotency_key,
+        } => {
+            if digest(&envelope)? != approved_digest {
+                return Err(invalid("immutable design approval digest mismatch"));
+            }
+            // Every template set must already pass ordinary submission checks.
+            for plan in crate::design::probe_plans(&envelope, &profile.policy)? {
+                submission_binding(store, profile, authority, &plan)?;
+            }
+            let intent = crate::design::retain_intent(store, &envelope, &idempotency_key, profile)?;
+            advance_design(store, profile, authority, &intent.id)?;
+            Ok(serde_json::to_value(crate::design::status(
+                store, &intent.id,
+            )?)?)
+        }
+        Operation::DesignPropose {
+            design_id,
+            candidate,
+        } => {
+            let candidate = crate::design::propose_external(
+                store,
+                &design_id,
+                &candidate,
+                profile,
+                &mut |plan, key| design_child(store, profile, authority, plan, key),
+            )?;
+            Ok(serde_json::json!({"design_id":design_id,"candidate":candidate}))
+        }
+        Operation::DesignStatus { design_id } => Ok(serde_json::to_value(crate::design::status(
+            store, &design_id,
+        )?)?),
+        Operation::DesignExport { design_id } => Ok(serde_json::to_value(crate::design::export(
+            store, &design_id,
+        )?)?),
     }
 }
 pub fn serve(state: &Path, socket: &Path, profile_path: &Path) -> Result<()> {
@@ -1160,6 +1264,7 @@ pub fn serve_authorized(
             Err(e) => return Err(e.into()),
         }
         reconcile(&store, &profile, false, admission.as_ref())?;
+        advance_designs(&store, &profile, authority.as_ref());
     }
 }
 pub fn request(socket: &Path, op: Operation) -> Result<Response> {
@@ -1214,7 +1319,12 @@ pub fn backends() -> serde_json::Value {
         {"adapter":"calculix_contact","backend":"cpu","runtime":"unqualified","precision":"float64","formulation":"planar_linear_penalty_contact","plan_schema_version":10,"scope":"synthetic zero-Poisson two-block preload and uniform thermal expansion/opening; independent original DAT force/stress/displacement and gap checks","reference_evidence":"docs/contact-reference.md"},
         {"adapter":"thermal_contact","backend":"cpu","runtime":"unqualified","precision":"float64","formulation":"one_way_native_capacitance_projection_to_planar_contact","plan_schema_version":11,"scope":"independent native thermal histories; complete C3D8 capacitance projection with explicit pointwise loss; derived uniform contact temperatures and original six-surface moisture; exact job qualification required","reference_evidence":"docs/contact-reference.md"},
         {"adapter":"paraview","backend":"egl","runtime":"unqualified"},
-        {"adapter":"ffmpeg","backend":"vaapi","runtime":"unqualified"}
+        {"adapter":"ffmpeg","backend":"vaapi","runtime":"unqualified"},
+        {"adapter":"openlb_wetting","backend":"hip","runtime":"unqualified","precision":"float64","formulation":"well_balanced_contact_angle_2d","plan_schema_version":9,"scope":"same synthetic recipe on one explicit PCI/UUID card; CPU/HIP Float64 phase parity and worker KFD gates pending","reference_evidence":"docs/gpu-backends.md"},
+        {"adapter":"openlb_freezing","backend":"hip","runtime":"unsupported","reason":crate::freezing::GPU_REFUSAL,"decision_evidence":"docs/gpu-backends.md"},
+        {"adapter":"openlb_retained_cooling","backend":"hip","runtime":"unsupported","reason":"host-applied per-step half-link boundaries and energy ledger over total-enthalpy dynamics absent from pinned OpenLB GPU CI","decision_evidence":"docs/gpu-backends.md"},
+        {"adapter":"gmsh_solids","backend":"cpu","runtime":"unqualified","precision":"float64","formulations":["imported_general_solids"],"plan_schema_version":7,"scope":"conformal multi-region tetrahedral mesh of registered closed solids with quality, volume and exterior-face receipts; no solver; exact job qualification required","reference_evidence":"docs/enclosure-thermal.md"},
+        {"adapter":"calculix_enclosure","backend":"cpu","runtime":"unqualified","precision":"float64","formulations":["enclosure_steady_conduction"],"factorization":"SPOOLES","plan_schema_version":8,"scope":"steady conduction with declared film, solar, radiation and one effective internal air node on an approved solid mesh; energy-balance gate; no internal convection or physical validation","reference_evidence":"docs/enclosure-thermal.md"}
     ])
 }
 pub fn doctor() -> Result<serde_json::Value> {
@@ -1347,11 +1457,11 @@ impl NativeRuntime {
     }
     fn executable(&self, operation: &StageOperation) -> Result<&str> {
         let path = match operation {
-            StageOperation::CadFixture | StageOperation::CadInspect => {
-                self.cad.as_deref().ok_or_else(|| {
-                    Error::Unqualified("CAD importer absent from selected runtime".into())
-                })?
-            }
+            StageOperation::CadFixture
+            | StageOperation::CadInspect
+            | StageOperation::EnclosureFixture => self.cad.as_deref().ok_or_else(|| {
+                Error::Unqualified("CAD importer absent from selected runtime".into())
+            })?,
             StageOperation::Openlb => self
                 .openlb
                 .as_deref()
@@ -1498,7 +1608,7 @@ fn native_stage(
         .args(["--chdir", "/work"]);
     if matches!(
         stage.operation,
-        StageOperation::CadInspect | StageOperation::CadFixture
+        StageOperation::CadInspect | StageOperation::CadFixture | StageOperation::EnclosureFixture
     ) {
         crate::sandbox::mount_importer(&mut command, runtime.importer_closure()?, Path::new(exe))?;
     } else if matches!(
@@ -1528,7 +1638,10 @@ fn native_stage(
             StageOperation::WettingReference => (
                 "/wetting-runtime-closure.txt",
                 "HARBOR_CAD_WETTING_POLICY",
-                crate::execution::WETTING_SANDBOX_POLICY,
+                plan.wetting
+                    .as_ref()
+                    .ok_or_else(|| invalid("wetting recipe required"))?
+                    .sandbox_policy(),
             ),
             StageOperation::FreezingReference if plan.retained_cooling.is_some() => (
                 "/retained-cooling-runtime-closure.txt",
@@ -1625,7 +1738,16 @@ fn native_stage(
             .arg(original)
             .arg("/inputs/wetting-original.csv");
     }
-    if matches!(
+    if let Some(recipe) = &plan.cad_solids {
+        let root = crate::enclosure_thermal::registered(store, id, plan)?;
+        command.args(["--dir", "/inputs"]);
+        for brep in &recipe.source.breps {
+            command
+                .args(["--ro-bind"])
+                .arg(safe_path(&root, &brep.path)?)
+                .arg(format!("/inputs/{}", brep.path));
+        }
+    } else if matches!(
         stage.operation,
         StageOperation::CadMesh | StageOperation::FemImported
     ) {
@@ -1688,15 +1810,17 @@ fn native_stage(
         ]);
     }
     let mut hip_identity = None;
+    let mut drm_binding = None;
     if let Some(selection) = &stage.selection {
         if selection.role != Role::Compute {
             let binding = devices::DrmSandbox::resolve(&selection.pci)?;
-            binding.apply(&mut command);
+            let policy = binding.apply(selection.role, &selection.backend, &mut command)?;
             store.event(
                 id,
                 "dri_binding_verified",
-                &serde_json::to_string(&binding)?,
+                &serde_json::to_string(&serde_json::json!({"policy": policy, "binding": binding}))?,
             )?;
+            drm_binding = Some((binding, policy));
         } else if selection.backend == "hip" {
             if store.execution_authorization(id)?.is_none() {
                 return Err(Error::Unqualified(
@@ -1725,8 +1849,7 @@ fn native_stage(
         }
     }
     if matches!(stage.operation, StageOperation::CadInspect) {
-        if let Some(spec) = &plan.cad_variant {
-            spec.validate()?;
+        if crate::cad_variant::original(plan)?.is_some() {
             command
                 .args(["--ro-bind"])
                 .arg(crate::cad_variant::registered(store, id, plan)?)
@@ -1924,6 +2047,9 @@ fn native_stage(
             read_native_receipt(&receipt)?
         };
     validate_native_receipt(stage, &evidence)?;
+    if let Some((binding, policy)) = &drm_binding {
+        binding.verify_receipt(policy, &evidence)?;
+    }
     if stage.operation == StageOperation::SpectralReference && plan.cad_transport.is_some() {
         let source = crate::cad_transport::registered(store, id, plan)?;
         crate::cad_transport_fields::verify_receipt(
@@ -2042,7 +2168,14 @@ fn native_stage(
             &evidence,
         )?;
     }
-    if matches!(stage.operation, StageOperation::CadMesh) {
+    if plan.cad_solids.is_some() {
+        crate::enclosure_thermal::registered(store, id, plan)?;
+        if stage.operation == StageOperation::CadMesh {
+            crate::enclosure_thermal::verify_mesh_receipt(plan, dir, &evidence)?;
+        } else {
+            crate::enclosure_thermal::verify_thermal_receipt(plan, dir, &evidence)?;
+        }
+    } else if matches!(stage.operation, StageOperation::CadMesh) {
         crate::cad_source::registered(store, id, plan)?;
         crate::cad_mesh::verify_receipt(plan, dir, &evidence)?;
     }
@@ -2050,7 +2183,11 @@ fn native_stage(
         crate::cad_variant::registered(store, id, plan)?;
         crate::cad_variant::verify_outputs(plan, dir, &evidence)?;
     }
-    if matches!(stage.operation, StageOperation::FemImported) {
+    if plan.cad_sheet_variant.is_some() && stage.operation == StageOperation::CadInspect {
+        crate::cad_variant::registered(store, id, plan)?;
+        crate::cad_sheet_variant::verify_outputs(plan, dir, &evidence)?;
+    }
+    if matches!(stage.operation, StageOperation::FemImported) && plan.cad_solids.is_none() {
         crate::cad_source::registered(store, id, plan)?;
         crate::fem_imported::verify_receipt(plan, dir, &evidence)?;
     }
@@ -2117,7 +2254,9 @@ fn read_native_receipt(path: &Path) -> Result<serde_json::Value> {
 
 fn validate_native_receipt(stage: &Stage, evidence: &serde_json::Value) -> Result<()> {
     let adapter = match stage.operation {
-        StageOperation::CadFixture | StageOperation::CadInspect => "FreeCAD",
+        StageOperation::CadFixture
+        | StageOperation::CadInspect
+        | StageOperation::EnclosureFixture => "FreeCAD",
         StageOperation::Openlb => "OpenLB",
         StageOperation::Render => "ParaView",
         StageOperation::Video => "FFmpeg",
@@ -2144,7 +2283,9 @@ fn validate_native_receipt(stage: &Stage, evidence: &serde_json::Value) -> Resul
         || evidence["software_fallback"] != false
         || (matches!(
             stage.operation,
-            StageOperation::CadFixture | StageOperation::CadInspect
+            StageOperation::CadFixture
+                | StageOperation::CadInspect
+                | StageOperation::EnclosureFixture
         ) && evidence["import_policy"] != crate::sandbox::IMPORT_POLICY)
         || (stage.gpu == GpuRequirement::Required
             && evidence["pci"].as_str() != stage.selection.as_ref().map(|s| s.pci.as_str()))
@@ -2658,6 +2799,13 @@ fn execute_job(store: &Store, profile: &HostExecutionProfile, id: &str) -> Resul
                         .ok_or_else(|| invalid("approved atmospheric recipe required"))?;
                     store.add_artifact(id,&commit_artifact(&dir,"native-atmosphere-request.json",&serde_json::to_vec(spec)?,"json","exact original UV source/profile, solar direction and full anisotropic angular grid; no inferred physical time")?)?;
                     native_stage(store, profile, &plan, stage, &working, id)?;
+                } else if stage.operation == StageOperation::FemImported
+                    && plan.cad_solids.is_some()
+                {
+                    let working = native_work.join("stages/fem-imported");
+                    private_dir(&working)?;
+                    store.add_artifact(id,&commit_artifact(&dir,"native-fem-imported-request.json",&serde_json::to_vec(&crate::enclosure_thermal::thermal_descriptor(&plan)?)?,"json","exact approved CAD solids, mesh digest and resolved provenance-bound thermal inputs; steady, no physical time")?)?;
+                    native_stage(store, profile, &plan, stage, &working, id)?;
                 } else if matches!(stage.operation, StageOperation::FemImported) {
                     let working = native_work.join("stages/fem-imported");
                     private_dir(&working)?;
@@ -2671,6 +2819,11 @@ fn execute_job(store: &Store, profile: &HostExecutionProfile, id: &str) -> Resul
                     })?;
                     crate::atmospheric_transport::registered_source(store, spec)?;
                     store.add_artifact(id,&commit_artifact(&dir,"native-atmospheric-spectral-request.json",&serde_json::to_vec(&spec.native_request()?)?,"json","exact original atmospheric angular fields, registered-source checksum, SI receiver and prescribed optical history")?)?;
+                    native_stage(store, profile, &plan, stage, &working, id)?;
+                } else if stage.operation == StageOperation::CadMesh && plan.cad_solids.is_some() {
+                    let working = native_work.join("stages/mesh");
+                    private_dir(&working)?;
+                    store.add_artifact(id,&commit_artifact(&dir,"native-cad-mesh-request.json",&serde_json::to_vec(crate::enclosure_thermal::mesh_descriptor(&plan)?)?,"json","exact approved SI general-solid mesh descriptor; original sources retained separately")?)?;
                     native_stage(store, profile, &plan, stage, &working, id)?;
                 } else if matches!(stage.operation, StageOperation::CadMesh) {
                     let working = native_work.join("stages/mesh");
@@ -2742,6 +2895,77 @@ fn annotate_native_artifacts(
     crate::atmospheric_transport::annotate_fields(plan, artifacts)?;
     crate::contact::annotate_fields(plan, artifacts);
     Ok(())
+}
+
+/// Design children are ordinary jobs: the envelope approval covers the plan,
+/// and the normal submission path owns binding, staging and admission.
+fn design_child(
+    store: &Store,
+    profile: &HostExecutionProfile,
+    authority: Option<&HostAuthority>,
+    plan: &ExecutionPlan,
+    key: &str,
+) -> Result<()> {
+    dispatch(
+        store,
+        profile,
+        authority,
+        Operation::Submit {
+            plan: Box::new(plan.clone()),
+            approved_digest: plan.id()?,
+            idempotency_key: key.into(),
+        },
+    )
+    .map(|_| ())
+}
+/// Chained design children are planned by the same dispatch the CLI/MCP
+/// planning calls use; design only allowlists and binds the request.
+fn design_plan(
+    store: &Store,
+    profile: &HostExecutionProfile,
+    authority: Option<&HostAuthority>,
+    op: Operation,
+) -> Result<ExecutionPlan> {
+    let plan = match dispatch(store, profile, authority, op)? {
+        serde_json::Value::Object(mut planned) if planned.contains_key("plan") => {
+            planned.remove("plan").unwrap_or_default()
+        }
+        plan => plan,
+    };
+    serde_json::from_value(plan).map_err(|e| invalid(format!("planned design child: {e}")))
+}
+fn advance_design(
+    store: &Store,
+    profile: &HostExecutionProfile,
+    authority: Option<&HostAuthority>,
+    id: &str,
+) -> Result<()> {
+    match crate::design::advance(
+        store,
+        id,
+        profile,
+        &mut |plan, key| design_child(store, profile, authority, plan, key),
+        &mut |op| design_plan(store, profile, authority, op),
+    ) {
+        // Transient state/IO errors retry on the next worker tick.
+        Err(error @ (Error::Io(_) | Error::Sql(_))) => Err(error),
+        Err(error) => crate::design::fail(store, id, &error.to_string()),
+        Ok(()) => Ok(()),
+    }
+}
+/// Worker completion hook: advance running designs after each reconcile.
+fn advance_designs(
+    store: &Store,
+    profile: &HostExecutionProfile,
+    authority: Option<&HostAuthority>,
+) {
+    let result = crate::design::running(store).and_then(|ids| {
+        ids.iter()
+            .try_for_each(|id| advance_design(store, profile, authority, id))
+    });
+    if let Err(error) = result {
+        eprintln!("design advancement deferred: {error}");
+    }
 }
 
 #[cfg(test)]

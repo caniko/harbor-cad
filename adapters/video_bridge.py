@@ -10,6 +10,33 @@ import sys
 from itertools import pairwise
 from pathlib import Path
 
+POLICY = "harbor-cad-media-drm-single-node-v1"
+
+
+def drm_sandbox(pci, dev=Path("/dev")):
+    """Worker DRM sandbox: only the selected render node, no KFD, no other card."""
+    if os.environ.get("HARBOR_CAD_DRM_POLICY") != POLICY:
+        raise RuntimeError("exact single-node DRM sandbox policy required")
+    alias = dev / "dri/by-path" / f"pci-{pci}-render"
+    node = alias.resolve() if alias.is_symlink() else None
+    visible = sorted(p.name for p in (dev / "dri").iterdir())
+    by_path = sorted(p.name for p in (dev / "dri/by-path").iterdir())
+    if (
+        node is None
+        or not node.is_char_device()
+        or visible != sorted(["by-path", node.name])
+        or by_path != [alias.name]
+        or (dev / "kfd").exists()
+    ):
+        raise RuntimeError("sandbox must expose only the selected DRM render node")
+    return {
+        "policy": POLICY,
+        "render_node": str(node),
+        "visible_dri": visible,
+        "visible_by_path": by_path,
+        "kfd_visible": False,
+    }
+
 
 def closed_record(path, limit):
     """Read bounded regular records without following frame/manifest symlinks."""
@@ -136,6 +163,7 @@ def main():
     frames, sequence_digest, source = frame_sequence(frame_root, plan)
     original_render = os.environ.get("HARBOR_CAD_FRAME_SOURCE_EXECUTION_ID")
     node = f"/dev/dri/by-path/pci-{selection['pci']}-render"
+    sandbox = drm_sandbox(selection["pci"])
     command = [
         "@ffmpeg@",
         "-nostdin",
@@ -216,6 +244,7 @@ def main():
         "encoder": "h264_vaapi",
         "pci": selection["pci"],
         "render_node": node,
+        "sandbox": sandbox,
         "executed": True,
         "software_fallback": False,
         "decode": "CPU verification",

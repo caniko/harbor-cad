@@ -134,6 +134,7 @@ runtime roots end at zero. See [exact scoped evidence](evidence/numerical-filter
 | §7 bounded studies and resource measurements | `src/study.rs`, `scripts/verify_study_worker.py` | explicit independently approved CPU collections and immutable partial submission recovery tested; exact packaged two-case thermal study/lifecycle/resource gate passes `c8-2`; fixed-science one/two-core equal-accuracy comparison passes `c8-4` |
 | §8 CLI/MCP product surfaces | `src/main.rs`, official MCP profiles | job/results/render/video/filter and CAD regions/export/mesh/imported-FEM surfaces implemented and scoped worker gates passed; v5/v8 exact native sample/signed same-mesh compare pass packaged results-3 CLI/MCP gate (eight fields, 40 rejections); CAD variant/prepared spectral-scene surfaces implemented, fresh native package gates pending |
 | §9 CI and negative tests | `scripts/check_cpu.py`, generated workflow, tests | local gate green; hardware gates remain opt-in and scoped |
+| §10 design loop, materials/cost, correlation, enclosure thermal | `src/{design,design_providers,manufacturing,correlation,enclosure_thermal,cad_sheet_variant}.rs`, `adapters/{solid_mesh,enclosure_thermal,enclosure_fixture}.py`, `data/` | source/CPU tests and the pure-Python enclosure reference pass (2026-10-23 slice); no Nix build, native Gmsh/CalculiX/FreeCAD/HIP gate or physical input; physical validation unqualified |
 
 ## Ordered runnable slices
 
@@ -462,6 +463,170 @@ Historical verification reconstructs every published view from authoritative
 CSV bytes. Source gate 57 passes the complete Rust/Clippy/build/format/lint and
 222-case Python gate; its VTK topology/Float64/unit roundtrip regression passes.
 Exact native/shared-worker qualification of this updated runtime is pending.
+
+### Product workstreams W11–W17, source/CPU only — 2026-10-24
+
+Trunk `f738aed` (17 commits after the `7034bdf` docs close-out) adds, at source
+level only:
+
+- W12 `cb97aec`, `549a3de`: plan-only MCP tools `cad_plan_solid_mesh` and
+  `enclosure_thermal_plan`, so the matrix grows from 69 to 71 tools over the same
+  28 frameworks. Render/media stages are bound to the single-node DRM policies
+  `harbor-cad-render-drm-single-node-v1` and
+  `harbor-cad-media-drm-single-node-v1`. A receipt without matching `sandbox`
+  evidence is refused, so earlier packaged adapters cannot pass
+  ([GPU backends](gpu-backends.md)).
+- W11 `7d2f4f2`, `8f7942e`: ETSI EN 300 019-1-4 classes, cited film ranges,
+  a surface-finish table, and the `sourced` metric kind
+  ([design conditions](design-conditions.md)).
+- W13a `9e085e9`: the multi-GPU KFD exclusion receipt gate
+  `harbor-cad-native-hip-kfd-exclusion-v1` and
+  `scripts/verify_kfd_exclusion.py` ([host authority](host-authority.md)). The
+  logic is unit-tested with a mocked ioctl layer. **Not run**: the iGPU
+  `0000:7d:00.0` is on `vfio-pci`.
+- W11b `be77e98` and `357ffc8`: the conservative window solar bound,
+  compatible `MATERIAL__PROCESS__FINISH` triples, the sourced internal cavity
+  film (1.2–8.2 W/(m²·K), low end used), and a component margin taken from the
+  hotter of board and internal air. The metric-source cap is raised (now 48).
+- W14 `278e06b`, `9d78ed7`, `cb60eee`: PCB power sweep by superposition (1 W and
+  15 W solves), `max_supported_pcb_power_w`, a third verification solve on the
+  refine tier, and a cost vs supported-power Pareto. It adds the cited 85 °C
+  industrial-grade default and the FR-4/copper board conductivity ranges
+  (in-plane 8.1–17.4, through-plane 0.26–0.81 W/(m·K)).
+- W15 `e277489`, `c8a66b5`: the linearized exterior radiation lower bound (a
+  tangent bound, valid for all T by convexity) and orthotropic board
+  conductivity at the low ends (8.1 in-plane, 0.26 W/(m·K) through-plane).
+- W16 `9b7187d`, `204c11d`: multi-start pattern search with constraint
+  edge-following.
+- W17 `29639fc`, `f738aed`: a cavity radiation lower bound behind a strict
+  postcondition.
+
+Coordinator source gate at `f738aed`, with ambient nightly Cargo 1.100 rather
+than the pinned 1.94 devShell toolchain: repository treefmt reported no changes,
+Clippy `-D warnings` clean, `cargo test` 284 passed, pytest 300 passed, Ruff
+clean. Both `examples/design-enclosure.json` and
+`examples/design-enclosure-demo.json` pass `design validate`.
+`scripts/verify_enclosure_thermal_cpu.py` passed 4/4 with the pure-Python
+reference solver.
+
+Reference-solver findings for the `al-6061-t6__cnc-3axis-al__powder-coat-white`
+candidate, from `python/tests/test_enclosure_feasibility.py`. They come from a
+**structured analogue of the fixture solved by the pure-Python reference solver,
+not CalculiX**:
+
+| Credit | With window | Opaque lid |
+|---|---|---|
+| none (isotropic 0.26, no radiation) | none (air 373.6 K at 1 W) | 2.04 W |
+| linearized radiation | 10.11 W | 10.77 W |
+| orthotropic board | none | 2.08 W |
+| both (pilot) | 10.42 W | 11.10 W |
+
+The PCB peak binds, and the verification solve matches the chords within
+0.04 K. With T⁴ radiation the chords do not hold, which is why `power_sweep`
+refuses it. The cavity radiation postcondition fails on the same analogue
+(window 1 W: board-surface minimum 325.28 K against wall maximum 325.81 K;
+window 15 W: 345.97 against 351.34 K; opaque lid 1 W: 323.27 against 323.96 K).
+Enabling it would therefore make every credited solve unknown, so the pilot
+envelope leaves it off. PA12 cannot pass the cold margin: its sourced −40 °C
+minimum against the −33 °C class 4.1 cold point leaves 7 K, below the 10 K
+requirement. Proposer sweep on the constrained CI example (seeds 0–39,
+32 evaluations, gap to the brute-force grid optimum): worst 27.7 % → 11.7 %,
+median 5.3 % → 0 %, exact optimum 6/40 → 34/40. The unconstrained bowl still
+converges exactly.
+
+**Board requirement.** The in-plane 8.1 W/(m·K) bound holds only for a PCB with
+at least one continuous copper plane. The operator confirmed on 2026-10-24 that
+the pilot PCB will have one. The exported design report must state this. A
+board without one must use the isotropic 0.26 W/(m·K), and every supported-power
+figure above would no longer apply. The board emissivity low end of 0.15, used
+only by the optional cavity bound, is also a board requirement.
+
+**Scope:** source/CPU only. No Nix build, no package realization, no native
+qualification (no CalculiX, EGL/VAAPI DRM policy, KFD exclusion or HIP worker
+run), and no A0–F promotion. The pinned-toolchain `scripts/check_cpu.py` gate was
+not rerun. Supported-power figures are reference-solver analogue results, not
+product data. The component limit and board conductivities are cited defaults
+pending the real part datasheet and stack-up. The preserved failures and the
+Paperclip audit are unchanged.
+
+**Cache-security hold, still open.** `/etc/nix/nix.conf` is unchanged (SHA-256
+`52c2f6453b70f19f2610607ef5f73719ec8470ef45abe85ac44d125450173e98`) and still
+trusts `lantian`. The running generation is unchanged
+(`rghhw421…-nixos-system-atlas-26.11.20260823.56c02bc`). Containment attempts,
+both under `/data/scratch/tmp/opencode/harbor-cad-cache-security-20261020/`:
+
+- v1 `operator-unified.sh` (SHA-256 `4f5114e6…7d13e1d8`), evidence
+  `operator-Eke6ZHo4`: refused at root-plan line 8 because sudo exports
+  `XDG_CONFIG_DIRS`.
+- v2 `operator-unified-v2.sh` (SHA-256
+  `acb15b7019293789ea04aec07cc3a544e5b10ae8de7ae0e7592c12ec28e9e044`) scrubs it.
+  Evidence `operator-by6AgK4k`: refused at root-plan line 27, the quiet-window
+  guard (more than one `nix-daemon` process; other sessions' `nix build`/`nix
+  eval` were connected).
+
+Nothing on the host changed in either attempt. Disposition is pre-authorized
+only if every containment check and the `lantian:` provenance triage pass.
+Nix-token rotation is unverified. The harbor-cad consumer patch
+`/data/scratch/tmp/claude-1000/harbor-cad-cache-pin-29073b5.patch` (harbor-rs
+`29073b5`, `lib.mkCachePin`) is still unapplied. Canix `5df6b230d`, an opt-in
+`igpu-amdgpu` boot specialisation for Atlas, is local only and not activated.
+
+### Product workstreams W1–W9, source/CPU only — 2026-10-23
+
+Trunk `e271596` (18 commits after `5d88adc`) adds, at source level only:
+measured-data correlation ([correlation](correlation.md)); a sourced
+material/process library with estimate-only cost, manufacturability and service
+margins ([materials and cost](materials-and-cost.md)); the bounded approval-bound
+design loop with chained templates, manufacturing providers and calibration
+envelopes ([design loop](design-loop.md)); spreadsheet-alias CAD variants and the
+synthetic `enclosure_fixture` seed ([CAD variants](cad-variants.md)); planar
+wetting on HIP (implemented, unqualified) with typed CPU-only refusal for
+solidification and retained cooling ([GPU backends](gpu-backends.md)); and
+general-solid Gmsh meshing with steady enclosure conduction
+([enclosure thermal](enclosure-thermal.md)). The executable MCP matrix grows from
+61 to 69 tools over the same 28 framework entries.
+
+Coordinator source gate at `e271596`, with ambient nightly Cargo 1.100 rather
+than the pinned 1.94 devShell toolchain: repository treefmt reported no changes,
+Clippy `-D warnings` clean, `cargo test --locked` 262 passed, pytest 263 passed,
+Ruff clean. `scripts/verify_enclosure_thermal_cpu.py` passed all four analytic
+cases at two refinements each with the pure-Python reference solver; it was
+rerun with ambient Python 3.13.15 for this entry, again 4/4. Development smoke
+outside the sandbox: local Gmsh 4.15.2 meshed the five-region enclosure fixture
+BREP (exported with FreeCAD 1.1.3, below the packaged ≥1.1.4 security floor).
+CalculiX was not in the local store and has never run for this recipe.
+
+**Scope:** source/CPU only. No Nix build, no package realization, no native
+FreeCAD/Gmsh/CalculiX/HIP worker gate and no A0–F promotion. The pinned-toolchain
+`scripts/check_cpu.py` gate was not rerun. Real physical inputs (PCB power,
+ambient, exterior/internal film coefficients, solar irradiance, interface data,
+component limits) remain `missing`, and pc-uv/PA12 solar absorptance is unsourced,
+so the enclosure design example cannot yet produce a feasible design. Known
+limits: the pattern-search proposer can stop short of constrained optima (a
+coordinator 40-seed sweep found 0–28 % excess; a surrogate is the upgrade path);
+`min_wall_m` probes one point per face; ray-based exterior-face selection is
+unqualified; CUDA is unqualified; physical/product validation is unqualified for
+every recipe. Preserved failures are unchanged: coarse enthalpy `0.0232` and
+uniform Stefan `0.0375` against the `0.02` gate, and the independent Paperclip
+revised-attempt-2 audit.
+
+**Cache-security hold, still open.** `/etc/nix/nix.conf` is unchanged (SHA-256
+`52c2f6453b70f19f2610607ef5f73719ec8470ef45abe85ac44d125450173e98`) and still
+trusts the retired `lantian` cache; the running generation is unchanged. The
+operator's unified containment script
+`/data/scratch/tmp/opencode/harbor-cad-cache-security-20261020/operator-unified.sh`
+(SHA-256 `4f5114e6e429d156df8d69e04d748400a1b114de4843e4080b92929e7d13e1d8`) has
+not been executed and no operator evidence has been returned. Nix-token rotation
+is unverified. The three retained 2026-10-20 outputs
+(`ypjddczm…-harbor-cad-0.1.0`, `qn41nvb7…-harbor-cad-mcp`,
+`vra25l54…-harbor-cad-tests`) have been garbage-collected; earlier packaged
+evidence that names them is historical and points to collected paths. The script
+therefore audits only the running system.
+
+harbor-rs PR #20 (`29073b5141de6244f1d41f567827d87948be91fa`, `lib.mkCachePin`
+over nix-cache-pin `0.3.0`) merged with green CI. The Harbor-CAD consumer patch
+`/data/scratch/tmp/claude-1000/harbor-cad-cache-pin-29073b5.patch` is prepared but
+not applied: locking awaits the user after containment.
 
 ### Cooling campaign profile preflight — 2026-10-19
 

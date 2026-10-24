@@ -102,7 +102,7 @@ def qualification_probes():
 
 def verify_import_environment(operation):
     if (
-        operation not in {"cad_inspect", "cad_fixture"}
+        operation not in {"cad_inspect", "cad_fixture", "enclosure_fixture"}
         or os.environ.get("HARBOR_CAD_IMPORT_POLICY") != POLICY
     ):
         raise RuntimeError("explicit operation-specific importer policy required")

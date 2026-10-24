@@ -69,6 +69,10 @@ def main():
     cad = load_bridge("harbor_cad_cad_mesh", "@cad_mesh_bridge@")
     raw = fem.read_regular(sys.argv[2], 1024**2)
     spec = fem.strict_json(raw)
+    if spec.get("schema_version") == 2:
+        enclosure = load_bridge("harbor_cad_enclosure_thermal", "@enclosure_bridge@")
+        enclosure.main(raw, spec, fem, sys.argv[2])
+        return
     validate(spec, fem, cad)
     sandbox = fem.cpu_sandbox(
         "HARBOR_CAD_FEM_IMPORTED_POLICY",

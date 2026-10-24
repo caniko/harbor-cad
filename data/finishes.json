@@ -1,0 +1,324 @@
+{
+  "schema_version": 1,
+  "transparent_materials": [
+    "pc",
+    "pc-uv",
+    "pmma"
+  ],
+  "finishes": [
+    {
+      "id": "bare",
+      "name": "No applied finish (bare metal or natural polymer)",
+      "compatible_materials": [
+        "al-6061-t6",
+        "al-5052-h32",
+        "pa12-mjf",
+        "pa12-sls",
+        "asa",
+        "pu-casting-resin",
+        "epdm",
+        "vmq-silicone",
+        "ss304",
+        "thermal-pad"
+      ],
+      "solar_absorptance": {
+        "availability": "missing",
+        "reason": "no applied finish: the material's own sourced solar absorptance applies"
+      },
+      "emissivity": {
+        "availability": "missing",
+        "reason": "no applied finish: the material's own sourced emissivity applies"
+      }
+    },
+    {
+      "id": "powder-coat-white",
+      "name": "Polyester powder coat, RAL 9016 traffic white, standard pigments",
+      "compatible_materials": [
+        "al-6061-t6",
+        "al-5052-h32",
+        "ss304"
+      ],
+      "solar_absorptance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.2,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.22,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://igp-powder.com/09_Documents/02_Brochures/Serien_Brosch%C3%BCren/IGP_HWFclassic/Flyer_HWFclassic59_Reflect_A4_IGP_EN_Web_low.pdf | IGP Pulvertechnik IGP-HWFclassic 59 Reflect flyer (TSR, ASTM G197-14, Surface Optics 410-solar, AM1.5, EN AW-5005, ~80 um powder) | accessed 2026-10-24 | standard (non-IR-optimised) RAL 9016 TSR ~0.79; read from the TSR figure, +-0.01 read-off; opaque coating: alpha_s = 1 - TSR; initial value, soiling/ageing not covered",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.82,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.92,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-24 | WHITE COATINGS organic white paints epsilon 0.82-0.92; laboratory beginning-of-life averages, tolerance +-0.02; not weathered or soiled; applied by analogy: polyester powder binder emittance not separately sourced",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "powder-coat-light-grey",
+      "name": "Polyester powder coat, RAL 7035 light grey, standard pigments",
+      "compatible_materials": [
+        "al-6061-t6",
+        "al-5052-h32",
+        "ss304"
+      ],
+      "solar_absorptance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.43,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.47,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://igp-powder.com/09_Documents/02_Brochures/Serien_Brosch%C3%BCren/IGP_HWFclassic/Flyer_HWFclassic59_Reflect_A4_IGP_EN_Web_low.pdf | IGP Pulvertechnik IGP-HWFclassic 59 Reflect flyer (TSR, ASTM G197-14, Surface Optics 410-solar, AM1.5, EN AW-5005, ~80 um powder) | accessed 2026-10-24 | standard (non-IR-optimised) RAL 7035 TSR ~0.55; read from the TSR figure, +-0.02 read-off; opaque coating: alpha_s = 1 - TSR; initial value, soiling/ageing not covered",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.82,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.94,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-24 | WHITE and BLACK COATINGS organic paints epsilon 0.82-0.94 (no grey paint measured); laboratory beginning-of-life averages, tolerance +-0.02; not weathered or soiled; applied by analogy: polyester powder binder emittance not separately sourced",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "powder-coat-dark-grey",
+      "name": "Polyester powder coat, RAL 7016 anthracite grey, standard pigments",
+      "compatible_materials": [
+        "al-6061-t6",
+        "al-5052-h32",
+        "ss304"
+      ],
+      "solar_absorptance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.91,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.92,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://igp-powder.com/09_Documents/02_Brochures/Serien_Brosch%C3%BCren/IGP_HWFclassic/Flyer_HWFclassic59_Reflect_A4_IGP_EN_Web_low.pdf | IGP Pulvertechnik IGP-HWFclassic 59 Reflect flyer (TSR, ASTM G197-14, Surface Optics 410-solar, AM1.5, EN AW-5005, ~80 um powder) | accessed 2026-10-24 | standard (non-IR-optimised) RAL 7016 TSR 0.08-0.09; tabulated for smooth silk gloss, smooth matte and fine-structure deep matte; opaque coating: alpha_s = 1 - TSR; initial value, soiling/ageing not covered",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.82,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.94,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-24 | WHITE and BLACK COATINGS organic paints epsilon 0.82-0.94 (no grey paint measured); laboratory beginning-of-life averages, tolerance +-0.02; not weathered or soiled; applied by analogy: polyester powder binder emittance not separately sourced",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "powder-coat-black",
+      "name": "Polyester powder coat, RAL 9005 jet black, standard pigments",
+      "compatible_materials": [
+        "al-6061-t6",
+        "al-5052-h32",
+        "ss304"
+      ],
+      "solar_absorptance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.94,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.96,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://igp-powder.com/09_Documents/02_Brochures/Serien_Brosch%C3%BCren/IGP_HWFclassic/Flyer_HWFclassic59_Reflect_A4_IGP_EN_Web_low.pdf | IGP Pulvertechnik IGP-HWFclassic 59 Reflect flyer (TSR, ASTM G197-14, Surface Optics 410-solar, AM1.5, EN AW-5005, ~80 um powder) | accessed 2026-10-24 | standard (non-IR-optimised) RAL 9005 TSR ~0.05; read from the TSR figure, +-0.01 read-off; opaque coating: alpha_s = 1 - TSR; initial value, soiling/ageing not covered ;; https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-24 | BLACK COATINGS black paints alpha_s 0.91-0.98 (cross-check); laboratory beginning-of-life averages, tolerance +-0.02; not weathered or soiled",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.84,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.94,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-24 | BLACK COATINGS black paints epsilon 0.84-0.94 (lacquers and Ebanol C excluded); laboratory beginning-of-life averages, tolerance +-0.02; not weathered or soiled; applied by analogy: polyester powder binder emittance not separately sourced",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "anodize-clear",
+      "name": "Clear (sulphuric) anodized aluminium",
+      "compatible_materials": [
+        "al-6061-t6",
+        "al-5052-h32"
+      ],
+      "solar_absorptance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.27,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.35,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-24 | ANODIZED ALUMINUM SAMPLES Clear: alpha_s 0.27 and 0.35; laboratory beginning-of-life averages, tolerance +-0.02; not weathered or soiled",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.76,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.84,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-24 | ANODIZED ALUMINUM SAMPLES Clear: epsilon 0.76 and 0.84; laboratory beginning-of-life averages, tolerance +-0.02; not weathered or soiled ;; https://www.engineeringtoolbox.com/emissivity-coefficients-d_447.html | Engineering ToolBox Emissivity Coefficients of Common Materials | accessed 2026-10-24 | Aluminum, anodized 0.77 at 300 K (cross-check)",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "anodize-black",
+      "name": "Black dyed anodized aluminium",
+      "compatible_materials": [
+        "al-6061-t6",
+        "al-5052-h32"
+      ],
+      "solar_absorptance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.65,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.88,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-24 | ANODIZED ALUMINUM SAMPLES Black: alpha_s 0.65 and 0.86; BLACK COATINGS Anodize Black 0.88; laboratory beginning-of-life averages, tolerance +-0.02; not weathered or soiled; dye-dependent spread",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.82,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.88,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-24 | ANODIZED ALUMINUM SAMPLES Black: epsilon 0.82 and 0.86; BLACK COATINGS Anodize Black 0.88; laboratory beginning-of-life averages, tolerance +-0.02; not weathered or soiled",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "pigment-black-polymer",
+      "name": "Carbon-black pigmented or black-dyed-through polymer",
+      "compatible_materials": [
+        "pa12-mjf",
+        "pa12-sls",
+        "asa",
+        "pu-casting-resin"
+      ],
+      "solar_absorptance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.93,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.96,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-24 | BLACK COATINGS black plastics: Delrin 0.96, polyethylene 0.93, Tedlar 0.94, Velostat 0.96; laboratory beginning-of-life averages, tolerance +-0.02; not weathered or soiled; applied by analogy: PA12/ASA/PU black grades not measured",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.85,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.92,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-24 | BLACK COATINGS black plastics: Delrin 0.87, polyethylene 0.92, Tedlar 0.90, Velostat 0.85; laboratory beginning-of-life averages, tolerance +-0.02; not weathered or soiled; applied by analogy",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "pigment-white-polymer",
+      "name": "White pigmented polymer",
+      "compatible_materials": [
+        "pa12-mjf",
+        "pa12-sls",
+        "asa",
+        "pu-casting-resin"
+      ],
+      "solar_absorptance": {
+        "availability": "missing",
+        "reason": "no white PA12/ASA/PU solar absorptance found in a fetched source; NASA RP-1121 Tedlar white plastic (0.39) is a PVF film and is not substituted"
+      },
+      "emissivity": {
+        "availability": "missing",
+        "reason": "no white-polymer-specific emittance sourced; the material's own sourced emissivity applies"
+      }
+    }
+  ]
+}

@@ -59,6 +59,7 @@ def test_framework_matrix_matches_real_profiles_and_shared_worker(tmp_path):
         for name in group["tools"]:
             assert name not in registered
             registered[name] = set(group["profiles"])
+    assert len(registered) == 71
     assert set().union(*(set(row["tools"]) for row in frameworks.values())) == set(
         registered
     )
@@ -188,6 +189,8 @@ def test_framework_matrix_matches_real_profiles_and_shared_worker(tmp_path):
                 "job_executions",
                 "job_authorizations",
                 "studies",
+                "designs",
+                "design_candidates",
             ):
                 assert (
                     connection.execute(f"SELECT count(*) FROM {table}").fetchone()[0]

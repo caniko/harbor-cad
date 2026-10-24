@@ -33,6 +33,13 @@ fn lattice_cells(case: &CaseSpec) -> Result<u64> {
     multiply(multiply(add(nx as u64, 4)?, add(n, 6)?)?, add(n, 4)?)
 }
 
+fn solid_elements(plan: &ExecutionPlan) -> Result<u64> {
+    plan.cad_solids
+        .as_ref()
+        .map(|recipe| recipe.source.geometry.mesh.max_elements)
+        .ok_or_else(|| invalid("general-solid resource recipe required"))
+}
+
 pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
     let pixels = plan.case.as_ref().map_or(Ok(0), |case| {
         multiply(
@@ -48,16 +55,25 @@ pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
         )
     });
     let mut output = if native { 16 * MIB } else { MIB };
-    if let Some(variant) = &plan.cad_variant {
-        variant.validate()?;
+    if let Some(variant) = crate::cad_variant::original(plan)? {
         // Original document/region copies plus bounded closed new FCStd, BREP
         // and STL outputs; native document compression ratios are not assumed.
+        let extra = plan
+            .cad_sheet_variant
+            .as_ref()
+            .map_or(0, |s| s.request.regions.len() as u64 - 1);
         output = add(
             output,
             add(
-                add(variant.document.bytes, variant.source.region_evidence.bytes)?,
-                192 * MIB,
+                add(variant.document.bytes, variant.regions.bytes)?,
+                add(192 * MIB, multiply(extra, 64 * MIB)?)?,
             )?,
+        )?;
+    }
+    if let Some(recipe) = &plan.cad_solids {
+        output = add(
+            output,
+            crate::enclosure_thermal::staged_bytes(&recipe.source)?,
         )?;
     }
     if let Some(source) = &plan.cad_source {
@@ -86,7 +102,9 @@ pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
                     multiply(u64::from(plan.channel_case()?.resolution), 160)?,
                 )?
             }
-            StageOperation::CadFixture | StageOperation::CadInspect => 1024 * MIB,
+            StageOperation::CadFixture
+            | StageOperation::CadInspect
+            | StageOperation::EnclosureFixture => 1024 * MIB,
             StageOperation::Openlb => {
                 let cells = lattice_cells(plan.channel_case()?)?;
                 // Two D3Q19 Float64 distribution sets, fields, geometry, halo
@@ -154,6 +172,18 @@ pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
                 )?;
                 2048 * MIB
             }
+            StageOperation::FemImported if plan.cad_solids.is_some() => {
+                // Mesh, deck and nodal field bytes plus SPOOLES fill-in; per-element
+                // allowances are conservative bounds, not measured peaks.
+                let elements = solid_elements(plan)?;
+                output = add(output, add(64 * MIB, multiply(elements, 1024)?)?)?;
+                add(2048 * MIB, multiply(elements, 16 * 1024)?)?
+            }
+            StageOperation::CadMesh if plan.cad_solids.is_some() => {
+                let elements = solid_elements(plan)?;
+                output = add(output, add(16 * MIB, multiply(elements, 256)?)?)?;
+                add(1024 * MIB, multiply(elements, 8 * 1024)?)?
+            }
             StageOperation::FemImported => {
                 let spec = plan
                     .imported_fem
@@ -208,7 +238,13 @@ pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
                 // Two Float64 D2Q9 lattices, halos and phase/coupling fields;
                 // Python contour verification retains its own closed CSV copy.
                 output = add(output, multiply(multiply(cells, 256)?, snapshots)?)?;
-                add(512 * MIB, multiply(cells, 4096)?)?
+                let ram = add(512 * MIB, multiply(cells, 4096)?)?;
+                // HIP keeps both lattices, fields and halos device-resident with
+                // host mirrors; reuse the host allowance, as for airflow OpenLB.
+                if stage.gpu != GpuRequirement::CpuOnly {
+                    vram = ram;
+                }
+                ram
             }
             StageOperation::Bundle => 16 * MIB,
             StageOperation::AtmosphericTransport => {

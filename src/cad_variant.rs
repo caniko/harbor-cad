@@ -85,20 +85,7 @@ impl CadVariantSpec {
             || self.request.region_name != self.source.geometry.region_name
             || transform != expected
             || self.source.geometry.geometry_tolerance_m != tolerance
-            || !["source.FCStd", "input.FCStd", "variant.FCStd"]
-                .contains(&self.document.path.as_str())
-            || self.document.schema_version != 1
-            || self.document.format != "FCStd"
-            || !(1..=64 * 1024 * 1024).contains(&self.document.bytes)
-            || self.document.sha256.len() != 64
-            || !self
-                .document
-                .sha256
-                .bytes()
-                .all(|v| v.is_ascii_digit() || (b'a'..=b'f').contains(&v))
-            || self.document.units.is_some()
-            || self.document.time_s.is_some()
-            || self.document.association.is_some()
+            || !document_ok(&self.document)
         {
             return Err(invalid(
                 "single axis-aligned registered CAD source and original document bytes required",
@@ -126,6 +113,63 @@ impl CadVariantSpec {
     }
 }
 
+/// Exact registered original FCStd record shape shared by every variant recipe.
+pub(crate) fn document_ok(document: &ArtifactManifest) -> bool {
+    ["source.FCStd", "input.FCStd", "variant.FCStd"].contains(&document.path.as_str())
+        && document.schema_version == 1
+        && document.format == "FCStd"
+        && (1..=64 * 1024 * 1024).contains(&document.bytes)
+        && document.sha256.len() == 64
+        && document
+            .sha256
+            .bytes()
+            .all(|v| v.is_ascii_digit() || (b'a'..=b'f').contains(&v))
+        && document.units.is_none()
+        && document.time_s.is_none()
+        && document.association.is_none()
+}
+
+/// The registered original document of a completed CAD job, rechecked on disk.
+pub(crate) fn original_document(
+    store: &Store,
+    id: &str,
+    plan: &ExecutionPlan,
+) -> Result<ArtifactManifest> {
+    let variant = plan.cad_variant.is_some() || plan.cad_sheet_variant.is_some();
+    let inspected = plan
+        .stages
+        .iter()
+        .any(|s| s.operation == StageOperation::CadInspect);
+    let path = if variant {
+        "variant.FCStd"
+    } else if inspected {
+        "input.FCStd"
+    } else {
+        "source.FCStd"
+    };
+    let document = store
+        .artifact_record(id, path)?
+        .ok_or_else(|| invalid("registered original CAD document required"))?;
+    let actual = native_manifest(
+        &store.job_dir(id)?,
+        path,
+        64 * 1024 * 1024,
+        "verify original CAD document",
+    )?;
+    if document.bytes != actual.bytes || document.sha256 != actual.sha256 {
+        return Err(invalid("registered CAD document bytes changed"));
+    }
+    if !variant
+        && inspected
+        && plan.channel_case()?.geometry.sha256.as_deref() != Some(document.sha256.as_str())
+    {
+        return Err(invalid(
+            "original inspected CAD document differs from its immutable approval",
+        ));
+    }
+    Ok(document)
+}
+
 fn resolve(store: &Store, request: CadVariantRequest) -> Result<CadVariantSpec> {
     let (_, tolerance) = request.normalized()?;
     let report = crate::cad::regions(store, &request.source_job)?;
@@ -143,40 +187,7 @@ fn resolve(store: &Store, request: CadVariantRequest) -> Result<CadVariantSpec> 
         tolerance,
     )?;
     let plan = store.recorded_plan(&request.source_job)?;
-    let path = if plan.cad_variant.is_some() {
-        "variant.FCStd"
-    } else if plan
-        .stages
-        .iter()
-        .any(|s| s.operation == StageOperation::CadInspect)
-    {
-        "input.FCStd"
-    } else {
-        "source.FCStd"
-    };
-    let document = store
-        .artifact_record(&request.source_job, path)?
-        .ok_or_else(|| invalid("registered original CAD document required"))?;
-    let actual = native_manifest(
-        &store.job_dir(&request.source_job)?,
-        path,
-        64 * 1024 * 1024,
-        "verify original CAD document",
-    )?;
-    if document.bytes != actual.bytes || document.sha256 != actual.sha256 {
-        return Err(invalid("registered CAD document bytes changed"));
-    }
-    if plan.cad_variant.is_none()
-        && plan
-            .stages
-            .iter()
-            .any(|s| s.operation == StageOperation::CadInspect)
-        && plan.channel_case()?.geometry.sha256.as_deref() != Some(document.sha256.as_str())
-    {
-        return Err(invalid(
-            "original inspected CAD document differs from its immutable approval",
-        ));
-    }
+    let document = original_document(store, &request.source_job, &plan)?;
     let spec = CadVariantSpec {
         schema_version: 1,
         request,
@@ -216,27 +227,81 @@ pub fn source(store: &Store, spec: &CadVariantSpec) -> Result<PathBuf> {
     store.job_dir(&spec.source.job_id)
 }
 
+/// Original identity shared by box (v1) and spreadsheet (v2) approvals, so both
+/// reuse one staging, retention and historical recheck path.
+pub(crate) struct Original<'a> {
+    pub job_id: &'a str,
+    pub science_id: &'a str,
+    pub execution_id: &'a str,
+    pub binding_digest: &'a str,
+    pub authorization_digest: &'a str,
+    pub document: &'a ArtifactManifest,
+    pub regions: &'a crate::qualification::EvidenceRecord,
+    pub spec: Vec<u8>,
+}
+
+pub(crate) fn original(plan: &ExecutionPlan) -> Result<Option<Original<'_>>> {
+    if let Some(spec) = &plan.cad_variant {
+        spec.validate()?;
+        let s = &spec.source;
+        return Ok(Some(Original {
+            job_id: &s.job_id,
+            science_id: &s.science_id,
+            execution_id: &s.execution_id,
+            binding_digest: &s.execution_binding_digest,
+            authorization_digest: &s.authorization_digest,
+            document: &spec.document,
+            regions: &s.region_evidence,
+            spec: serde_json::to_vec(spec)?,
+        }));
+    }
+    let Some(spec) = &plan.cad_sheet_variant else {
+        return Ok(None);
+    };
+    spec.validate()?;
+    let s = &spec.source;
+    Ok(Some(Original {
+        job_id: &s.job_id,
+        science_id: &s.science_id,
+        execution_id: &s.execution_id,
+        binding_digest: &s.execution_binding_digest,
+        authorization_digest: &s.authorization_digest,
+        document: &spec.document,
+        regions: &s.region_evidence,
+        spec: serde_json::to_vec(spec)?,
+    }))
+}
+
+/// Re-resolve the approved original from the registered source job.
+fn recheck(store: &Store, plan: &ExecutionPlan) -> Result<PathBuf> {
+    match (&plan.cad_variant, &plan.cad_sheet_variant) {
+        (Some(spec), None) => source(store, spec),
+        (None, Some(spec)) => crate::cad_sheet_variant::source(store, spec),
+        _ => Err(invalid("exactly one approved CAD variant required")),
+    }
+}
+
 pub(crate) fn retain(store: &Store, id: &str, plan: &ExecutionPlan) -> Result<()> {
-    let Some(spec) = &plan.cad_variant else {
+    let Some(spec) = original(plan)? else {
         return Ok(());
     };
-    let original = source(store, spec)?;
+    let original = recheck(store, plan)?;
     let root = store.job_dir(id)?;
     let intent = crate::storage::commit_artifact(
         &root,
         "cad-variant-retention.json",
-        &serde_json::to_vec(spec)?,
+        &spec.spec,
         "json",
         "durable original CAD-copy staging intent; preserve unverifiable orphan originals",
     )?;
     let staging = root.join(format!(".variant-source-{}", uuid::Uuid::new_v4()));
     crate::storage::private_dir(&staging)?;
-    crate::storage::copy_verified(&original, &staging, &spec.document)?;
+    crate::storage::copy_verified(&original, &staging, spec.document)?;
     crate::storage::copy_verified(
         &original,
         &staging,
         &store
-            .artifact_record(&spec.source.job_id, &spec.source.region_evidence.path)?
+            .artifact_record(spec.job_id, &spec.regions.path)?
             .ok_or_else(|| invalid("original variant region evidence required"))?,
     )?;
     std::fs::rename(
@@ -244,7 +309,7 @@ pub(crate) fn retain(store: &Store, id: &str, plan: &ExecutionPlan) -> Result<()
         staging.join("source-document.FCStd"),
     )?;
     std::fs::rename(
-        safe_path(&staging, &spec.source.region_evidence.path)?,
+        safe_path(&staging, &spec.regions.path)?,
         staging.join("variant-source-regions.json"),
     )?;
     crate::storage::sync_directories(&staging)?;
@@ -267,7 +332,8 @@ pub(crate) fn retain(store: &Store, id: &str, plan: &ExecutionPlan) -> Result<()
         )?;
     }
     std::fs::remove_dir(&staging)?;
-    let provenance = serde_json::json!({"source":spec,"plan":store.recorded_plan(&spec.source.job_id)?,"host_profile":store.job_profile(&spec.source.job_id)?,"execution_binding":store.execution_binding(&spec.source.job_id)?,"execution_authorization":store.execution_authorization(&spec.source.job_id)?});
+    let source: serde_json::Value = serde_json::from_slice(&spec.spec)?;
+    let provenance = serde_json::json!({"source":source,"plan":store.recorded_plan(spec.job_id)?,"host_profile":store.job_profile(spec.job_id)?,"execution_binding":store.execution_binding(spec.job_id)?,"execution_authorization":store.execution_authorization(spec.job_id)?});
     store.add_artifact(
         id,
         &crate::storage::commit_artifact(
@@ -284,17 +350,13 @@ pub(crate) fn retain(store: &Store, id: &str, plan: &ExecutionPlan) -> Result<()
     Ok(())
 }
 pub fn registered(store: &Store, id: &str, plan: &ExecutionPlan) -> Result<PathBuf> {
-    let spec = plan
-        .cad_variant
-        .as_ref()
-        .ok_or_else(|| invalid("approved CAD variant required"))?;
-    spec.validate()?;
+    let spec = original(plan)?.ok_or_else(|| invalid("approved CAD variant required"))?;
+    let approved: serde_json::Value = serde_json::from_slice(&spec.spec)?;
     let root = store.job_dir(id)?;
     let (_, intent) =
         crate::qualification::registered_json(store, id, "cad-variant-retention.json")?
             .ok_or_else(|| invalid("registered original CAD variant staging intent required"))?;
-    let intent: CadVariantSpec = serde_json::from_value(intent)?;
-    if digest(&intent)? != digest(spec)? {
+    if intent != approved {
         return Err(invalid("CAD variant source-retention intent changed"));
     }
     let (_, execution) =
@@ -307,11 +369,11 @@ pub fn registered(store: &Store, id: &str, plan: &ExecutionPlan) -> Result<PathB
     let authorization: crate::authority::ExecutionAuthorization =
         serde_json::from_value(execution["execution_authorization"].clone())?;
     authorization.verify(&original, &profile, &binding)?;
-    if execution["source"] != serde_json::to_value(spec)?
-        || original.id()? != spec.source.execution_id
-        || original.science_id()? != spec.source.science_id
-        || digest(&binding)? != spec.source.execution_binding_digest
-        || digest(&authorization)? != spec.source.authorization_digest
+    if execution["source"] != approved
+        || original.id()? != spec.execution_id
+        || original.science_id()? != spec.science_id
+        || digest(&binding)? != spec.binding_digest
+        || digest(&authorization)? != spec.authorization_digest
     {
         return Err(invalid(
             "retained CAD source science/execution/binding/authorization changed",
@@ -325,8 +387,8 @@ pub fn registered(store: &Store, id: &str, plan: &ExecutionPlan) -> Result<PathB
         ),
         (
             "variant-source-regions.json",
-            &spec.source.region_evidence.sha256,
-            spec.source.region_evidence.bytes,
+            &spec.regions.sha256,
+            spec.regions.bytes,
         ),
     ] {
         let record = store
@@ -350,9 +412,14 @@ pub(crate) fn recover_orphan(store: &Store, id: &str) -> Result<()> {
     if !intent.exists() {
         return Ok(());
     }
-    let spec: CadVariantSpec =
+    let intent: serde_json::Value =
         serde_json::from_slice(&crate::worker::read_bounded(&intent, MAX_MESSAGE)?)?;
-    if source(store, &spec).is_ok() {
+    let verifiable = if intent["schema_version"] == 2 {
+        crate::cad_sheet_variant::source(store, &serde_json::from_value(intent)?).is_ok()
+    } else {
+        source(store, &serde_json::from_value(intent)?).is_ok()
+    };
+    if verifiable {
         std::fs::remove_dir_all(&root)?;
         std::fs::File::open(
             root.parent()
@@ -399,16 +466,7 @@ pub fn verify_snapshot(spec: &CadVariantSpec, snapshot: &crate::cad::RegionSnaps
     Ok(())
 }
 
-pub(crate) fn verify_outputs(
-    plan: &ExecutionPlan,
-    root: &std::path::Path,
-    receipt: &serde_json::Value,
-) -> Result<()> {
-    let spec = plan
-        .cad_variant
-        .as_ref()
-        .ok_or_else(|| invalid("approved controlled CAD variant required"))?;
-    spec.validate()?;
+pub(crate) fn importer_receipt(receipt: &serde_json::Value) -> Result<()> {
     if receipt["adapter"] != "FreeCAD"
         || receipt["executed"] != true
         || receipt["backend"] != "cpu"
@@ -420,6 +478,20 @@ pub(crate) fn verify_outputs(
             "patched operation-specific CAD execution receipt required",
         ));
     }
+    Ok(())
+}
+
+pub(crate) fn verify_outputs(
+    plan: &ExecutionPlan,
+    root: &std::path::Path,
+    receipt: &serde_json::Value,
+) -> Result<()> {
+    let spec = plan
+        .cad_variant
+        .as_ref()
+        .ok_or_else(|| invalid("approved controlled CAD variant required"))?;
+    spec.validate()?;
+    importer_receipt(receipt)?;
     let report: serde_json::Value = serde_json::from_slice(&crate::worker::read_bounded(
         &safe_path(root, "cad-variant-recompute.json")?,
         MAX_MESSAGE,

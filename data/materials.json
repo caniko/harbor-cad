@@ -1,0 +1,2489 @@
+{
+  "schema_version": 1,
+  "materials": [
+    {
+      "id": "al-6061-t6",
+      "name": "Aluminium 6061-T6/T651 (plate/extrusion)",
+      "density": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 2700,
+            "unit": "kg/m3"
+          },
+          "high": {
+            "value": 2700,
+            "unit": "kg/m3"
+          }
+        },
+        "provenance": "https://www.protolabs.com/media/h54d0gnp/2026-026-cnc-material-data-sheet_aluminum-6061-t651_t6.pdf | Protolabs CNC material data sheet Aluminum 6061-T651/T6 | accessed 2026-10-23 | 2.70 Mg/m3 at 20 C ;; https://www.aalco.co.uk/datasheets/Aluminium-Alloy-6061-T6-Extrusions_145.ashx | Aalco Aluminium Alloy 6061-T6 Extrusions datasheet | accessed 2026-10-23 | 2.70 g/cm3",
+        "synthetic": false
+      },
+      "thermal_conductivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 166,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 167,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://www.aalco.co.uk/datasheets/Aluminium-Alloy-6061-T6-Extrusions_145.ashx | Aalco Aluminium Alloy 6061-T6 Extrusions datasheet | accessed 2026-10-23 | 166 W/m.K ;; https://www.protolabs.com/media/h54d0gnp/2026-026-cnc-material-data-sheet_aluminum-6061-t651_t6.pdf | Protolabs CNC material data sheet Aluminum 6061-T651/T6 | accessed 2026-10-23 | 167 W/m-K",
+        "synthetic": false
+      },
+      "specific_heat": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 896,
+            "unit": "J/(kg*K)"
+          },
+          "high": {
+            "value": 896,
+            "unit": "J/(kg*K)"
+          }
+        },
+        "provenance": "https://www.protolabs.com/media/h54d0gnp/2026-026-cnc-material-data-sheet_aluminum-6061-t651_t6.pdf | Protolabs CNC material data sheet Aluminum 6061-T651/T6 | accessed 2026-10-23 | 896 J/kg-K at 100 C ;; https://www.allianceorg.com/pdfs/alumext/6061t6.pdf | Alliance LLC Aluminum 6061 T6 datasheet | accessed 2026-10-23 | 0.896 J/g-C",
+        "synthetic": false
+      },
+      "youngs_modulus": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 68300,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 70000,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.protolabs.com/media/h54d0gnp/2026-026-cnc-material-data-sheet_aluminum-6061-t651_t6.pdf | Protolabs CNC material data sheet Aluminum 6061-T651/T6 | accessed 2026-10-23 | 68.3 GPa ;; https://www.aalco.co.uk/datasheets/Aluminium-Alloy-6061-T6-Extrusions_145.ashx | Aalco Aluminium Alloy 6061-T6 Extrusions datasheet | accessed 2026-10-23 | 70 GPa; AZoM 68.9 GPa within range",
+        "synthetic": false
+      },
+      "poisson_ratio": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.33,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.33,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.azom.com/article.aspx?ArticleID=6636 | AZoM Aluminium 6061 Alloy Properties | accessed 2026-10-23 | 0.33 ;; https://www.allianceorg.com/pdfs/alumext/6061t6.pdf | Alliance LLC Aluminum 6061 T6 datasheet | accessed 2026-10-23 | 0.33",
+        "synthetic": false
+      },
+      "yield_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 240,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 276,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.aalco.co.uk/datasheets/Aluminium-Alloy-6061-T6-Extrusions_145.ashx | Aalco Aluminium Alloy 6061-T6 Extrusions datasheet | accessed 2026-10-23 | 0.2% proof 240 MPa min, EN 755-2 extrusions ;; https://www.protolabs.com/media/h54d0gnp/2026-026-cnc-material-data-sheet_aluminum-6061-t651_t6.pdf | Protolabs CNC material data sheet Aluminum 6061-T651/T6 | accessed 2026-10-23 | yield 276 MPa typical T6/T651",
+        "synthetic": false
+      },
+      "tensile_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 260,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 310,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.aalco.co.uk/datasheets/Aluminium-Alloy-6061-T6-Extrusions_145.ashx | Aalco Aluminium Alloy 6061-T6 Extrusions datasheet | accessed 2026-10-23 | 260 MPa min, EN 755-2 ;; https://www.protolabs.com/media/h54d0gnp/2026-026-cnc-material-data-sheet_aluminum-6061-t651_t6.pdf | Protolabs CNC material data sheet Aluminum 6061-T651/T6 | accessed 2026-10-23 | 310 MPa typical",
+        "synthetic": false
+      },
+      "thermal_expansion": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 2.32e-05,
+            "unit": "1/K"
+          },
+          "high": {
+            "value": 2.36e-05,
+            "unit": "1/K"
+          }
+        },
+        "provenance": "https://www.azom.com/article.aspx?ArticleID=6636 | AZoM Aluminium 6061 Alloy Properties | accessed 2026-10-23 | 23.2e-6/C, 20-100 C ;; https://www.protolabs.com/media/h54d0gnp/2026-026-cnc-material-data-sheet_aluminum-6061-t651_t6.pdf | Protolabs CNC material data sheet Aluminum 6061-T651/T6 | accessed 2026-10-23 | 23.6e-6/K; Aalco 23.4e-6/K within range",
+        "synthetic": false
+      },
+      "max_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 100,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 150,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://aluminium-guide.com/aluminium-elevated-temperatures/ | aluminium-guide.com Aluminium at elevated temperatures | accessed 2026-10-23 | low: 'Ultimate and yield strengths drop rapidly above 100 C'; creep not a factor unless sustained stress above ~95 C ;; https://dcc-llo.ligo.org/public/0021/T1000564/001/T1000564-v1%20bake%20temperatures%20for%20aluminum%20alloys.pdf | LIGO T1000564-v1 Allowable Bake Temperature for UHV Processing of Aluminum Alloys (MMPDS data) | accessed 2026-10-23 | high: MMPDS data, 6061-T6 retains 100% Ftu and Fty after 100 h at 150 C (no degradation). Mechanical/creep limit, not melting (solidus 582 C)",
+        "synthetic": false
+      },
+      "min_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -196,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -100,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.totalmateria.com/Article23.htm | Total Materia Properties of Aluminum Alloys at Cryogenic and Elevated Temperatures | accessed 2026-10-23 | aluminium alloys show no ductile-to-brittle transition; 6061-T651 good fracture toughness at -196 C (low) ;; https://aluminium-guide.com/aluminium-elevated-temperatures/ | aluminium-guide.com Aluminium at elevated temperatures | accessed 2026-10-23 | high (conservative): strength plateau roughly -100 C to 100 C; below it UTS rises 30-50%",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.03,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.09,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-23 | finish: bare aluminium. Buffed Aluminum eps_N 0.03 (low). Anodized (not used): clear anodize eps 0.76-0.84, sulphuric 0.87, black 0.82-0.86 ;; https://www.engineeringtoolbox.com/emissivity-coefficients-d_447.html | Engineering ToolBox Emissivity Coefficients of Common Materials | accessed 2026-10-23 | Aluminum Commercial sheet 0.09 (high, mill-finish sheet, ~300 K); rough 0.07; heavily oxidized 0.2-0.31; anodized 0.77",
+        "synthetic": false
+      },
+      "solar_absorptance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.16,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.3,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-23 | finish: bare aluminium. Buffed Aluminum alpha_s 0.16 (low). Anodized (not used): clear 0.27-0.35, sulphuric 0.42, black 0.65-0.86 ;; https://www.engineeringtoolbox.com/solar-radiation-absorbed-materials-d_1568.html | Engineering ToolBox Absorbed Solar Radiation | accessed 2026-10-23 | Aluminum, polished absorb factor 0.30 (high); 'Aluminum, anodized' listed 0.15",
+        "synthetic": false
+      },
+      "compression_set": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "hardness_shore_a": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "uv_resistance": {
+        "availability": "known",
+        "value": "Metal: no UV photodegradation mechanism; outdoor durability set by corrosion - datasheet: excellent corrosion resistance",
+        "provenance": "https://www.aalco.co.uk/datasheets/Aluminium-Alloy-6061-T6-Extrusions_145.ashx | Aalco Aluminium Alloy 6061-T6 Extrusions datasheet | accessed 2026-10-23 | 'medium to high strength heat-treatable alloy' with 'excellent corrosion resistance'; UV statement is qualitative (metal)",
+        "synthetic": false
+      },
+      "material_cost": {
+        "availability": "known",
+        "value": {
+          "low": 7.72,
+          "high": 19.68,
+          "currency": "USD",
+          "basis": "per_kg",
+          "year": 2026
+        },
+        "provenance": "https://www.mwalloys.com/aluminum-alloy-6061-price-per-pound-2026/ | MWalloys Aluminum Alloy 6061 Price Per Pound 2026 (published 2026-02-10) | accessed 2026-10-23 | quote-guide: US small retail orders $3.50-6.00/lb => low 7.72 $/kg (3.50*2.20462); US mill-direct $2.20-3.20/lb = 4.85-7.05 $/kg (not used; pilot volume buys retail) ;; https://speedymetals.com/p-2410-38-6061-t651-aluminum-plate.aspx | Speedy Metals 3/8 in 6061-T651 Aluminum Plate (search-result listing) | accessed 2026-10-23 | derived: $94.33 per 12x24x0.375 in piece of 10.5696 lb => $8.92/lb => 19.68 $/kg (high) ;; https://www.speedymetals.com/p-2413-34-6061-t651-aluminum-plate.aspx | Speedy Metals 3/4 in 6061-T651 Aluminum Plate (search-result listing) | accessed 2026-10-23 | derived: $92.66 per 12x12x0.75 in piece of 10.512 lb => $8.81/lb => 19.43 $/kg; listing date not shown, year taken as 2026 at access",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "al-5052-h32",
+      "name": "Aluminium 5052-H32 sheet",
+      "density": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 2680,
+            "unit": "kg/m3"
+          },
+          "high": {
+            "value": 2680,
+            "unit": "kg/m3"
+          }
+        },
+        "provenance": "https://Protolabs.com/media/iw0mfa0k/datasheet-sm-aluminum5052-h32.pdf | Protolabs sheet metal datasheet Aluminum 5052-H32 (Clinton Aluminum data) | accessed 2026-10-23 | 2.68 g/cc AA typical ;; https://www.mwcomponents.com/uploads/Resource-Center/Elgin-Material-Sheets/Aluminum-5052-H32-Fact-Sheet_Elgin.pdf | MW Components/Elgin Aluminum 5052-H32 Fact Sheet | accessed 2026-10-23 | 2.68 g/cc",
+        "synthetic": false
+      },
+      "thermal_conductivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 138,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 138,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://Protolabs.com/media/iw0mfa0k/datasheet-sm-aluminum5052-h32.pdf | Protolabs sheet metal datasheet Aluminum 5052-H32 (Clinton Aluminum data) | accessed 2026-10-23 | 138 W/m-K AA typical at 77 F ;; https://www.mwcomponents.com/uploads/Resource-Center/Elgin-Material-Sheets/Aluminum-5052-H32-Fact-Sheet_Elgin.pdf | MW Components/Elgin Aluminum 5052-H32 Fact Sheet | accessed 2026-10-23 | 138 W/m-K",
+        "synthetic": false
+      },
+      "specific_heat": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 880,
+            "unit": "J/(kg*K)"
+          },
+          "high": {
+            "value": 880,
+            "unit": "J/(kg*K)"
+          }
+        },
+        "provenance": "https://Protolabs.com/media/iw0mfa0k/datasheet-sm-aluminum5052-h32.pdf | Protolabs sheet metal datasheet Aluminum 5052-H32 (Clinton Aluminum data) | accessed 2026-10-23 | 0.880 J/g-C, estimated from trends in similar Al alloys ;; https://www.mwcomponents.com/uploads/Resource-Center/Elgin-Material-Sheets/Aluminum-5052-H32-Fact-Sheet_Elgin.pdf | MW Components/Elgin Aluminum 5052-H32 Fact Sheet | accessed 2026-10-23 | 0.880 J/g-C",
+        "synthetic": false
+      },
+      "youngs_modulus": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 70300,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 70300,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://Protolabs.com/media/iw0mfa0k/datasheet-sm-aluminum5052-h32.pdf | Protolabs sheet metal datasheet Aluminum 5052-H32 (Clinton Aluminum data) | accessed 2026-10-23 | 70.3 GPa, avg of tension and compression ;; https://www.mwcomponents.com/uploads/Resource-Center/Elgin-Material-Sheets/Aluminum-5052-H32-Fact-Sheet_Elgin.pdf | MW Components/Elgin Aluminum 5052-H32 Fact Sheet | accessed 2026-10-23 | 70.3 GPa",
+        "synthetic": false
+      },
+      "poisson_ratio": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.33,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.33,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://Protolabs.com/media/iw0mfa0k/datasheet-sm-aluminum5052-h32.pdf | Protolabs sheet metal datasheet Aluminum 5052-H32 (Clinton Aluminum data) | accessed 2026-10-23 | 0.330 ;; https://www.mwcomponents.com/uploads/Resource-Center/Elgin-Material-Sheets/Aluminum-5052-H32-Fact-Sheet_Elgin.pdf | MW Components/Elgin Aluminum 5052-H32 Fact Sheet | accessed 2026-10-23 | 0.33",
+        "synthetic": false
+      },
+      "yield_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 193,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 193,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://Protolabs.com/media/iw0mfa0k/datasheet-sm-aluminum5052-h32.pdf | Protolabs sheet metal datasheet Aluminum 5052-H32 (Clinton Aluminum data) | accessed 2026-10-23 | 193 MPa AA typical (not minimum) ;; https://www.mwcomponents.com/uploads/Resource-Center/Elgin-Material-Sheets/Aluminum-5052-H32-Fact-Sheet_Elgin.pdf | MW Components/Elgin Aluminum 5052-H32 Fact Sheet | accessed 2026-10-23 | 193 MPa AA typical",
+        "synthetic": false
+      },
+      "tensile_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 228,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 228,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://Protolabs.com/media/iw0mfa0k/datasheet-sm-aluminum5052-h32.pdf | Protolabs sheet metal datasheet Aluminum 5052-H32 (Clinton Aluminum data) | accessed 2026-10-23 | 228 MPa AA typical ;; https://www.mwcomponents.com/uploads/Resource-Center/Elgin-Material-Sheets/Aluminum-5052-H32-Fact-Sheet_Elgin.pdf | MW Components/Elgin Aluminum 5052-H32 Fact Sheet | accessed 2026-10-23 | 228 MPa AA typical",
+        "synthetic": false
+      },
+      "thermal_expansion": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 2.21e-05,
+            "unit": "1/K"
+          },
+          "high": {
+            "value": 2.38e-05,
+            "unit": "1/K"
+          }
+        },
+        "provenance": "https://www.mwcomponents.com/uploads/Resource-Center/Elgin-Material-Sheets/Aluminum-5052-H32-Fact-Sheet_Elgin.pdf | MW Components/Elgin Aluminum 5052-H32 Fact Sheet | accessed 2026-10-23 | 22.1e-6/C over -50..20 C (low); 23.8e-6/C over 20..100 C AA typical (high)",
+        "synthetic": false
+      },
+      "max_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 100,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 150,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://aluminium-guide.com/aluminium-elevated-temperatures/ | aluminium-guide.com Aluminium at elevated temperatures | accessed 2026-10-23 | low: 'Ultimate and yield strengths drop rapidly above 100 C'; creep not a factor unless sustained stress above ~95 C ;; https://dcc-llo.ligo.org/public/0021/T1000564/001/T1000564-v1%20bake%20temperatures%20for%20aluminum%20alloys.pdf | LIGO T1000564-v1 Allowable Bake Temperature for UHV Processing of Aluminum Alloys (MMPDS data) | accessed 2026-10-23 | high: MMPDS data, 5052-H34 retains 97% Ftu/100% Fty and 5052-H38 99%/97% after 100 h at 150 C (H34/H38 used as proxy for H32). Solidus 607 C",
+        "synthetic": false
+      },
+      "min_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -196,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -100,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.totalmateria.com/Article23.htm | Total Materia Properties of Aluminum Alloys at Cryogenic and Elevated Temperatures | accessed 2026-10-23 | aluminium alloys show no ductile-to-brittle transition; 6061-T651 good fracture toughness at -196 C (low); -196 C figure is for 6061, applied to 5052 via the general no-DBTT statement ;; https://aluminium-guide.com/aluminium-elevated-temperatures/ | aluminium-guide.com Aluminium at elevated temperatures | accessed 2026-10-23 | high (conservative): strength plateau roughly -100 C to 100 C; below it UTS rises 30-50%",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.03,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.09,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-23 | finish: bare aluminium. Buffed Aluminum eps_N 0.03 (low). Anodized (not used): clear anodize eps 0.76-0.84, sulphuric 0.87, black 0.82-0.86 ;; https://www.engineeringtoolbox.com/emissivity-coefficients-d_447.html | Engineering ToolBox Emissivity Coefficients of Common Materials | accessed 2026-10-23 | Aluminum Commercial sheet 0.09 (high, mill-finish sheet, ~300 K); rough 0.07; heavily oxidized 0.2-0.31; anodized 0.77",
+        "synthetic": false
+      },
+      "solar_absorptance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.16,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.3,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-23 | finish: bare aluminium. Buffed Aluminum alpha_s 0.16 (low). Anodized (not used): clear 0.27-0.35, sulphuric 0.42, black 0.65-0.86 ;; https://www.engineeringtoolbox.com/solar-radiation-absorbed-materials-d_1568.html | Engineering ToolBox Absorbed Solar Radiation | accessed 2026-10-23 | Aluminum, polished absorb factor 0.30 (high); 'Aluminum, anodized' listed 0.15",
+        "synthetic": false
+      },
+      "compression_set": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "hardness_shore_a": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "uv_resistance": {
+        "availability": "known",
+        "value": "Metal: no UV photodegradation mechanism; outdoor durability set by corrosion - datasheet: very good corrosion resistance",
+        "provenance": "https://Protolabs.com/media/iw0mfa0k/datasheet-sm-aluminum5052-h32.pdf | Protolabs sheet metal datasheet Aluminum 5052-H32 (Clinton Aluminum data) | accessed 2026-10-23 | 'good workability, very good corrosion resistance, high fatigue strength, weldability'; UV statement is qualitative (metal)",
+        "synthetic": false
+      },
+      "material_cost": {
+        "availability": "known",
+        "value": {
+          "low": 19.29,
+          "high": 27.56,
+          "currency": "USD",
+          "basis": "per_kg",
+          "year": 2026
+        },
+        "provenance": "https://speedymetals.com/p-1939-0063-5052-h32-aluminum-sheet.aspx | Speedy Metals .063 in 5052-H32 Aluminum Sheet (search-result listing) | accessed 2026-10-23 | derived: $15.37 per 12x24x0.063 in sheet of 1.7568 lb => $8.75/lb => 19.29 $/kg (low); retail cut sheet; mill-level 5052 price not sourced ;; https://speedymetals.com/p-1941-009-5052-h32-aluminum-sheet.aspx | Speedy Metals .090 in 5052-H32 Aluminum Sheet (search-result listing) | accessed 2026-10-23 | derived: $15.66 per 12x12x0.090 in sheet of 1.2528 lb => $12.50/lb => 27.56 $/kg (high); listing date not shown, year taken as 2026 at access",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "pa12-mjf",
+      "name": "HP 3D High Reusability PA 12 (Multi Jet Fusion, natural grey)",
+      "density": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1010,
+            "unit": "kg/m3"
+          },
+          "high": {
+            "value": 1010,
+            "unit": "kg/m3"
+          }
+        },
+        "provenance": "https://pro.sculpteo.com/media/imagecontent/HP%20Strong%20and%20Flexible%20Data%20Sheet.pdf | HP 3D High Reusability PA 12 data sheet (4AA6-4895ENA, Feb 2017) | accessed 2026-10-23 | part density 1.01 g/cm3, ASTM D792 ;; https://info.sculpteo.com/hubfs/Material%20documentation/PA11%20HP/TDS%20HP%20pa12%20pa12gb%20pa11%20pp%20(1).pdf | HP white paper: HP 3D Printing materials for the HP Jet Fusion 5200 Series - Mechanical Properties | accessed 2026-10-23 | 5200 series Balanced profile, 1.01 g/cm3, ASTM D792",
+        "synthetic": false
+      },
+      "thermal_conductivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.22,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 0.26,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://analyzing-testing.netzsch.com/en/polymers-netzsch-com/engineering-thermoplastics/pa12-polyamide-12 | NETZSCH Polymers: PA12 Polyamide 12 | accessed 2026-10-23 | generic (bulk) PA12 0.22-0.24 W/(m*K); not MJF-specific, MJF part density 1.01 ~ bulk ;; https://utw10945.utweb.utexas.edu/Manuscripts/2011/2011-32-Yuan.pdf | Yuan, Bourell, Diller: Thermal Conductivity Measurements of Polyamide 12 (SFF Symposium 2011) | accessed 2026-10-23 | bulk laser-sintered PA12 room-temperature value 0.26 W/mK; powder-bed-fusion proxy",
+        "synthetic": false
+      },
+      "specific_heat": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1170,
+            "unit": "J/(kg*K)"
+          },
+          "high": {
+            "value": 1260,
+            "unit": "J/(kg*K)"
+          }
+        },
+        "provenance": "https://analyzing-testing.netzsch.com/en/polymers-netzsch-com/engineering-thermoplastics/pa12-polyamide-12 | NETZSCH Polymers: PA12 Polyamide 12 | accessed 2026-10-23 | generic PA12 1.17-1.26 J/(g*K); not MJF-specific",
+        "synthetic": false
+      },
+      "youngs_modulus": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1650,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 2200,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://info.sculpteo.com/hubfs/Material%20documentation/PA11%20HP/TDS%20HP%20pa12%20pa12gb%20pa11%20pp%20(1).pdf | HP white paper: HP 3D Printing materials for the HP Jet Fusion 5200 Series - Mechanical Properties | accessed 2026-10-23 | tensile modulus 1900 MPa XY/Z avg; 95% of parts within 1650-2200 MPa, ASTM D638 type I ;; https://pro.sculpteo.com/media/imagecontent/HP%20Strong%20and%20Flexible%20Data%20Sheet.pdf | HP 3D High Reusability PA 12 data sheet (4AA6-4895ENA, Feb 2017) | accessed 2026-10-23 | 1700 MPa XY / 1800 MPa Z, ASTM D638 type V",
+        "synthetic": false
+      },
+      "poisson_ratio": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.387,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.41,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://utw10945.utweb.utexas.edu/sites/default/files/2015/2015-69-Faes.pdf | Faes et al.: Variability in the mechanical properties of laser sintered PA-12 components (SFF Symposium 2015) | accessed 2026-10-23 | laser-sintered PA12 (not MJF) via DIC: 0.3871-0.4093 by orientation, 0.41 combined; used as powder-bed-fusion PA12 proxy",
+        "synthetic": false
+      },
+      "yield_strength": {
+        "availability": "missing",
+        "reason": "HP datasheets report tensile strength at max load only (elongation at yield given, no yield stress)"
+      },
+      "tensile_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 45,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 55,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://info.sculpteo.com/hubfs/Material%20documentation/PA11%20HP/TDS%20HP%20pa12%20pa12gb%20pa11%20pp%20(1).pdf | HP white paper: HP 3D Printing materials for the HP Jet Fusion 5200 Series - Mechanical Properties | accessed 2026-10-23 | avg 50 MPa XY/Z; 95% of parts within 45-55 MPa, ASTM D638 ;; https://pro.sculpteo.com/media/imagecontent/HP%20Strong%20and%20Flexible%20Data%20Sheet.pdf | HP 3D High Reusability PA 12 data sheet (4AA6-4895ENA, Feb 2017) | accessed 2026-10-23 | 48 MPa XY and Z, max load, ASTM D638",
+        "synthetic": false
+      },
+      "thermal_expansion": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.000109,
+            "unit": "1/K"
+          },
+          "high": {
+            "value": 0.00014,
+            "unit": "1/K"
+          }
+        },
+        "provenance": "https://analyzing-testing.netzsch.com/en/polymers-netzsch-com/engineering-thermoplastics/pa12-polyamide-12 | NETZSCH Polymers: PA12 Polyamide 12 | accessed 2026-10-23 | generic PA12 CLTE 120-140e-6 1/K ;; https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf | EOS Product Information: Feinpolyamide PA 2200 for EOSINT P (MAG/07.04) | accessed 2026-10-23 | laser-sintered PA 2200 1.09e-4 1/K, DIN 53752-A ;; no MJF-specific CTE found; PA12 proxies",
+        "synthetic": false
+      },
+      "max_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 80,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 95,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf | EOS Product Information: Feinpolyamide PA 2200 for EOSINT P (MAG/07.04) | accessed 2026-10-23 | PA12 parts: strength under steady stress from -40 to +80 degC (generic PA12 statement, used as proxy) -> low ;; https://pro.sculpteo.com/media/imagecontent/HP%20Strong%20and%20Flexible%20Data%20Sheet.pdf | HP 3D High Reusability PA 12 data sheet (4AA6-4895ENA, Feb 2017) | accessed 2026-10-23 | HDT 95 degC @1.82 MPa (Z), ASTM D648 -> high; HDT @0.45 MPa 175 degC ;; https://assets-eu-01.kc-usercontent.com/8ff24b0e-57a3-0157-62d1-fa4ac9734eb5/9a726d42-3240-4e44-851f-bf739f841624/materialise-datasheets-multi-jet-fusion.pdf | Materialise Datasheets 3D Printing Materials Multi Jet Fusion v1.3 (March 2026) | accessed 2026-10-23 | HDT 95 degC @1.81 MPa, 175 degC @0.45 MPa",
+        "synthetic": false
+      },
+      "min_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -40,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -40,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf | EOS Product Information: Feinpolyamide PA 2200 for EOSINT P (MAG/07.04) | accessed 2026-10-23 | PA12 parts show high strength and elasticity under steady stress from -40 degC (generic PA12 statement, EOS PA 2200; used as proxy)",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.84,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.95,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ired.co.uk/?p=36380 | 2021 Emissivity Table For Thermographers - iRed | accessed 2026-10-23 | LWIR thermography table: 'Plastic (White)' 0.84, 'Plastic (Black)' 0.95; generic plastic, not material-specific; white -> low, black -> high",
+        "synthetic": false
+      },
+      "solar_absorptance": {
+        "availability": "missing",
+        "reason": "solar absorptance is colour/finish dependent; no polymer- and colour-specific solar absorptance value found in a fetched source"
+      },
+      "compression_set": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "hardness_shore_a": {
+        "availability": "missing",
+        "reason": "not applicable (rigid thermoplastic/thermoset; Shore A is for elastomers/pads)"
+      },
+      "uv_resistance": {
+        "availability": "missing",
+        "reason": "HP HR PA 12 datasheet has no UV/weathering statement; HP accelerated weathering white paper covers HR PA 12 W only and is form-gated"
+      },
+      "material_cost": {
+        "availability": "known",
+        "value": {
+          "low": 63.96,
+          "high": 63.96,
+          "currency": "USD",
+          "basis": "per_kg",
+          "year": 2026
+        },
+        "provenance": "https://www.matterhackers.com/store/l/hp-3d-hr-pa-12-material | MatterHackers: HP 3D HR PA 12 Material | accessed 2026-10-23 | derived: $8,315.00 per 300 L / 130 kg box => $63.96/kg virgin powder; effective cost depends on 20% refresh / 80% reuse",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "pa12-sls",
+      "name": "EOS PA 2200 (PA12, laser sintered, white)",
+      "density": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 900,
+            "unit": "kg/m3"
+          },
+          "high": {
+            "value": 950,
+            "unit": "kg/m3"
+          }
+        },
+        "provenance": "https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf | EOS Product Information: Feinpolyamide PA 2200 for EOSINT P (MAG/07.04) | accessed 2026-10-23 | laser-sintered part density 0.90-0.95 g/cm3, EOS method ;; https://www.eos.info/polymer-solutions/polymer-materials/data-sheets/mds-pa-2200 | MDS PA 2200 Balance | EOS GmbH | accessed 2026-10-23 | PA 2200 Balance 0.93 g/cm3, EOS method",
+        "synthetic": false
+      },
+      "thermal_conductivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.127,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 0.26,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf | EOS Product Information: Feinpolyamide PA 2200 for EOSINT P (MAG/07.04) | accessed 2026-10-23 | sintered parts DIN 52616: 0.127 parallel / 0.144 vertical to layers ;; https://utw10945.utweb.utexas.edu/Manuscripts/2011/2011-32-Yuan.pdf | Yuan, Bourell, Diller: Thermal Conductivity Measurements of Polyamide 12 (SFF Symposium 2011) | accessed 2026-10-23 | bulk laser-sintered PA12 room-temperature 0.26 W/mK",
+        "synthetic": false
+      },
+      "specific_heat": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1170,
+            "unit": "J/(kg*K)"
+          },
+          "high": {
+            "value": 2350,
+            "unit": "J/(kg*K)"
+          }
+        },
+        "provenance": "https://analyzing-testing.netzsch.com/en/polymers-netzsch-com/engineering-thermoplastics/pa12-polyamide-12 | NETZSCH Polymers: PA12 Polyamide 12 | accessed 2026-10-23 | generic PA12 1.17-1.26 J/(g*K) ;; https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf | EOS Product Information: Feinpolyamide PA 2200 for EOSINT P (MAG/07.04) | accessed 2026-10-23 | PA 2200 specific heat 2.35 J/gK, DIN 51005 (high; sources disagree)",
+        "synthetic": false
+      },
+      "youngs_modulus": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1650,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 1700,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.eos.info/polymer-solutions/polymer-materials/data-sheets/mds-pa-2200 | MDS PA 2200 Balance | EOS GmbH | accessed 2026-10-23 | tensile modulus 1650 MPa X/Y/Z, ISO 527 ;; https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf | EOS Product Information: Feinpolyamide PA 2200 for EOSINT P (MAG/07.04) | accessed 2026-10-23 | 1700 +/- 150 N/mm2, ISO 527 ;; https://utw10945.utweb.utexas.edu/sites/default/files/2015/2015-69-Faes.pdf | Faes et al.: Variability in the mechanical properties of laser sintered PA-12 components (SFF Symposium 2015) | accessed 2026-10-23 | measured mean 1653 MPa (90 specimens)",
+        "synthetic": false
+      },
+      "poisson_ratio": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.387,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.41,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://utw10945.utweb.utexas.edu/sites/default/files/2015/2015-69-Faes.pdf | Faes et al.: Variability in the mechanical properties of laser sintered PA-12 components (SFF Symposium 2015) | accessed 2026-10-23 | laser-sintered PA12 via DIC: 0.3871 (upright) - 0.4093 (flat), 0.41 combined",
+        "synthetic": false
+      },
+      "yield_strength": {
+        "availability": "missing",
+        "reason": "EOS datasheets give tensile strength only, no tensile yield stress"
+      },
+      "tensile_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 42,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 48,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.eos.info/polymer-solutions/polymer-materials/data-sheets/mds-pa-2200 | MDS PA 2200 Balance | EOS GmbH | accessed 2026-10-23 | 48 MPa X/Y, 42 MPa Z, ISO 527 ;; https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf | EOS Product Information: Feinpolyamide PA 2200 for EOSINT P (MAG/07.04) | accessed 2026-10-23 | 45 +/- 3 N/mm2, ISO 527",
+        "synthetic": false
+      },
+      "thermal_expansion": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.000109,
+            "unit": "1/K"
+          },
+          "high": {
+            "value": 0.00014,
+            "unit": "1/K"
+          }
+        },
+        "provenance": "https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf | EOS Product Information: Feinpolyamide PA 2200 for EOSINT P (MAG/07.04) | accessed 2026-10-23 | 1.09e-4 1/K, DIN 53752-A ;; https://analyzing-testing.netzsch.com/en/polymers-netzsch-com/engineering-thermoplastics/pa12-polyamide-12 | NETZSCH Polymers: PA12 Polyamide 12 | accessed 2026-10-23 | generic PA12 120-140e-6 1/K",
+        "synthetic": false
+      },
+      "max_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 57,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 80,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.eos.info/polymer-solutions/polymer-materials/data-sheets/mds-pa-2200 | MDS PA 2200 Balance | EOS GmbH | accessed 2026-10-23 | HDT @1.80 MPa 64 degC X / 57 degC Z (ISO 75) -> low; HDT @0.45 MPa 157/145 degC ;; https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf | EOS Product Information: Feinpolyamide PA 2200 for EOSINT P (MAG/07.04) | accessed 2026-10-23 | steady-stress use -40 to +80 degC -> high; short-term unloaded to 160 degC",
+        "synthetic": false
+      },
+      "min_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -40,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -40,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.amf.uzh.ch/dam/jcr:59a8b14a-c212-4693-8443-d5e543aeabe2/Material-Data-PA2200-ENGLISH.pdf | EOS Product Information: Feinpolyamide PA 2200 for EOSINT P (MAG/07.04) | accessed 2026-10-23 | high strength and elasticity under steady stress from -40 degC",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.84,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.95,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ired.co.uk/?p=36380 | 2021 Emissivity Table For Thermographers - iRed | accessed 2026-10-23 | LWIR thermography table: 'Plastic (White)' 0.84, 'Plastic (Black)' 0.95; generic plastic, not material-specific; white -> low, black -> high",
+        "synthetic": false
+      },
+      "solar_absorptance": {
+        "availability": "missing",
+        "reason": "solar absorptance is colour/finish dependent; no polymer- and colour-specific solar absorptance value found in a fetched source"
+      },
+      "compression_set": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "hardness_shore_a": {
+        "availability": "missing",
+        "reason": "not applicable (rigid thermoplastic/thermoset; Shore A is for elastomers/pads)"
+      },
+      "uv_resistance": {
+        "availability": "known",
+        "value": "Formlabs SLS Nylon 12 (not EOS PA 2200): ASTM D4329 Cycle A xenon arc 1000 h, UTS -3.7%, modulus ~-4%, elongation at break -16.9%, Delta E2000 0.60",
+        "provenance": "https://formlabs.com/eu/white-papers/fuse-sls-powders-uv-resistance-aging-study/ | Formlabs white paper: Fuse SLS powders UV resistance aging study | accessed 2026-10-23 | proxy SLS PA12; EOS PA 2200 sheets give no UV statement",
+        "synthetic": false
+      },
+      "material_cost": {
+        "availability": "known",
+        "value": {
+          "low": 99.83,
+          "high": 109.9,
+          "currency": "USD",
+          "basis": "per_kg",
+          "year": 2026
+        },
+        "provenance": "https://www.matterhackers.com/store/c/nylon-sls-powder | MatterHackers: Nylon SLS powder | accessed 2026-10-23 | SLS PA12 proxy (Formlabs; EOS PA 2200 price not published): derived: Gray Nylon 12 6 kg $599 => $99.83/kg; Gray 10 kg $999 => $99.90/kg; White 10 kg $1,099 => $109.90/kg",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "asa",
+      "name": "ASA FDM filament (Stratasys ASA; Polymaker PolyLite ASA)",
+      "density": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1070,
+            "unit": "kg/m3"
+          },
+          "high": {
+            "value": 1130,
+            "unit": "kg/m3"
+          }
+        },
+        "provenance": "https://plasticker.de/docs/recybase/35956_1735808178.pdf | INEOS Styrolution Luran S 757R (ASA) technical data sheet, rev. 12/12/2018 | accessed 2026-10-23 | bulk ASA 1070 kg/m3, ISO 1183 ;; https://www.secs.oakland.edu/~latcha/ME4999/ASA%20-%20EN%20Material%20Data%20Sheet%20FDM.pdf | Stratasys ASA FDM Thermoplastic Filament Data Sheet (MDS_FDM_ASA_0222a, 2022) | accessed 2026-10-23 | specific gravity 1.08 @23 degC ;; https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/abs-asa/polylite-tm-asa | Polymaker PolyLite ASA Technical Data Sheet V5.4 | accessed 2026-10-23 | 1.13 g/cm3 @23 degC, ISO 1183",
+        "synthetic": false
+      },
+      "thermal_conductivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.1563,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 0.17,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://www.secs.oakland.edu/~latcha/ME4999/ASA%20-%20EN%20Material%20Data%20Sheet%20FDM.pdf | Stratasys ASA FDM Thermoplastic Filament Data Sheet (MDS_FDM_ASA_0222a, 2022) | accessed 2026-10-23 | printed ASA natural, ASTM E1952: 0.1685 @0C, 0.1642 @30C, 0.1622 @60C, 0.1563 @90C ;; https://plasticker.de/docs/recybase/35956_1735808178.pdf | INEOS Styrolution Luran S 757R (ASA) technical data sheet, rev. 12/12/2018 | accessed 2026-10-23 | 0.17 W/(m K), DIN 52612-1",
+        "synthetic": false
+      },
+      "specific_heat": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1445,
+            "unit": "J/(kg*K)"
+          },
+          "high": {
+            "value": 1726,
+            "unit": "J/(kg*K)"
+          }
+        },
+        "provenance": "https://www.secs.oakland.edu/~latcha/ME4999/ASA%20-%20EN%20Material%20Data%20Sheet%20FDM.pdf | Stratasys ASA FDM Thermoplastic Filament Data Sheet (MDS_FDM_ASA_0222a, 2022) | accessed 2026-10-23 | derived cp = k/(rho*alpha) with SG 1.08: 0C 0.1685/(1080*0.108e-6)=1445; 30C 0.1642/(1080*0.096e-6)=1584; 60C 0.1622/(1080*0.087e-6)=1726 J/(kg*K)",
+        "synthetic": false
+      },
+      "youngs_modulus": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1620,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 2379,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.secs.oakland.edu/~latcha/ME4999/ASA%20-%20EN%20Material%20Data%20Sheet%20FDM.pdf | Stratasys ASA FDM Thermoplastic Filament Data Sheet (MDS_FDM_ASA_0222a, 2022) | accessed 2026-10-23 | tensile modulus 1.62-2.14 GPa (F770 XZ low, F900 XZ high), ASTM D638 ;; https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/abs-asa/polylite-tm-asa | Polymaker PolyLite ASA Technical Data Sheet V5.4 | accessed 2026-10-23 | 2379 +/- 157 MPa X-Y, ISO 527",
+        "synthetic": false
+      },
+      "poisson_ratio": {
+        "availability": "missing",
+        "reason": "no ASA Poisson's ratio found in fetched datasheets/papers"
+      },
+      "yield_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 26.9,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 35.2,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.secs.oakland.edu/~latcha/ME4999/ASA%20-%20EN%20Material%20Data%20Sheet%20FDM.pdf | Stratasys ASA FDM Thermoplastic Filament Data Sheet (MDS_FDM_ASA_0222a, 2022) | accessed 2026-10-23 | tensile yield ASTM D638: F770 XZ 26.9 / ZX 35.2 MPa; F900 XZ 32.8 MPa, ZX no yield",
+        "synthetic": false
+      },
+      "tensile_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 27.0,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 43.8,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.secs.oakland.edu/~latcha/ME4999/ASA%20-%20EN%20Material%20Data%20Sheet%20FDM.pdf | Stratasys ASA FDM Thermoplastic Filament Data Sheet (MDS_FDM_ASA_0222a, 2022) | accessed 2026-10-23 | max tensile stress 27.0 (F770 XZ) to 35.2 MPa (F770 ZX), ASTM D638 ;; https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/abs-asa/polylite-tm-asa | Polymaker PolyLite ASA Technical Data Sheet V5.4 | accessed 2026-10-23 | 43.8 +/- 0.8 MPa X-Y, ISO 527",
+        "synthetic": false
+      },
+      "thermal_expansion": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 6.355e-05,
+            "unit": "1/K"
+          },
+          "high": {
+            "value": 0.00011,
+            "unit": "1/K"
+          }
+        },
+        "provenance": "https://www.secs.oakland.edu/~latcha/ME4999/ASA%20-%20EN%20Material%20Data%20Sheet%20FDM.pdf | Stratasys ASA FDM Thermoplastic Filament Data Sheet (MDS_FDM_ASA_0222a, 2022) | accessed 2026-10-23 | printed mean CTE -50..90 degC: 69.38e-6 XY, 63.55e-6 XZ/ZX, ASTM E831 ;; https://plasticker.de/docs/recybase/35956_1735808178.pdf | INEOS Styrolution Luran S 757R (ASA) technical data sheet, rev. 12/12/2018 | accessed 2026-10-23 | bulk ASA 80-110e-6 1/K, ISO 11359",
+        "synthetic": false
+      },
+      "max_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 97.9,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 100,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.secs.oakland.edu/~latcha/ME4999/ASA%20-%20EN%20Material%20Data%20Sheet%20FDM.pdf | Stratasys ASA FDM Thermoplastic Filament Data Sheet (MDS_FDM_ASA_0222a, 2022) | accessed 2026-10-23 | HDT @264 psi (1.82 MPa) 97.9 degC, ASTM D648; HDT @66 psi 102.2 degC ;; https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/abs-asa/polylite-tm-asa | Polymaker PolyLite ASA Technical Data Sheet V5.4 | accessed 2026-10-23 | HDT 100 degC @1.8 MPa, ISO 75",
+        "synthetic": false
+      },
+      "min_service_temperature": {
+        "availability": "missing",
+        "reason": "no minimum service temperature in fetched ASA datasheets (Luran S gives only notched Charpy 3 kJ/m2 at -30 degC)"
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.84,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.95,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ired.co.uk/?p=36380 | 2021 Emissivity Table For Thermographers - iRed | accessed 2026-10-23 | LWIR thermography table: 'Plastic (White)' 0.84, 'Plastic (Black)' 0.95; generic plastic, not material-specific; white -> low, black -> high",
+        "synthetic": false
+      },
+      "solar_absorptance": {
+        "availability": "missing",
+        "reason": "solar absorptance is colour/finish dependent; no polymer- and colour-specific solar absorptance value found in a fetched source"
+      },
+      "compression_set": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "hardness_shore_a": {
+        "availability": "missing",
+        "reason": "not applicable (rigid thermoplastic/thermoset; Shore A is for elastomers/pads)"
+      },
+      "uv_resistance": {
+        "availability": "known",
+        "value": "UV stable / better UV resistance than ABS (qualitative supplier statements; no UL 746C rating found)",
+        "provenance": "https://www.secs.oakland.edu/~latcha/ME4999/ASA%20-%20EN%20Material%20Data%20Sheet%20FDM.pdf | Stratasys ASA FDM Thermoplastic Filament Data Sheet (MDS_FDM_ASA_0222a, 2022) | accessed 2026-10-23 | 'exhibits better UV resistance ... than ABS' ;; https://wiki.polymaker.com/polymaker-products/more-about-our-products/documents/technical-data-sheets/abs-asa/polylite-tm-asa | Polymaker PolyLite ASA Technical Data Sheet V5.4 | accessed 2026-10-23 | 'improved weather resistance' ;; https://www.prusa3d.com/product/prusament-asa-prusa-galaxy-black-850g/ | Prusament ASA Prusa Galaxy Black product page | accessed 2026-10-23 | 'Great for outside use - UV stable'",
+        "synthetic": false
+      },
+      "material_cost": {
+        "availability": "known",
+        "value": {
+          "low": 22.0,
+          "high": 58.6,
+          "currency": "USD",
+          "basis": "per_kg",
+          "year": 2026
+        },
+        "provenance": "https://www.matterhackers.com/store/c/asa | MatterHackers: ASA filament | accessed 2026-10-23 | derived: Polymaker PolyLite ASA Black 5 kg $109.99 => $22.00/kg (low); 3DXtech 3DXMAX ASA 10 kg $475 => $47.50/kg; Forward AM Ultrafuse ASA Black 0.75 kg $43.95 => $58.60/kg (high); Stratasys canister price not published",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "pc",
+      "name": "Polycarbonate, general purpose unfilled (Covestro Makrolon 2405 / SABIC Lexan 9034 sheet), clear, not UV-stabilized",
+      "density": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1200,
+            "unit": "kg/m3"
+          },
+          "high": {
+            "value": 1200,
+            "unit": "kg/m3"
+          }
+        },
+        "provenance": "https://www.okw.ch/it/PC/RW_Makrolon_2405_en.pdf | Covestro Makrolon 2405 ISO Datasheet (edition 01.09.2015) | accessed 2026-10-23 | 1200 kg/m3, ISO 1183-1 ;; https://www.usplastic.com/catalog/files/specsheets/LExan%209034%20-%20Sabic.pdf | SABIC Lexan 9034 Sheet Product Datasheet (01/2008) | accessed 2026-10-23 | specific gravity 1.20, ASTM D792",
+        "synthetic": false
+      },
+      "thermal_conductivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.195,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 0.2,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://www.usplastic.com/catalog/files/specsheets/LExan%209034%20-%20Sabic.pdf | SABIC Lexan 9034 Sheet Product Datasheet (01/2008) | accessed 2026-10-23 | 1.35 Btu*in/(hr*ft2*F), ASTM C177 => 0.195 W/(m*K) ;; https://www.okw.ch/it/PC/RW_Makrolon_2405_en.pdf | Covestro Makrolon 2405 ISO Datasheet (edition 01.09.2015) | accessed 2026-10-23 | 0.20 W/(m*K) cross-flow, 23 degC, ISO 8302",
+        "synthetic": false
+      },
+      "specific_heat": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1256,
+            "unit": "J/(kg*K)"
+          },
+          "high": {
+            "value": 1256,
+            "unit": "J/(kg*K)"
+          }
+        },
+        "provenance": "https://www.usplastic.com/catalog/files/specsheets/LExan%209034%20-%20Sabic.pdf | SABIC Lexan 9034 Sheet Product Datasheet (01/2008) | accessed 2026-10-23 | 0.30 cal/(g*degC) at 40 degC => 1256 J/(kg*K); single source",
+        "synthetic": false
+      },
+      "youngs_modulus": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 2379,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 2400,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.usplastic.com/catalog/files/specsheets/LExan%209034%20-%20Sabic.pdf | SABIC Lexan 9034 Sheet Product Datasheet (01/2008) | accessed 2026-10-23 | tensile modulus 345,000 psi, ASTM D638 => 2379 MPa ;; https://www.okw.ch/it/PC/RW_Makrolon_2405_en.pdf | Covestro Makrolon 2405 ISO Datasheet (edition 01.09.2015) | accessed 2026-10-23 | tensile modulus 2400 MPa, 1 mm/min, ISO 527, 23 degC",
+        "synthetic": false
+      },
+      "poisson_ratio": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.37,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.37,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.usplastic.com/catalog/files/specsheets/LExan%209034%20-%20Sabic.pdf | SABIC Lexan 9034 Sheet Product Datasheet (01/2008) | accessed 2026-10-23 | Poisson's ratio 0.37; single source",
+        "synthetic": false
+      },
+      "yield_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 62.05,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 65,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.usplastic.com/catalog/files/specsheets/LExan%209034%20-%20Sabic.pdf | SABIC Lexan 9034 Sheet Product Datasheet (01/2008) | accessed 2026-10-23 | tensile strength at yield 9,000 psi, ASTM D638 => 62.05 MPa ;; https://www.okw.ch/it/PC/RW_Makrolon_2405_en.pdf | Covestro Makrolon 2405 ISO Datasheet (edition 01.09.2015) | accessed 2026-10-23 | yield stress 65 MPa, 50 mm/min, ISO 527, 23 degC",
+        "synthetic": false
+      },
+      "tensile_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 65,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 65.5,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.okw.ch/it/PC/RW_Makrolon_2405_en.pdf | Covestro Makrolon 2405 ISO Datasheet (edition 01.09.2015) | accessed 2026-10-23 | stress at break 65 MPa, 50 mm/min, ISO 527 ;; https://www.usplastic.com/catalog/files/specsheets/LExan%209034%20-%20Sabic.pdf | SABIC Lexan 9034 Sheet Product Datasheet (01/2008) | accessed 2026-10-23 | tensile strength ultimate 9,500 psi, ASTM D638 => 65.5 MPa",
+        "synthetic": false
+      },
+      "thermal_expansion": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 6.5e-05,
+            "unit": "1/K"
+          },
+          "high": {
+            "value": 6.75e-05,
+            "unit": "1/K"
+          }
+        },
+        "provenance": "https://www.okw.ch/it/PC/RW_Makrolon_2405_en.pdf | Covestro Makrolon 2405 ISO Datasheet (edition 01.09.2015) | accessed 2026-10-23 | 0.65e-4/K parallel and transverse, 23-55 degC, ISO 11359 ;; https://www.usplastic.com/catalog/files/specsheets/LExan%209034%20-%20Sabic.pdf | SABIC Lexan 9034 Sheet Product Datasheet (01/2008) | accessed 2026-10-23 | 3.75e-5 in/in/F, ASTM D696 => 6.75e-5 1/K",
+        "synthetic": false
+      },
+      "max_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 115,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 125,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.okw.ch/it/PC/RW_Makrolon_2405_en.pdf | Covestro Makrolon 2405 ISO Datasheet (edition 01.09.2015) | accessed 2026-10-23 | UL 746B RTI at 1.5 mm: 115 degC (tensile impact), 125 degC (tensile strength, electric); HDT 1.8 MPa = 124 degC",
+        "synthetic": false
+      },
+      "min_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -100,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -100,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.zenit.cz/public/media/Plasty/Zenit_Technicky_List_Plasty_Polykarbonat_Plny_Strukturovany_Makrolon_AJ.pdf | Covestro Makrolon UV patterned polycarbonate sheet product data sheet MF 0087 e (Sept 2015) | accessed 2026-10-23 | Covestro statement 'Makrolon sheets resist temperatures of -100 to +120 degC' (sheet product of same PC family); Makrolon 2405 resin datasheet itself shows unnotched Charpy non-break at -60 degC but no min service temperature",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.8,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.8,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://manualslib.mx/manual/63435/Ht-Ht3302.html?page=29 | HT HT3302 infrared thermometer instruction manual, emissivity table p.29 | accessed 2026-10-23 | polycarbonate 0.80; IR-thermometer band table value, not hemispherical total; single source",
+        "synthetic": false
+      },
+      "solar_absorptance": {
+        "availability": "missing",
+        "reason": "clear transmissive sheet: datasheets give light transmission (84-89%) / shading coefficient (0.97 clear, Makrolon UV), not solar absorptance; no sourced absorptance found"
+      },
+      "compression_set": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "hardness_shore_a": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "uv_resistance": {
+        "availability": "known",
+        "value": "Not UV-stabilized for outdoor exposure: uncoated polycarbonate reaches visible yellowness (YI >= 8) in roughly 5 years in Plaskolite's weathering comparison; no UL 746C f1 rating stated for Makrolon 2405",
+        "provenance": "https://plaskolite.com/docs/default-source/pds/pds343_tuf_sl_metric.pdf | Plaskolite TUFFAK SL Polycarbonate Sheet Typical Metric Properties PDS343 (2022) | accessed 2026-10-23 | UV weather resistance chart: uncoated polycarbonate crosses YI 8 before ~5 years (xenon WOM, mid-latitude UV dose) ;; https://www.okw.ch/it/PC/RW_Makrolon_2405_en.pdf | Covestro Makrolon 2405 ISO Datasheet (edition 01.09.2015) | accessed 2026-10-23 | no weathering / UL 746C rating listed",
+        "synthetic": false
+      },
+      "material_cost": {
+        "availability": "known",
+        "value": {
+          "low": 3.0,
+          "high": 3.29,
+          "currency": "USD",
+          "basis": "per_kg",
+          "year": 2026
+        },
+        "provenance": "https://businessanalytiq.com/procurementanalytics/index/polycarbonate-price-index/ | businessanalytiq Polycarbonate price index | accessed 2026-10-23 | September 2026 resin price: Europe US$3.00/kg, North America US$3.29/kg (NE Asia 2.07, SE Asia 2.21 excluded as non-US/EU supply); pellet resin price, excludes compounding/moulding",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "pc-uv",
+      "name": "UV-protected (coextruded) polycarbonate glazing sheet, clear (Covestro/Plaskolite Makrolon UV / TUFFAK SL, SABIC LEXAN EXELL-D)",
+      "density": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1200,
+            "unit": "kg/m3"
+          },
+          "high": {
+            "value": 1200,
+            "unit": "kg/m3"
+          }
+        },
+        "provenance": "https://www.zenit.cz/public/media/Plasty/Zenit_Technicky_List_Plasty_Polykarbonat_Plny_Strukturovany_Makrolon_AJ.pdf | Covestro Makrolon UV patterned polycarbonate sheet product data sheet MF 0087 e (Sept 2015) | accessed 2026-10-23 | 1200 kg/m3, ISO 1183-1 ;; https://amariplastics.com/media/import/AMARI_LEXAN-EXELL_D.pdf | SABIC LEXAN EXELL-D Sheet Product Datasheet (2021) | accessed 2026-10-23 | 1.20 g/cm3, ISO 1183 ;; https://plaskolite.com/docs/default-source/pds/pds343_tuf_sl_metric.pdf | Plaskolite TUFFAK SL Polycarbonate Sheet Typical Metric Properties PDS343 (2022) | accessed 2026-10-23 | specific gravity 1.2, ASTM D792",
+        "synthetic": false
+      },
+      "thermal_conductivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.195,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 0.209,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://www.modernplastics.com/wp-content/uploads/2015/05/PDS109_MAK_UV.pdf | Bayer/Sheffield Makrolon UV sheet Typical Properties (MAKUV 0115) | accessed 2026-10-23 | 1.35 Btu*in/(hr*ft2*F), ASTM C177 => 0.195 W/(m*K) ;; https://plaskolite.com/docs/default-source/pds/pds343_tuf_sl_metric.pdf | Plaskolite TUFFAK SL Polycarbonate Sheet Typical Metric Properties PDS343 (2022) | accessed 2026-10-23 | 0.0005 cal*cm/(s*cm2*degC), ASTM C177 => 0.209 W/(m*K); Makrolon UV MF0087 and EXELL-D list 0.20 (ISO 8302)",
+        "synthetic": false
+      },
+      "specific_heat": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1256,
+            "unit": "J/(kg*K)"
+          },
+          "high": {
+            "value": 1256,
+            "unit": "J/(kg*K)"
+          }
+        },
+        "provenance": "https://www.usplastic.com/catalog/files/specsheets/LExan%209034%20-%20Sabic.pdf | SABIC Lexan 9034 Sheet Product Datasheet (01/2008) | accessed 2026-10-23 | UV-sheet datasheets omit cp; value is for SABIC Lexan 9034 uncoated PC sheet (same bisphenol-A PC base resin): 0.30 cal/(g*degC) at 40 degC => 1256 J/(kg*K)",
+        "synthetic": false
+      },
+      "youngs_modulus": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 2300,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 2350,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://amariplastics.com/media/import/AMARI_LEXAN-EXELL_D.pdf | SABIC LEXAN EXELL-D Sheet Product Datasheet (2021) | accessed 2026-10-23 | tensile modulus 2300 MPa, 1 mm/min, ISO 527 ;; https://www.zenit.cz/public/media/Plasty/Zenit_Technicky_List_Plasty_Polykarbonat_Plny_Strukturovany_Makrolon_AJ.pdf | Covestro Makrolon UV patterned polycarbonate sheet product data sheet MF 0087 e (Sept 2015) | accessed 2026-10-23 | tensile modulus 2350 MPa, ISO 527; TUFFAK SL 2340 MPa ASTM D638; Makrolon UV (US) 340,000 psi = 2344 MPa",
+        "synthetic": false
+      },
+      "poisson_ratio": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.38,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.38,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.modernplastics.com/wp-content/uploads/2015/05/PDS109_MAK_UV.pdf | Bayer/Sheffield Makrolon UV sheet Typical Properties (MAKUV 0115) | accessed 2026-10-23 | Poisson's ratio 0.38, ASTM E132 ;; https://plaskolite.com/docs/default-source/pds/pds343_tuf_sl_metric.pdf | Plaskolite TUFFAK SL Polycarbonate Sheet Typical Metric Properties PDS343 (2022) | accessed 2026-10-23 | Poisson's ratio 0.38, ASTM E132",
+        "synthetic": false
+      },
+      "yield_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 60,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 62.05,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://amariplastics.com/media/import/AMARI_LEXAN-EXELL_D.pdf | SABIC LEXAN EXELL-D Sheet Product Datasheet (2021) | accessed 2026-10-23 | yield stress >60 MPa, 50 mm/min, ISO 527 (lower bound); Makrolon UV MF0087 also >60 MPa ;; https://www.modernplastics.com/wp-content/uploads/2015/05/PDS109_MAK_UV.pdf | Bayer/Sheffield Makrolon UV sheet Typical Properties (MAKUV 0115) | accessed 2026-10-23 | tensile strength yield 9,000 psi, ASTM D638 => 62.05 MPa; TUFFAK SL 62 MPa",
+        "synthetic": false
+      },
+      "tensile_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 65.5,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 66,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.modernplastics.com/wp-content/uploads/2015/05/PDS109_MAK_UV.pdf | Bayer/Sheffield Makrolon UV sheet Typical Properties (MAKUV 0115) | accessed 2026-10-23 | tensile strength ultimate 9,500 psi, ASTM D638 => 65.5 MPa ;; https://plaskolite.com/docs/default-source/pds/pds343_tuf_sl_metric.pdf | Plaskolite TUFFAK SL Polycarbonate Sheet Typical Metric Properties PDS343 (2022) | accessed 2026-10-23 | tensile strength ultimate 66 MPa, ASTM D638",
+        "synthetic": false
+      },
+      "thermal_expansion": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 6.5e-05,
+            "unit": "1/K"
+          },
+          "high": {
+            "value": 7e-05,
+            "unit": "1/K"
+          }
+        },
+        "provenance": "https://www.zenit.cz/public/media/Plasty/Zenit_Technicky_List_Plasty_Polykarbonat_Plny_Strukturovany_Makrolon_AJ.pdf | Covestro Makrolon UV patterned polycarbonate sheet product data sheet MF 0087 e (Sept 2015) | accessed 2026-10-23 | 0.65e-4/K, 23-55 degC, ISO 11359 ;; https://amariplastics.com/media/import/AMARI_LEXAN-EXELL_D.pdf | SABIC LEXAN EXELL-D Sheet Product Datasheet (2021) | accessed 2026-10-23 | 7e-5 1/degC, 23-55 degC, ISO 11359-2; TUFFAK SL 6.8e-5 ASTM D696",
+        "synthetic": false
+      },
+      "max_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 120,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 120,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.zenit.cz/public/media/Plasty/Zenit_Technicky_List_Plasty_Polykarbonat_Plny_Strukturovany_Makrolon_AJ.pdf | Covestro Makrolon UV patterned polycarbonate sheet product data sheet MF 0087 e (Sept 2015) | accessed 2026-10-23 | permanent service temperature without load approx. 120 degC; HDT 1.8 MPa 128 degC (EXELL-D 127, TUFFAK SL 132)",
+        "synthetic": false
+      },
+      "min_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -100,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -100,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.zenit.cz/public/media/Plasty/Zenit_Technicky_List_Plasty_Polykarbonat_Plny_Strukturovany_Makrolon_AJ.pdf | Covestro Makrolon UV patterned polycarbonate sheet product data sheet MF 0087 e (Sept 2015) | accessed 2026-10-23 | 'Makrolon sheets resist temperatures of -100 to +120 degC'; TUFFAK SL brittleness temperature -129 degC (ASTM D746, not a service rating)",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.8,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.8,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://manualslib.mx/manual/63435/Ht-Ht3302.html?page=29 | HT HT3302 infrared thermometer instruction manual, emissivity table p.29 | accessed 2026-10-23 | polycarbonate 0.80; IR-thermometer band table value, not hemispherical total; single source; generic polycarbonate, thin UV coex cap layer not separately characterised",
+        "synthetic": false
+      },
+      "solar_absorptance": {
+        "availability": "missing",
+        "reason": "clear transmissive sheet: datasheets give light transmission (84-89%) / shading coefficient (0.97 clear, Makrolon UV), not solar absorptance; no sourced absorptance found; EXELL-D opaque below 385 nm"
+      },
+      "compression_set": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "hardness_shore_a": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "uv_resistance": {
+        "availability": "known",
+        "value": "UV-coextruded protective layer (both sides on LEXAN EXELL-D), opaque below 385 nm, 10-year limited warranty against yellowing, loss of light transmission and breakage; TUFFAK SL listed under UL 746C Suitability for Outdoor Use (UL File E87887) but the f1/f2 rating letter is not stated on the datasheets",
+        "provenance": "https://amariplastics.com/media/import/AMARI_LEXAN-EXELL_D.pdf | SABIC LEXAN EXELL-D Sheet Product Datasheet (2021) | accessed 2026-10-23 | UV protection on both sides; essentially opaque below 385 nm; 10-year limited written warranty ;; https://plaskolite.com/docs/default-source/pds/pds343_tuf_sl_metric.pdf | Plaskolite TUFFAK SL Polycarbonate Sheet Typical Metric Properties PDS343 (2022) | accessed 2026-10-23 | coextruded UV layer; certifications list 'UL 746C: Suitability for Outdoor Use, UL File #E87887' without f1/f2 letter ;; https://www.zenit.cz/public/media/Plasty/Zenit_Technicky_List_Plasty_Polykarbonat_Plny_Strukturovany_Makrolon_AJ.pdf | Covestro Makrolon UV patterned polycarbonate sheet product data sheet MF 0087 e (Sept 2015) | accessed 2026-10-23 | Makrolon UV: UV protection on both sides, real-time outdoor exposure testing since 1989",
+        "synthetic": false
+      },
+      "material_cost": {
+        "availability": "known",
+        "value": {
+          "low": 11.63,
+          "high": 13.66,
+          "currency": "USD",
+          "basis": "per_kg",
+          "year": 2026
+        },
+        "provenance": "https://acplasticsinc.com/products/0000-187-48x-96-tuffak-sl-uf | A&C Plastics TUFFAK SL 0000 Clear Polycarbonate Sheet 48 x 96 | accessed 2026-10-23 | derived: $197.00 per 0.187 in x 48 x 96 in sheet (search-result price, single-sheet qty) = 2.973 m2 x 4.75 mm x 1200 kg/m3 = 16.95 kg => $11.63/kg ;; https://acplasticsinc.com/products/0000-187-48x-96-tuffak-sl-uf | A&C Plastics TUFFAK SL/UF 0000 .080 48X96 (variant shown on fetch) | accessed 2026-10-23 | derived: $99.00 per 0.080 in x 48 x 96 in sheet = 2.973 m2 x 2.03 mm x 1200 kg/m3 = 7.25 kg => $13.66/kg; retail sheet price before cutting/scrap",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "pmma",
+      "name": "PMMA acrylic glazing sheet, clear, cast or extruded (Roehm PLEXIGLAS GS 0F00 / XT 0A000, Perspex cell cast)",
+      "density": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1190,
+            "unit": "kg/m3"
+          },
+          "high": {
+            "value": 1190,
+            "unit": "kg/m3"
+          }
+        },
+        "provenance": "https://www.voskunststoffen.nl/files/166151/datasheet%20plexiglas%20XT%20GS.pdf | PLEXIGLAS GS/XT Technical Information Ref. No. 211-1 04/25 (Polyvantis/Roehm) | accessed 2026-10-23 | 1.19 g/cm3, ISO 1183, GS and XT ;; https://www.perspex.co.uk/Perspex/media/General/technical-library/PDFs/Perspex-Cell-Cast-Acrylic-Technical-Data-Sheet-(Complete)_EN-2019.pdf | Perspex Cell Cast Acrylic (Complete) Technical Data Sheet EN 2019 | accessed 2026-10-23 | 1.19 g/cm3, ISO 1183",
+        "synthetic": false
+      },
+      "thermal_conductivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.189,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 0.19,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://www.perspex.co.uk/Perspex/media/General/technical-library/PDFs/Perspex-Cell-Cast-Acrylic-Technical-Data-Sheet-(Complete)_EN-2019.pdf | Perspex Cell Cast Acrylic (Complete) Technical Data Sheet EN 2019 | accessed 2026-10-23 | K value 0.189 W/(m*K) ;; https://www.voskunststoffen.nl/files/166151/datasheet%20plexiglas%20XT%20GS.pdf | PLEXIGLAS GS/XT Technical Information Ref. No. 211-1 04/25 (Polyvantis/Roehm) | accessed 2026-10-23 | 0.19 W/(m*K), DIN 52612, GS and XT",
+        "synthetic": false
+      },
+      "specific_heat": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1465,
+            "unit": "J/(kg*K)"
+          },
+          "high": {
+            "value": 1470,
+            "unit": "J/(kg*K)"
+          }
+        },
+        "provenance": "https://www.perspex.co.uk/Perspex/media/General/technical-library/PDFs/Perspex-Cell-Cast-Acrylic-Technical-Data-Sheet-(Complete)_EN-2019.pdf | Perspex Cell Cast Acrylic (Complete) Technical Data Sheet EN 2019 | accessed 2026-10-23 | 0.35 cal/(g*degC), ASTM C351 => 1465 J/(kg*K) ;; https://www.voskunststoffen.nl/files/166151/datasheet%20plexiglas%20XT%20GS.pdf | PLEXIGLAS GS/XT Technical Information Ref. No. 211-1 04/25 (Polyvantis/Roehm) | accessed 2026-10-23 | 1.47 J/(g*K), GS and XT",
+        "synthetic": false
+      },
+      "youngs_modulus": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 3210,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 3300,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.perspex.co.uk/Perspex/media/General/technical-library/PDFs/Perspex-Cell-Cast-Acrylic-Technical-Data-Sheet-(Complete)_EN-2019.pdf | Perspex Cell Cast Acrylic (Complete) Technical Data Sheet EN 2019 | accessed 2026-10-23 | flexural modulus 3210 MPa, ISO 178 (flexural, not tensile) ;; https://www.voskunststoffen.nl/files/166151/datasheet%20plexiglas%20XT%20GS.pdf | PLEXIGLAS GS/XT Technical Information Ref. No. 211-1 04/25 (Polyvantis/Roehm) | accessed 2026-10-23 | modulus of elasticity Et 3300 MPa short-term, ISO 527-2/1B/1, GS and XT",
+        "synthetic": false
+      },
+      "poisson_ratio": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.37,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.38,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.voskunststoffen.nl/files/166151/datasheet%20plexiglas%20XT%20GS.pdf | PLEXIGLAS GS/XT Technical Information Ref. No. 211-1 04/25 (Polyvantis/Roehm) | accessed 2026-10-23 | 0.37, ISO 527-1, 23 degC, GS and XT ;; https://www.perspex.co.uk/Perspex/media/General/technical-library/PDFs/Perspex-Cell-Cast-Acrylic-Technical-Data-Sheet-(Complete)_EN-2019.pdf | Perspex Cell Cast Acrylic (Complete) Technical Data Sheet EN 2019 | accessed 2026-10-23 | Poisson's ratio 0.38",
+        "synthetic": false
+      },
+      "yield_strength": {
+        "availability": "missing",
+        "reason": "PMMA fails brittle (elongation at break 4-5.5%) without a tensile yield point; datasheets list only tensile strength (compressive yield 103-110 MPa per PLEXIGLAS, not a tensile value)"
+      },
+      "tensile_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 72,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 80,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.voskunststoffen.nl/files/166151/datasheet%20plexiglas%20XT%20GS.pdf | PLEXIGLAS GS/XT Technical Information Ref. No. 211-1 04/25 (Polyvantis/Roehm) | accessed 2026-10-23 | 23 degC, ISO 527-2/1B/5: XT 72 MPa, GS 80 MPa (at -40 degC: 100/110; at 70 degC: 35/40) ;; https://www.perspex.co.uk/Perspex/media/General/technical-library/PDFs/Perspex-Cell-Cast-Acrylic-Technical-Data-Sheet-(Complete)_EN-2019.pdf | Perspex Cell Cast Acrylic (Complete) Technical Data Sheet EN 2019 | accessed 2026-10-23 | 75 MPa, ISO 527 5 mm/min, cell cast",
+        "synthetic": false
+      },
+      "thermal_expansion": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 7e-05,
+            "unit": "1/K"
+          },
+          "high": {
+            "value": 7.7e-05,
+            "unit": "1/K"
+          }
+        },
+        "provenance": "https://www.voskunststoffen.nl/files/166151/datasheet%20plexiglas%20XT%20GS.pdf | PLEXIGLAS GS/XT Technical Information Ref. No. 211-1 04/25 (Polyvantis/Roehm) | accessed 2026-10-23 | 7e-5 1/K, 0-50 degC, DIN 53752-A, GS and XT ;; https://www.perspex.co.uk/Perspex/media/General/technical-library/PDFs/Perspex-Cell-Cast-Acrylic-Technical-Data-Sheet-(Complete)_EN-2019.pdf | Perspex Cell Cast Acrylic (Complete) Technical Data Sheet EN 2019 | accessed 2026-10-23 | 7.7e-5 1/K, ASTM D696",
+        "synthetic": false
+      },
+      "max_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 70,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 85,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.voskunststoffen.nl/files/166151/datasheet%20plexiglas%20XT%20GS.pdf | PLEXIGLAS GS/XT Technical Information Ref. No. 211-1 04/25 (Polyvantis/Roehm) | accessed 2026-10-23 | max. permanent service temperature: XT 70 degC, GS 80 degC ;; https://www.perspex.co.uk/Perspex/media/General/technical-library/PDFs/Perspex-Cell-Cast-Acrylic-Technical-Data-Sheet-(Complete)_EN-2019.pdf | Perspex Cell Cast Acrylic (Complete) Technical Data Sheet EN 2019 | accessed 2026-10-23 | maximum working temperature 80-85 degC (cell cast)",
+        "synthetic": false
+      },
+      "min_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -40,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -40,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.par-group.co.uk/engineering-plastics/plastic-sheet/acrylic-perspex-sheet/ | PAR Group Acrylic and Perspex Sheet (distributor page) | accessed 2026-10-23 | Genuine Perspex sheet temperature range '-40 degC up to +80 degC'; PLEXIGLAS datasheet also gives tensile strength at -40 degC",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.9,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.95,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.acrylite.co/resources/knowledge-base/article/what-is-the-emissivity-value-of-acrylite-r-acrylic-sheet | What is the emissivity value of ACRYLITE acrylic sheet? (Roehm ACRYLITE knowledge base) | accessed 2026-10-23 | 'emissivity value for acrylic ranges from about 0.90 to 0.95'; for thickness < 1/8 in down to film it can be below 0.90; clear sheet",
+        "synthetic": false
+      },
+      "solar_absorptance": {
+        "availability": "missing",
+        "reason": "clear transmissive sheet: PLEXIGLAS lists light transmittance ~92%, total energy transmittance g = 85% (DIN EN 410) and 4% reflection per surface, but no solar absorptance; not derivable without a sourced solar reflectance"
+      },
+      "compression_set": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "hardness_shore_a": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "uv_resistance": {
+        "availability": "known",
+        "value": "PLEXIGLAS GS/XT: 'unequalled resistance to weathering and ageing'; standard grades largely UV-absorbing; no UL 746C f1 rating stated",
+        "provenance": "https://www.voskunststoffen.nl/files/166151/datasheet%20plexiglas%20XT%20GS.pdf | PLEXIGLAS GS/XT Technical Information Ref. No. 211-1 04/25 (Polyvantis/Roehm) | accessed 2026-10-23 | datasheet grade survey and GS/XT comparison table",
+        "synthetic": false
+      },
+      "material_cost": {
+        "availability": "known",
+        "value": {
+          "low": 14.71,
+          "high": 22.19,
+          "currency": "USD",
+          "basis": "per_kg",
+          "year": 2026
+        },
+        "provenance": "https://www.homedepot.com/p/OPTIX-48-in-x-96-in-x-0-118-1-8-in-Clear-Acrylic-Sheet-MC-100S/205351353 | Home Depot OPTIX 48 in x 96 in x 0.118 in Clear Acrylic Sheet MC-100S | accessed 2026-10-23 | derived from search-result price: $156.00 per sheet = 2.973 m2 x 3.00 mm x 1190 kg/m3 = 10.60 kg => $14.71/kg (extruded) ;; https://homedepot.com/p/Falken-Design-48-in-x-96-in-x-0-125-in-Thick-Acrylic-Clear-Sheet-Falken-Design-ACRYLIC-CL-1-8-4896/314774602 | Home Depot Falken Design 48 in x 96 in x 0.125 in Acrylic Clear Sheet | accessed 2026-10-23 | derived from search-result price: $249.19 per sheet = 2.973 m2 x 3.175 mm x 1190 kg/m3 = 11.23 kg => $22.19/kg; retail sheet; resin index (Sep 2026 NA $3.41/kg, businessanalytiq) excluded as not purchasable form",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "pu-casting-resin",
+      "name": "Rigid PU vacuum-casting resin, ABS-like (SikaBiresin PX223 HT, Heishin Hei-Cast 8150, Smooth-On Smooth-Cast 300)",
+      "density": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1050,
+            "unit": "kg/m3"
+          },
+          "high": {
+            "value": 1210,
+            "unit": "kg/m3"
+          }
+        },
+        "provenance": "https://www.smooth-on.com/tb/files/Smooth-Cast_300q,_300,_305___310.pdf | Smooth-On Smooth-Cast 300 Series technical bulletin | accessed 2026-10-23 | Smooth-Cast 300 specific gravity 1.05 g/cc, ASTM D-1475 ;; https://deu.sika.com/dms/getdocument.get/04d7eff4-b6c7-4c68-90a2-b5712bbeb9bb/sikabiresin-px223ht.pdf | SikaBiresin PX223 HT Product Data Sheet v01.01 (08-2026) | accessed 2026-10-23 | cured 1.14 kg/l ;; https://hlhrapid.com/wp-content/uploads/2022/07/Vacuum-Casting-Material-List-and-Spec-Sheets.pdf | HLH Rapid: Vacuum (Urethane) Casting Material List and Spec Sheets (Hei-Cast 8150 sheet) | accessed 2026-10-23 | Hei-Cast 8150 S.G. of finished article 1.21, JIS K-7112",
+        "synthetic": false
+      },
+      "thermal_conductivity": {
+        "availability": "missing",
+        "reason": "not reported in fetched PU casting resin datasheets"
+      },
+      "specific_heat": {
+        "availability": "missing",
+        "reason": "not reported in fetched PU casting resin datasheets"
+      },
+      "youngs_modulus": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 962,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 2300,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.smooth-on.com/tb/files/Smooth-Cast_300q,_300,_305___310.pdf | Smooth-On Smooth-Cast 300 Series technical bulletin | accessed 2026-10-23 | Smooth-Cast 300 tensile modulus 139,500 psi = 962 MPa, ASTM D-638 ;; https://hlhrapid.com/wp-content/uploads/2022/07/Vacuum-Casting-Material-List-and-Spec-Sheets.pdf | HLH Rapid: Vacuum (Urethane) Casting Material List and Spec Sheets (Hei-Cast 8150 sheet) | accessed 2026-10-23 | Hei-Cast 8150 flexural modulus 1790 MPa, JIS K-7171 ;; https://deu.sika.com/dms/getdocument.get/04d7eff4-b6c7-4c68-90a2-b5712bbeb9bb/sikabiresin-px223ht.pdf | SikaBiresin PX223 HT Product Data Sheet v01.01 (08-2026) | accessed 2026-10-23 | PX223 HT flexural modulus 2300 MPa, ISO 178 (flexural used as proxy; no tensile modulus given)",
+        "synthetic": false
+      },
+      "poisson_ratio": {
+        "availability": "missing",
+        "reason": "not reported in fetched PU casting resin datasheets"
+      },
+      "yield_strength": {
+        "availability": "missing",
+        "reason": "datasheets give tensile strength only, no yield stress"
+      },
+      "tensile_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 20.7,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 73,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.smooth-on.com/tb/files/Smooth-Cast_300q,_300,_305___310.pdf | Smooth-On Smooth-Cast 300 Series technical bulletin | accessed 2026-10-23 | Smooth-Cast 300 3,000 psi = 20.7 MPa, ASTM D-638 ;; https://deu.sika.com/dms/getdocument.get/04d7eff4-b6c7-4c68-90a2-b5712bbeb9bb/sikabiresin-px223ht.pdf | SikaBiresin PX223 HT Product Data Sheet v01.01 (08-2026) | accessed 2026-10-23 | PX223 HT 60 MPa, ISO 527 (post-cured) ;; https://hlhrapid.com/wp-content/uploads/2022/07/Vacuum-Casting-Material-List-and-Spec-Sheets.pdf | HLH Rapid: Vacuum (Urethane) Casting Material List and Spec Sheets (Hei-Cast 8150 sheet) | accessed 2026-10-23 | Hei-Cast 8150 73 MPa, JIS K-7113",
+        "synthetic": false
+      },
+      "thermal_expansion": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 6e-05,
+            "unit": "1/K"
+          },
+          "high": {
+            "value": 0.000115,
+            "unit": "1/K"
+          }
+        },
+        "provenance": "https://hlhrapid.com/wp-content/uploads/2022/07/Vacuum-Casting-Material-List-and-Spec-Sheets.pdf | HLH Rapid: Vacuum (Urethane) Casting Material List and Spec Sheets (Hei-Cast 8150 sheet) | accessed 2026-10-23 | Hei-Cast 8150 6e-5 /degC, JIS K-6911 ;; https://deu.sika.com/dms/getdocument.get/04d7eff4-b6c7-4c68-90a2-b5712bbeb9bb/sikabiresin-px223ht.pdf | SikaBiresin PX223 HT Product Data Sheet v01.01 (08-2026) | accessed 2026-10-23 | PX223 HT 115e-6 1/K, ISO 11359",
+        "synthetic": false
+      },
+      "max_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 50,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 110,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.smooth-on.com/tb/files/Smooth-Cast_300q,_300,_305___310.pdf | Smooth-On Smooth-Cast 300 Series technical bulletin | accessed 2026-10-23 | Smooth-Cast 300 HDT 50 degC, ASTM D-648 ;; https://hlhrapid.com/wp-content/uploads/2022/07/Vacuum-Casting-Material-List-and-Spec-Sheets.pdf | HLH Rapid: Vacuum (Urethane) Casting Material List and Spec Sheets (Hei-Cast 8150 sheet) | accessed 2026-10-23 | Hei-Cast 8150 HDT 100 degC @1.80 MPa ;; https://deu.sika.com/dms/getdocument.get/04d7eff4-b6c7-4c68-90a2-b5712bbeb9bb/sikabiresin-px223ht.pdf | SikaBiresin PX223 HT Product Data Sheet v01.01 (08-2026) | accessed 2026-10-23 | PX223 HT HDT 110 degC ISO 75A (1.8 MPa), 130 degC ISO 75B; Tg 120 degC; needs post-cure",
+        "synthetic": false
+      },
+      "min_service_temperature": {
+        "availability": "missing",
+        "reason": "no minimum service temperature stated (Hei-Cast 8150 reports properties down to -20 degC only)"
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.84,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.95,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ired.co.uk/?p=36380 | 2021 Emissivity Table For Thermographers - iRed | accessed 2026-10-23 | LWIR thermography table: 'Plastic (White)' 0.84, 'Plastic (Black)' 0.95; generic plastic, not material-specific; white -> low, black -> high",
+        "synthetic": false
+      },
+      "solar_absorptance": {
+        "availability": "missing",
+        "reason": "solar absorptance is colour/finish dependent; no polymer- and colour-specific solar absorptance value found in a fetched source"
+      },
+      "compression_set": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "hardness_shore_a": {
+        "availability": "missing",
+        "reason": "not applicable (rigid thermoplastic/thermoset; Shore A is for elastomers/pads)"
+      },
+      "uv_resistance": {
+        "availability": "known",
+        "value": "poor unpainted: yellows under sunlight/UV; prime and paint for outdoor use",
+        "provenance": "https://www.smooth-on.com/products/smooth-cast-300/ | Smooth-On Smooth-Cast 300 product page | accessed 2026-10-23 | 'Unpainted castings will yellow over time - more quickly when exposed to ultra-violet light'; outdoor display after priming and painting ;; https://hlhrapid.com/wp-content/uploads/2022/07/Vacuum-Casting-Material-List-and-Spec-Sheets.pdf | HLH Rapid: Vacuum (Urethane) Casting Material List and Spec Sheets (Hei-Cast 8150 sheet) | accessed 2026-10-23 | 'Color of cured material changes yellow on exposure to sun light or UV ray.'",
+        "synthetic": false
+      },
+      "material_cost": {
+        "availability": "known",
+        "value": {
+          "low": 17.04,
+          "high": 41.02,
+          "currency": "USD",
+          "basis": "per_kg",
+          "year": 2026
+        },
+        "provenance": "https://shop.smooth-on.com/urethane-resin/smooth-cast-trade-series/smooth-cast-trade-300 | Smooth-On shop: Smooth-Cast 300 Series | accessed 2026-10-23 | derived: Smooth-Cast 300 Gallon Unit 15.4 lb (6.985 kg) $119.04 => $17.04/kg; price from WebSearch result for this page (direct fetch 403) ;; https://sculpturesupply.com/products/smooth-cast-300 | Sculpture Supply: Smooth Cast 300 | accessed 2026-10-23 | derived: Smooth-Cast 300 Pint Kit 1.9 lb (0.862 kg) $35.35 => $41.02/kg ;; Sika PX223 HT price not published (quote only)",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "epdm",
+      "name": "EPDM solid gasket compound, black, 60-80 Shore A (e.g. Freudenberg 70 EPDM EP703902, Polymax EP70, Parker E0540-80, commercial ASTM D2000 BA sheet)",
+      "density": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1120,
+            "unit": "kg/m3"
+          },
+          "high": {
+            "value": 1500,
+            "unit": "kg/m3"
+          }
+        },
+        "provenance": "https://products.fst.com/medialibrary/materialdatasheets/70%20EPDM%20EP703902_en.pdf | Freudenberg/Dichtomatik Material 70 EPDM EP703902 datasheet (v02, 2023) | accessed 2026-10-23 | typical 1.12 g/cm3 (nominal 1.13+/-0.03), ASTM D2781 A ;; https://cdn.shopify.com/s/files/1/1223/3958/files/EPD.pdf | SAS Industries Typical Properties of EPD, EPDM 60A Durometer | accessed 2026-10-23 | specific gravity 1.5, ASTM D297, 60A commercial sheet; raw EPDM polymer is 0.86 g/cm3 per NETZSCH, compounded grades are filled",
+        "synthetic": false
+      },
+      "thermal_conductivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.26,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 0.26,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://polymers.netzsch.com/Materials/Details/55 | NETZSCH Polymers: EPDM Ethylene-propylene-diene rubber | accessed 2026-10-23 | 0.26 W/(m*K); polymer-database value (search-result snippet), filled compounds may differ",
+        "synthetic": false
+      },
+      "specific_heat": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1800,
+            "unit": "J/(kg*K)"
+          },
+          "high": {
+            "value": 2000,
+            "unit": "J/(kg*K)"
+          }
+        },
+        "provenance": "https://polymers.netzsch.com/Materials/Details/55 | NETZSCH Polymers: EPDM Ethylene-propylene-diene rubber | accessed 2026-10-23 | 1.80-2.00 J/(g*K) (search-result snippet)",
+        "synthetic": false
+      },
+      "youngs_modulus": {
+        "availability": "missing",
+        "reason": "compound datasheets give only Shore A and secant stress at 100% elongation, not a small-strain Young's modulus; no fetched source gives E for EPDM"
+      },
+      "poisson_ratio": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.48,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.5,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.engineeringtoolbox.com/poissons-ratio-d_1224.html | Engineering ToolBox: Poisson's Ratio | accessed 2026-10-23 | generic rubber 0.48 - ~0.5; not EPDM-specific",
+        "synthetic": false
+      },
+      "yield_strength": {
+        "availability": "missing",
+        "reason": "not defined for elastomers (no yield point; hyperelastic to break); use tensile strength / compression set instead"
+      },
+      "tensile_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 6.9,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 14.0,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://cdn.shopify.com/s/files/1/1223/3958/files/EPD.pdf | SAS Industries Typical Properties of EPD, EPDM 60A Durometer | accessed 2026-10-23 | 1000 psi minimum (6.9 MPa), ASTM D412, 60A ;; https://www.polymax.co.uk//media/documents/Datasheet/ORing_EPDM-70.pdf | Polymax Technical Data Sheet EP70 EPDM | accessed 2026-10-23 | 14 MPa tested (10 MPa required), 70 Shore A ;; https://products.fst.com/medialibrary/materialdatasheets/70%20EPDM%20EP703902_en.pdf | Freudenberg/Dichtomatik Material 70 EPDM EP703902 datasheet (v02, 2023) | accessed 2026-10-23 | 13 MPa typical, ASTM D412",
+        "synthetic": false
+      },
+      "thermal_expansion": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.00018,
+            "unit": "1/K"
+          },
+          "high": {
+            "value": 0.000201,
+            "unit": "1/K"
+          }
+        },
+        "provenance": "https://polymers.netzsch.com/Materials/Details/55 | NETZSCH Polymers: EPDM Ethylene-propylene-diene rubber | accessed 2026-10-23 | 180e-6 /K (search-result snippet) ;; https://parker.com/promotionsite/oring-ehandbook/us/en/ehome/Coefficient-of-Thermal-Expansion | Parker O-Ring Handbook: Coefficient of Thermal Expansion | accessed 2026-10-23 | EPDM 2.01E-04 m/m/degC over 25-125 degC (search-result snippet)",
+        "synthetic": false
+      },
+      "max_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 104,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 145,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://cdn.shopify.com/s/files/1/1223/3958/files/EPD.pdf | SAS Industries Typical Properties of EPD, EPDM 60A Durometer | accessed 2026-10-23 | +220 degF upper limit, 60A commercial ;; https://products.fst.com/medialibrary/materialdatasheets/70%20EPDM%20EP703902_en.pdf | Freudenberg/Dichtomatik Material 70 EPDM EP703902 datasheet (v02, 2023) | accessed 2026-10-23 | static up to 110 degC, short-term 125 degC ;; https://www.polymax.co.uk//media/documents/Datasheet/ORing_EPDM-70.pdf | Polymax Technical Data Sheet EP70 EPDM | accessed 2026-10-23 | operating range -45 to +145 degC",
+        "synthetic": false
+      },
+      "min_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -57,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -40,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.marcorubber.com/downloads/Marco-Material-Datasheet-Parker-E0540-80.pdf | Marco Rubber material datasheet Parker E0540-80 EPDM | accessed 2026-10-23 | recommended -70 degF (-57 degC) to 250 degF ;; https://cdn.shopify.com/s/files/1/1223/3958/files/EPD.pdf | SAS Industries Typical Properties of EPD, EPDM 60A Durometer | accessed 2026-10-23 | -40 degF lower limit ;; https://products.fst.com/medialibrary/materialdatasheets/70%20EPDM%20EP703902_en.pdf | Freudenberg/Dichtomatik Material 70 EPDM EP703902 datasheet (v02, 2023) | accessed 2026-10-23 | static -50 degC; TR10 -35 degC; brittleness -50 degC",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.86,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.94,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.engineeringtoolbox.com/emissivity-coefficients-d_447.html | Engineering ToolBox: Emissivity Coefficients of Common Materials | accessed 2026-10-23 | generic rubber at 300 K: natural soft 0.86 ... hard glossy plate 0.94; proxy, not EPDM-specific",
+        "synthetic": false
+      },
+      "solar_absorptance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.94,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.94,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.asumag.com/mag/know-how-roofing-1 | American School & University: Know-How: Roofing | accessed 2026-10-23 | black EPDM roof membrane solar reflectance 0.06 => absorptance 0.94 (derived: opaque, 1 - 0.06)",
+        "synthetic": false
+      },
+      "compression_set": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.13,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.16,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://products.fst.com/medialibrary/materialdatasheets/70%20EPDM%20EP703902_en.pdf | Freudenberg/Dichtomatik Material 70 EPDM EP703902 datasheet (v02, 2023) | accessed 2026-10-23 | 13%, ASTM D395 B, 22 h at 70 degC (18% at 22 h/100 degC) ;; https://www.polymax.co.uk//media/documents/Datasheet/ORing_EPDM-70.pdf | Polymax Technical Data Sheet EP70 EPDM | accessed 2026-10-23 | 13% tested at 70 degC for 22 h (25% max) ;; https://products.fst.com/medialibrary/materialdatasheets/75%20EPDM%20E755FMD_en.pdf | Freudenberg 75 EPDM E755FMD datasheet | accessed 2026-10-23 | 16%, ASTM D395 Procedure B, 22 h at 70 degC (search-result snippet)",
+        "synthetic": false
+      },
+      "hardness_shore_a": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 60,
+            "unit": "1"
+          },
+          "high": {
+            "value": 80,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://cdn.shopify.com/s/files/1/1223/3958/files/EPD.pdf | SAS Industries Typical Properties of EPD, EPDM 60A Durometer | accessed 2026-10-23 | 60 +/- 5 Shore A ;; https://products.fst.com/medialibrary/materialdatasheets/70%20EPDM%20EP703902_en.pdf | Freudenberg/Dichtomatik Material 70 EPDM EP703902 datasheet (v02, 2023) | accessed 2026-10-23 | 70 +/- 5 Shore A (typ 68) ;; https://www.marcorubber.com/downloads/Marco-Material-Datasheet-Parker-E0540-80.pdf | Marco Rubber material datasheet Parker E0540-80 EPDM | accessed 2026-10-23 | 70-80 Shore A spec, 78 result",
+        "synthetic": false
+      },
+      "uv_resistance": {
+        "availability": "known",
+        "value": "Ozone resistance ISO 1431-1 (40 degC, 70 h, 200 pphm): pass; no UL 746C rating",
+        "provenance": "https://products.fst.com/medialibrary/materialdatasheets/70%20EPDM%20EP703902_en.pdf | Freudenberg/Dichtomatik Material 70 EPDM EP703902 datasheet (v02, 2023) | accessed 2026-10-23 | ozone test result on datasheet",
+        "synthetic": false
+      },
+      "material_cost": {
+        "availability": "known",
+        "value": {
+          "low": 9.72,
+          "high": 10.14,
+          "currency": "USD",
+          "basis": "per_kg",
+          "year": 2026
+        },
+        "provenance": "https://hosewarehouse.com/products/E60-04x48x50-Kuriyama-Commercial-Grade-Black-EPDM-Sheet-Rubber-60-Duro-hardness-Shore-Durometer-A-1-8-x-48-50ft-Roll | Hose Warehouse Kuriyama E60-04x48x50 EPDM 60A 1/8in roll | accessed 2026-10-23 | derived: $802.50 per 182 lb roll => $9.72/kg (commercial grade 60A, search-result snippet) ;; https://hosewarehouse.com/products/E60-08x36x36-Kuriyama-Commercial-Grade-Black-EPDM-Sheet-Rubber-60-Duro-hardness-Shore-Durometer-A-1-4-x-36-36ft-Roll | Hose Warehouse Kuriyama E60-08x36x36 EPDM 60A 1/4in roll | accessed 2026-10-23 | derived: $906.12 per 197 lb roll => $10.14/kg ;; https://hosewarehouse.com/products/E60-08x36x50-Kuriyama-Commercial-Grade-Black-EPDM-Sheet-Rubber-60-Duro-hardness-Shore-Durometer-A-1-4-x-36-50ft-Roll | Hose Warehouse Kuriyama E60-08x36x50 EPDM 60A 1/4in roll | accessed 2026-10-23 | derived: $1258.50 per 274 lb roll => $10.13/kg; full-roll pricing, cut pieces cost more",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "vmq-silicone",
+      "name": "VMQ silicone rubber gasket compound, peroxide/platinum cured, 50-75 Shore A (e.g. Wacker ELASTOSIL R 401/60, Freudenberg 70 VMQ SI701807, Angst+Pfister VMQ 50.20-01/70.00-03)",
+      "density": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1150,
+            "unit": "kg/m3"
+          },
+          "high": {
+            "value": 1320,
+            "unit": "kg/m3"
+          }
+        },
+        "provenance": "https://www.wacker.com/h/en-us/medias/6858-EN.pdf | Wacker Solid and Liquid Silicone Rubber Product Selection Guide (6858en/08.25) | accessed 2026-10-23 | ELASTOSIL R 401/60 S specific gravity 1.15 g/cm3 ;; https://products.fst.com/medialibrary/materialdatasheets/70%20VMQ%20SI701807_en.pdf | Freudenberg/Dichtomatik Material 70 VMQ SI701807 datasheet (v03, 2023) | accessed 2026-10-23 | 1.32 +/- 0.03 g/cm3 ;; https://www.apsoparts.com/media/downloads/asset//std.lang.all/0-/03/VMQ_70_00-03.pdf | Angst+Pfister Technical Data Sheet VMQ 70.00-03 | accessed 2026-10-23 | 1.22 +/- 0.03 g/cm3, ASTM D792",
+        "synthetic": false
+      },
+      "thermal_conductivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.23,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 0.24,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://www.makeitfrom.com/material-properties/Silicone-Rubber-PMQ-PVMQ-VMQ | MakeItFrom: Silicone Rubber (PMQ, PVMQ, VMQ) | accessed 2026-10-23 | 0.23 W/(m*K) (search-result snippet) ;; https://www.apsoparts.com/media/downloads/asset//std.lang.all/0-/01/VMQ_50_20-01.pdf | Angst+Pfister Technical Data Sheet VMQ 50.20-01 | accessed 2026-10-23 | 0.24 W/(m*K) acc. to VDE 0304",
+        "synthetic": false
+      },
+      "specific_heat": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1590,
+            "unit": "J/(kg*K)"
+          },
+          "high": {
+            "value": 1590,
+            "unit": "J/(kg*K)"
+          }
+        },
+        "provenance": "https://www.makeitfrom.com/material-properties/Silicone-Rubber-PMQ-PVMQ-VMQ | MakeItFrom: Silicone Rubber (PMQ, PVMQ, VMQ) | accessed 2026-10-23 | 1590 J/(kg*K) (search-result snippet)",
+        "synthetic": false
+      },
+      "youngs_modulus": {
+        "availability": "missing",
+        "reason": "datasheets give Shore A and 100% secant modulus (e.g. 4.3 MPa, Freudenberg SI701807), not a small-strain Young's modulus; no fetched source gives E"
+      },
+      "poisson_ratio": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.48,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.5,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.engineeringtoolbox.com/poissons-ratio-d_1224.html | Engineering ToolBox: Poisson's Ratio | accessed 2026-10-23 | generic rubber 0.48 - ~0.5; not silicone-specific",
+        "synthetic": false
+      },
+      "yield_strength": {
+        "availability": "missing",
+        "reason": "not defined for elastomers (no yield point; hyperelastic to break)"
+      },
+      "tensile_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 6.0,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 11.5,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://homedepot.com/p/Rubber-Cal-Silicone-1-8-in-x-36-in-x-144-in-Red-Orange-Commercial-Grade-60A-Rubber-Sheet-20-116-0125-36-144/304267945 | Home Depot: Rubber-Cal Silicone 1/8in x 36in x 144in Red/Orange Commercial Grade 60A Rubber Sheet | accessed 2026-10-23 | commercial grade 60A 870 psi (6.0 MPa) (search-result snippet) ;; https://products.fst.com/medialibrary/materialdatasheets/70%20VMQ%20SI701807_en.pdf | Freudenberg/Dichtomatik Material 70 VMQ SI701807 datasheet (v03, 2023) | accessed 2026-10-23 | 6.4 MPa, ASTM D412 ;; https://www.wacker.com/h/en-us/medias/6858-EN.pdf | Wacker Solid and Liquid Silicone Rubber Product Selection Guide (6858en/08.25) | accessed 2026-10-23 | ELASTOSIL R 401/70 S 11.5 N/mm2; R 401/60 S 11.0 N/mm2",
+        "synthetic": false
+      },
+      "thermal_expansion": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.00023,
+            "unit": "1/K"
+          },
+          "high": {
+            "value": 0.00023,
+            "unit": "1/K"
+          }
+        },
+        "provenance": "https://parker.com/promotionsite/oring-ehandbook/us/en/ehome/Coefficient-of-Thermal-Expansion | Parker O-Ring Handbook: Coefficient of Thermal Expansion | accessed 2026-10-23 | silicone VMQ 2.30E-04 /K over 25-230 degC (search-result snippet)",
+        "synthetic": false
+      },
+      "max_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 200,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 230,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://products.fst.com/medialibrary/materialdatasheets/70%20VMQ%20SI701807_en.pdf | Freudenberg/Dichtomatik Material 70 VMQ SI701807 datasheet (v03, 2023) | accessed 2026-10-23 | static -55 to 200 degC ;; https://www.apsoparts.com/media/downloads/asset//std.lang.all/0-/03/VMQ_70_00-03.pdf | Angst+Pfister Technical Data Sheet VMQ 70.00-03 | accessed 2026-10-23 | max 205 degC, short-term 260 degC ;; https://www.apsoparts.com/media/downloads/asset//std.lang.all/0-/01/VMQ_50_20-01.pdf | Angst+Pfister Technical Data Sheet VMQ 50.20-01 | accessed 2026-10-23 | max 230 degC, short-term 250 degC",
+        "synthetic": false
+      },
+      "min_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -60,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -55,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://www.apsoparts.com/media/downloads/asset//std.lang.all/0-/01/VMQ_50_20-01.pdf | Angst+Pfister Technical Data Sheet VMQ 50.20-01 | accessed 2026-10-23 | min -60 degC ;; https://products.fst.com/medialibrary/materialdatasheets/70%20VMQ%20SI701807_en.pdf | Freudenberg/Dichtomatik Material 70 VMQ SI701807 datasheet (v03, 2023) | accessed 2026-10-23 | static min -55 degC; brittleness -55 degC",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "missing",
+        "reason": "no fetched source gives IR emissivity for silicone rubber; colour/filler-dependent"
+      },
+      "solar_absorptance": {
+        "availability": "missing",
+        "reason": "no fetched source; strongly pigment-dependent (grades are transparent, red-orange, black)"
+      },
+      "compression_set": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.07,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.467,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.wacker.com/h/en-us/medias/6858-EN.pdf | Wacker Solid and Liquid Silicone Rubber Product Selection Guide (6858en/08.25) | accessed 2026-10-23 | 22 h/175 degC: R 701/60 7%, R plus 4060/50 9%, R 401/60 S 31%, R 401/70 S 40% ;; https://products.fst.com/medialibrary/materialdatasheets/70%20VMQ%20SI701807_en.pdf | Freudenberg/Dichtomatik Material 70 VMQ SI701807 datasheet (v03, 2023) | accessed 2026-10-23 | 19%, ASTM D395-18, 22 h at 175 degC, plied ;; https://www.apsoparts.com/media/downloads/asset//std.lang.all/0-/03/VMQ_70_00-03.pdf | Angst+Pfister Technical Data Sheet VMQ 70.00-03 | accessed 2026-10-23 | 46.7% ASTM D395-B 24 h at 175 degC; 4.7% at 24 h/30 degC",
+        "synthetic": false
+      },
+      "hardness_shore_a": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 50,
+            "unit": "1"
+          },
+          "high": {
+            "value": 75,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.apsoparts.com/media/downloads/asset//std.lang.all/0-/01/VMQ_50_20-01.pdf | Angst+Pfister Technical Data Sheet VMQ 50.20-01 | accessed 2026-10-23 | 50 +/- 5 Shore A ;; https://products.fst.com/medialibrary/materialdatasheets/70%20VMQ%20SI701807_en.pdf | Freudenberg/Dichtomatik Material 70 VMQ SI701807 datasheet (v03, 2023) | accessed 2026-10-23 | 70 +/- 5 Shore A ;; https://www.apsoparts.com/media/downloads/asset//std.lang.all/0-/03/VMQ_70_00-03.pdf | Angst+Pfister Technical Data Sheet VMQ 70.00-03 | accessed 2026-10-23 | 75 +/- 5 Shore A",
+        "synthetic": false
+      },
+      "uv_resistance": {
+        "availability": "known",
+        "value": "Sunlight resistance: Excellent; weather resistance: Excellent; ozone resistance: Excellent (qualitative)",
+        "provenance": "https://robinsonrubber.com/wp-content/uploads/2024/02/RRPC-Rubber-Selection-Guide-Silicone-Rubber.pdf | Robinson Rubber Products: Rubber Material Selection Guide VMQ, PMQ, or PVMQ Silicone Rubber (2024) | accessed 2026-10-23 | environmental performance table",
+        "synthetic": false
+      },
+      "material_cost": {
+        "availability": "known",
+        "value": {
+          "low": 17.26,
+          "high": 25.37,
+          "currency": "USD",
+          "basis": "per_kg",
+          "year": 2026
+        },
+        "provenance": "https://homedepot.com/p/Rubber-Cal-Silicone-1-8-in-x-36-in-x-144-in-Red-Orange-Commercial-Grade-60A-Rubber-Sheet-20-116-0125-36-144/304267945 | Home Depot: Rubber-Cal Silicone 1/8in x 36in x 144in Red/Orange Commercial Grade 60A Rubber Sheet | accessed 2026-10-23 | derived: $6.72/ft2 at 1/8in; mass/ft2 = 0.0929 m2 x 3.175 mm x 1150-1320 kg/m3 (VMQ density range, vendor SG not published) => $17.26-19.81/kg (search-result snippet) ;; https://www.zoro.com/i/G3211958/ | Zoro: Silicone Commercial Grade rubber sheet 1/8in x 3ft x 22ft | accessed 2026-10-23 | derived: $567.99 per 66 ft2 = $8.61/ft2 => $22.10-25.37/kg, same density assumption (search-result snippet)",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "ss304",
+      "name": "Stainless steel 304 / A2-70 fasteners (ISO 3506-1)",
+      "density": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 8000,
+            "unit": "kg/m3"
+          },
+          "high": {
+            "value": 8100,
+            "unit": "kg/m3"
+          }
+        },
+        "provenance": "https://www.azom.com/article.aspx?ArticleID=965 | AZoM Stainless Steel Grade 304 (UNS S30400) | accessed 2026-10-23 | 8000 kg/m3 ;; https://www.totalmateria.com/en-us/material/1536856 | Total Materia DIN A2-70 Material Properties | accessed 2026-10-23 | A2-70 7.61-8.1 kg/dm3 (class range); upper value used as high",
+        "synthetic": false
+      },
+      "thermal_conductivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 16.2,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 16.2,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://www.azom.com/article.aspx?ArticleID=965 | AZoM Stainless Steel Grade 304 (UNS S30400) | accessed 2026-10-23 | 16.2 W/m.K at 100 C (21.5 at 500 C)",
+        "synthetic": false
+      },
+      "specific_heat": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 500,
+            "unit": "J/(kg*K)"
+          },
+          "high": {
+            "value": 500,
+            "unit": "J/(kg*K)"
+          }
+        },
+        "provenance": "https://www.azom.com/article.aspx?ArticleID=965 | AZoM Stainless Steel Grade 304 (UNS S30400) | accessed 2026-10-23 | 500 J/kg.K, 0-100 C",
+        "synthetic": false
+      },
+      "youngs_modulus": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 190000,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 215000,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.totalmateria.com/en-us/material/1536856 | Total Materia DIN A2-70 Material Properties | accessed 2026-10-23 | 190-215 GPa at 0-30 C ;; https://www.azom.com/article.aspx?ArticleID=965 | AZoM Stainless Steel Grade 304 (UNS S30400) | accessed 2026-10-23 | 193 GPa (within range)",
+        "synthetic": false
+      },
+      "poisson_ratio": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.27,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.3,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.totalmateria.com/en-us/material/1536856 | Total Materia DIN A2-70 Material Properties | accessed 2026-10-23 | Poisson coefficient 0.27-0.3, 0-30 C",
+        "synthetic": false
+      },
+      "yield_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 450,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 450,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.totalmateria.com/en-us/material/1536856 | Total Materia DIN A2-70 Material Properties | accessed 2026-10-23 | A2-70 Rp0.2 >= 450 MPa (fastener property class minimum) ;; https://www.azom.com/article.aspx?ArticleID=965 | AZoM Stainless Steel Grade 304 (UNS S30400) | accessed 2026-10-23 | context: annealed 304 bar/sheet 205 MPa min, not used",
+        "synthetic": false
+      },
+      "tensile_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 700,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 700,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://www.totalmateria.com/en-us/material/1536856 | Total Materia DIN A2-70 Material Properties | accessed 2026-10-23 | A2-70 Rm >= 700 MPa ;; https://www.azom.com/article.aspx?ArticleID=965 | AZoM Stainless Steel Grade 304 (UNS S30400) | accessed 2026-10-23 | context: annealed 304 515 MPa min, not used",
+        "synthetic": false
+      },
+      "thermal_expansion": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1.72e-05,
+            "unit": "1/K"
+          },
+          "high": {
+            "value": 1.72e-05,
+            "unit": "1/K"
+          }
+        },
+        "provenance": "https://www.azom.com/article.aspx?ArticleID=965 | AZoM Stainless Steel Grade 304 (UNS S30400) | accessed 2026-10-23 | mean 17.2e-6/C over 0-100 C (17.8e-6 to 315 C)",
+        "synthetic": false
+      },
+      "max_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 150,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 300,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://dgsm.gso.org.sa/store/standards/iso:pub:std:IS:70045?lang=en | ISO 3506-1:2020 scope (GSO store listing) | accessed 2026-10-23 | fasteners used without restriction -20..+150 C (low); also used up to +300 C with metallurgist review (high) ;; https://www.azom.com/article.aspx?ArticleID=965 | AZoM Stainless Steel Grade 304 (UNS S30400) | accessed 2026-10-23 | bulk 304 oxidation limit 870 C intermittent / 925 C continuous, not a fastener limit",
+        "synthetic": false
+      },
+      "min_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -196,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -20,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://dgsm.gso.org.sa/store/standards/iso:pub:std:IS:70045?lang=en | ISO 3506-1:2020 scope (GSO store listing) | accessed 2026-10-23 | unrestricted down to -20 C (high); used down to -196 C with metallurgist review (low) ;; https://www.azom.com/article.aspx?ArticleID=965 | AZoM Stainless Steel Grade 304 (UNS S30400) | accessed 2026-10-23 | 'excellent toughness, even down to cryogenic temperatures'",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.11,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.14,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-23 | finish: bright as-supplied metal. Stainless Steel Machine Rolled 0.11 / Polished 0.11 (low), Machined 0.14 (high); sandblasted 0.38; 304 foil 0.05 ;; https://www.engineeringtoolbox.com/emissivity-coefficients-d_447.html | Engineering ToolBox Emissivity Coefficients of Common Materials | accessed 2026-10-23 | context: Stainless Steel polished 0.075, weathered 0.85",
+        "synthetic": false
+      },
+      "solar_absorptance": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.39,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.47,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://ntrs.nasa.gov/api/citations/19840015630/downloads/19840015630.pdf | NASA RP-1121 Henninger 1984, Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings | accessed 2026-10-23 | finish: bright as-supplied metal. Machine Rolled 0.39 (low), Polished 0.42, Machined 0.47 (high); sandblasted 0.58",
+        "synthetic": false
+      },
+      "compression_set": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "hardness_shore_a": {
+        "availability": "missing",
+        "reason": "not applicable"
+      },
+      "uv_resistance": {
+        "availability": "known",
+        "value": "Metal: no UV photodegradation mechanism; excellent in wide range of atmospheric environments; pitting/crevice risk in warm chloride, SCC above ~60 C",
+        "provenance": "https://www.azom.com/article.aspx?ArticleID=965 | AZoM Stainless Steel Grade 304 (UNS S30400) | accessed 2026-10-23 | 'excellent in a wide range of atmospheric environments and many corrosive media'; susceptible to pitting/crevice corrosion in warm chloride environments and SCC above 60 C",
+        "synthetic": false
+      },
+      "material_cost": {
+        "availability": "known",
+        "value": {
+          "low": 28.59,
+          "high": 35.43,
+          "currency": "USD",
+          "basis": "per_kg",
+          "year": 2026
+        },
+        "provenance": "https://speedymetals.com/p-1852-1-18-rd-304-stainless-steel-cold-finished-annealed.aspx | Speedy Metals 1-1/8 in RD 304 Stainless CF Annealed (search-result listing) | accessed 2026-10-23 | derived: $43.82 per 1-1/8 in dia x 12 in bar of 3.3792 lb => $12.97/lb => 28.59 $/kg (low); 304 bar stock, not finished A2 fasteners (bought per piece) ;; https://speedymetals.com/p-1854-1-14-rd-304-stainless-steel-cold-finished-annealed.aspx | Speedy Metals 1-1/4 in RD 304 Stainless CF Annealed (search-result listing) | accessed 2026-10-23 | derived: $67.02 per 1-1/4 in dia x 12 in bar of 4.17 lb => $16.07/lb => 35.43 $/kg (high) ;; https://www.mwalloys.com/stainless-steel-prices-per-pound/ | MWalloys Stainless Steel Prices Per Pound (May 2026) | accessed 2026-10-23 | quote-guide context only: US 304 round bar $1.75-2.20/lb = 3.86-4.85 $/kg mill/service-centre level",
+        "synthetic": false
+      }
+    },
+    {
+      "id": "thermal-pad",
+      "name": "Silicone thermal gap filler pad, ceramic filled, 1.2-3.0 W/(m*K) (Bergquist GAP PAD TGP 1500 / TGP 3000, Laird Tflex 300 series)",
+      "density": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1750,
+            "unit": "kg/m3"
+          },
+          "high": {
+            "value": 3200,
+            "unit": "kg/m3"
+          }
+        },
+        "provenance": "https://nonprod.docs.rs-online.com/1ba9/0900766b80b191be.pdf | Laird Technologies T-flex 300 Series Thermal Gap Filler datasheet (A15293-00 Rev.B) | accessed 2026-10-23 | 1.75-1.78 g/cc, helium pycnometer ;; https://datasheets.tdx.henkel.com/BERGQUIST-GAP-PAD-TGP-1500-en_GL.pdf | Henkel TDS BERGQUIST GAP PAD TGP 1500 (Oct 2020) | accessed 2026-10-23 | 2.1 g/cc, ASTM D792 ;; https://datasheets.tdx.henkel.com/BERGQUIST-GAP-PAD-TGP-3000-en_GL.pdf | Henkel TDS BERGQUIST GAP PAD TGP 3000 (Apr 2021) | accessed 2026-10-23 | 3.2 g/cc, ASTM D792",
+        "synthetic": false
+      },
+      "thermal_conductivity": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1.2,
+            "unit": "W/(m*K)"
+          },
+          "high": {
+            "value": 3.0,
+            "unit": "W/(m*K)"
+          }
+        },
+        "provenance": "https://nonprod.docs.rs-online.com/1ba9/0900766b80b191be.pdf | Laird Technologies T-flex 300 Series Thermal Gap Filler datasheet (A15293-00 Rev.B) | accessed 2026-10-23 | 1.2 W/mK, ASTM D5470 (modified) ;; https://datasheets.tdx.henkel.com/BERGQUIST-GAP-PAD-TGP-1500-en_GL.pdf | Henkel TDS BERGQUIST GAP PAD TGP 1500 (Oct 2020) | accessed 2026-10-23 | 1.5 W/(m-K), ASTM D5470 ;; https://datasheets.tdx.henkel.com/BERGQUIST-GAP-PAD-TGP-3000-en_GL.pdf | Henkel TDS BERGQUIST GAP PAD TGP 3000 (Apr 2021) | accessed 2026-10-23 | 3.0 W/(m-K), ASTM D5470",
+        "synthetic": false
+      },
+      "specific_heat": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1000,
+            "unit": "J/(kg*K)"
+          },
+          "high": {
+            "value": 1000,
+            "unit": "J/(kg*K)"
+          }
+        },
+        "provenance": "https://datasheets.tdx.henkel.com/BERGQUIST-GAP-PAD-TGP-1500-en_GL.pdf | Henkel TDS BERGQUIST GAP PAD TGP 1500 (Oct 2020) | accessed 2026-10-23 | heat capacity 1.0 J/g-K, ASTM E1269 ;; https://datasheets.tdx.henkel.com/BERGQUIST-GAP-PAD-TGP-3000-en_GL.pdf | Henkel TDS BERGQUIST GAP PAD TGP 3000 (Apr 2021) | accessed 2026-10-23 | heat capacity 1.0 J/g-K, ASTM E1269",
+        "synthetic": false
+      },
+      "youngs_modulus": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.18,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 0.31,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://datasheets.tdx.henkel.com/BERGQUIST-GAP-PAD-TGP-3000-en_GL.pdf | Henkel TDS BERGQUIST GAP PAD TGP 3000 (Apr 2021) | accessed 2026-10-23 | 180 kPa, ASTM D575 compression, 0.01 in/min ;; https://datasheets.tdx.henkel.com/BERGQUIST-GAP-PAD-TGP-1500-en_GL.pdf | Henkel TDS BERGQUIST GAP PAD TGP 1500 (Oct 2020) | accessed 2026-10-23 | 310 kPa, ASTM D575 compression",
+        "synthetic": false
+      },
+      "poisson_ratio": {
+        "availability": "missing",
+        "reason": "not published on gap-pad datasheets"
+      },
+      "yield_strength": {
+        "availability": "missing",
+        "reason": "not defined for soft filled elastomer pads (no yield point)"
+      },
+      "tensile_strength": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.103,
+            "unit": "MPa"
+          },
+          "high": {
+            "value": 0.103,
+            "unit": "MPa"
+          }
+        },
+        "provenance": "https://nonprod.docs.rs-online.com/1ba9/0900766b80b191be.pdf | Laird Technologies T-flex 300 Series Thermal Gap Filler datasheet (A15293-00 Rev.B) | accessed 2026-10-23 | 15 psi (0.103 MPa), ASTM D412, Tflex 340-3160; Bergquist TGP datasheets give none",
+        "synthetic": false
+      },
+      "thermal_expansion": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.000517,
+            "unit": "1/K"
+          },
+          "high": {
+            "value": 0.000906,
+            "unit": "1/K"
+          }
+        },
+        "provenance": "https://nonprod.docs.rs-online.com/1ba9/0900766b80b191be.pdf | Laird Technologies T-flex 300 Series Thermal Gap Filler datasheet (A15293-00 Rev.B) | accessed 2026-10-23 | 517 ppm/degC (38-58 degC), 754 (58-103 degC), 906 (103-135 degC), IPC-TM-650 2.4.24",
+        "synthetic": false
+      },
+      "max_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 160,
+            "unit": "degC"
+          },
+          "high": {
+            "value": 200,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://nonprod.docs.rs-online.com/1ba9/0900766b80b191be.pdf | Laird Technologies T-flex 300 Series Thermal Gap Filler datasheet (A15293-00 Rev.B) | accessed 2026-10-23 | -40 to 160 degC ;; https://datasheets.tdx.henkel.com/BERGQUIST-GAP-PAD-TGP-1500-en_GL.pdf | Henkel TDS BERGQUIST GAP PAD TGP 1500 (Oct 2020) | accessed 2026-10-23 | operating -60 to 200 degC",
+        "synthetic": false
+      },
+      "min_service_temperature": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": -60,
+            "unit": "degC"
+          },
+          "high": {
+            "value": -40,
+            "unit": "degC"
+          }
+        },
+        "provenance": "https://datasheets.tdx.henkel.com/BERGQUIST-GAP-PAD-TGP-3000-en_GL.pdf | Henkel TDS BERGQUIST GAP PAD TGP 3000 (Apr 2021) | accessed 2026-10-23 | operating -60 to 200 degC ;; https://nonprod.docs.rs-online.com/1ba9/0900766b80b191be.pdf | Laird Technologies T-flex 300 Series Thermal Gap Filler datasheet (A15293-00 Rev.B) | accessed 2026-10-23 | -40 to 160 degC",
+        "synthetic": false
+      },
+      "emissivity": {
+        "availability": "missing",
+        "reason": "not published on gap-pad datasheets; internal component"
+      },
+      "solar_absorptance": {
+        "availability": "missing",
+        "reason": "not published; internal component, not sun-exposed"
+      },
+      "compression_set": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.054,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.143,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://nonprod.docs.rs-online.com/1ba9/0900766b80b191be.pdf | Laird Technologies T-flex 300 Series Thermal Gap Filler datasheet (A15293-00 Rev.B) | accessed 2026-10-23 | Tflex 3100/3140/3160: 5.4%, 11.1%, 14.3% after 24 h hold; test temperature and deflection not stated, not ASTM D395 B 22 h/70 degC; Bergquist gives none",
+        "synthetic": false
+      },
+      "hardness_shore_a": {
+        "availability": "missing",
+        "reason": "datasheet reports Shore 00 only: Bergquist TGP 1500 40, TGP 3000 30 (ASTM D2240, 30 s delay); Laird Tflex 300 series 20-45 Shore 00"
+      },
+      "uv_resistance": {
+        "availability": "missing",
+        "reason": "no UV/weathering statement on gap-pad datasheets; intended for enclosed electronics"
+      },
+      "material_cost": {
+        "availability": "known",
+        "value": {
+          "low": 112.96,
+          "high": 144.33,
+          "currency": "USD",
+          "basis": "per_kg",
+          "year": 2026
+        },
+        "provenance": "https://the-esb.com/part/a1534003~ezurio | the-esb.com part A15340-03 Tflex 3200 DC1 9x9in 1.2W/mK (DigiKey 926-1565-ND pricing) | accessed 2026-10-23 | derived: 9x9x0.200in sheet = 265.5 cm3 x 1.75 g/cc = 0.465 kg; $67.05 (qty 1) .. $52.48 (qty 100) per sheet => $112.96-144.33/kg; thick sheet is cheapest per kg, thin sheets cost more",
+        "synthetic": false
+      }
+    }
+  ]
+}

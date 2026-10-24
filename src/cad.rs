@@ -38,7 +38,10 @@ impl RegionSnapshot {
         let mut expected: BTreeSet<_> = case.regions.iter().map(String::as_str).collect();
         if matches!(operation, StageOperation::CadFixture) {
             expected.remove("wall");
-        } else if !matches!(operation, StageOperation::CadInspect) {
+        } else if !matches!(
+            operation,
+            StageOperation::CadInspect | StageOperation::EnclosureFixture
+        ) {
             return Err(invalid("CAD region snapshot requires a CAD operation"));
         }
         let names: BTreeSet<_> = self.regions.iter().map(|r| r.name.as_str()).collect();
@@ -109,7 +112,9 @@ pub fn regions(store: &Store, id: &str) -> Result<RegionReport> {
         .find(|c| {
             matches!(
                 c.operation,
-                StageOperation::CadInspect | StageOperation::CadFixture
+                StageOperation::CadInspect
+                    | StageOperation::CadFixture
+                    | StageOperation::EnclosureFixture
             ) && matches!(c.runtime_execution, EvidenceState::Recorded)
         })
         .ok_or_else(|| invalid("succeeded bound native CAD execution required"))?;
@@ -122,6 +127,9 @@ pub fn regions(store: &Store, id: &str) -> Result<RegionReport> {
     snapshot.verify(plan.channel_case()?, capability.operation.clone())?;
     if let Some(spec) = &plan.cad_variant {
         crate::cad_variant::verify_snapshot(spec, &snapshot)?;
+    }
+    if let Some(spec) = &plan.cad_sheet_variant {
+        crate::cad_sheet_variant::verify_snapshot(spec, &snapshot)?;
     }
     Ok(RegionReport {
         schema_version: 1,

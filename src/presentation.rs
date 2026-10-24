@@ -99,7 +99,9 @@ pub(crate) fn retain(store: &Store, id: &str, plan: &ExecutionPlan) -> Result<()
     )?;
     let staging = destination.with_file_name(format!(".retained-source-{}", uuid::Uuid::new_v4()));
     private_dir(&staging)?;
-    let result = (|| {
+    // Failed submission copies remain under the durable intent. Recovery
+    // removes them only after re-verifying the original authorized source.
+    (|| {
         let records = fields::manifests(&root, &snapshot)?;
         if records
             .last()
@@ -151,10 +153,7 @@ pub(crate) fn retain(store: &Store, id: &str, plan: &ExecutionPlan) -> Result<()
         )?;
         store.add_artifact(id, &intent)?;
         Ok(())
-    })();
-    // Failed submission copies remain under the durable intent. Recovery
-    // removes them only after re-verifying the original authorized source.
-    result
+    })()
 }
 
 /// A dropped submission transaction has no runnable job. Delete its unpublished
@@ -258,6 +257,7 @@ mod tests {
             overrides: vec![],
             native_runtimes: vec![],
             allowed_input_roots: vec![profile.allowed_input_root.clone()],
+            kfd_exclusion: None,
         };
         let authorization =
             ExecutionAuthorization::capture(&plan, &profile, &binding, &authority).unwrap();

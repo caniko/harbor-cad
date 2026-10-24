@@ -98,6 +98,19 @@ fn freezing_contract_rejects_missing_physics_nonconduction_and_weakened_acceptan
 }
 
 #[test]
+fn gpu_solidification_is_a_typed_cpu_only_refusal_not_a_fallback() {
+    for backend in ["hip", "cuda"] {
+        let mut spec = fixture();
+        spec.backend = backend.into();
+        assert!(
+            matches!(spec.scale(), Err(harbor_cad::Error::Unqualified(ref m)) if m == harbor_cad::freezing::GPU_REFUSAL),
+            "{backend}"
+        );
+        assert!(ExecutionPlan::freezing_reference(spec, "research".into()).is_err());
+    }
+}
+
+#[test]
 fn version_twelve_freezing_plan_binds_native_times_geometry_and_conservative_allocated_resources() {
     let spec = fixture();
     let plan = ExecutionPlan::freezing_reference(spec.clone(), "research".into()).unwrap();
