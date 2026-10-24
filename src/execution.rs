@@ -13,6 +13,9 @@ use std::{
 
 pub const SANDBOX_POLICY: &str = "harbor-cad-native-v2";
 pub const HIP_SANDBOX_POLICY: &str = "harbor-cad-native-hip-single-kfd-v1";
+/// Direct-evidence exclusion of a second live KFD GPU. Recorded as the applied
+/// policy when `from_topology` admits the selected GPU alongside a foreign one.
+pub const KFD_EXCLUSION_POLICY: &str = "harbor-cad-native-hip-kfd-exclusion-v1";
 pub const PRESENTATION_SANDBOX_POLICY: &str = "harbor-cad-presentation-v1";
 pub const FILTER_SANDBOX_POLICY: &str = "harbor-cad-filter-hip-single-kfd-v1";
 pub const FEM_SANDBOX_POLICY: &str = "harbor-cad-fem-cpu-v1";

@@ -127,6 +127,7 @@ fn archived_source_with_geometry(store: &Store, geometry: serde_json::Value) -> 
         overrides: vec![],
         native_runtimes: vec![],
         allowed_input_roots: vec![profile.allowed_input_root.clone()],
+        kfd_exclusion: None,
     };
     let authorization =
         ExecutionAuthorization::capture(&plan, &profile, &binding, &authority).unwrap();
@@ -1285,6 +1286,7 @@ fn submit_mesh(
         overrides: vec![],
         native_runtimes: vec![],
         allowed_input_roots: vec![profile.allowed_input_root.clone()],
+        kfd_exclusion: None,
     };
     let authorization =
         ExecutionAuthorization::capture(&plan, &profile, &binding, &authority).unwrap();

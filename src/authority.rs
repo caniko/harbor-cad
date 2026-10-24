@@ -1,5 +1,5 @@
 //! Explicit execution authorization, separate from historical approval schemas.
-use crate::{Result, contracts::*, execution::ExecutionBinding};
+use crate::{Result, contracts::*, devices::KfdExclusion, execution::ExecutionBinding};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -45,6 +45,10 @@ pub struct HostAuthority {
     pub overrides: Vec<RouteOverride>,
     pub native_runtimes: Vec<String>,
     pub allowed_input_roots: Vec<String>,
+    /// Operator-installed direct-evidence exclusion of a second live KFD GPU.
+    /// Absent keeps the single-KFD-GPU policy, which refuses any second GPU.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kfd_exclusion: Option<KfdExclusion>,
 }
 
 fn absolute(path: &str) -> bool {
@@ -169,6 +173,18 @@ impl HostAuthority {
             return Err(invalid(
                 "authority runtime manifests must identify immutable store files",
             ));
+        }
+        if let Some(exclusion) = &self.kfd_exclusion {
+            exclusion.validate()?;
+            // The exclusion's selected card must be an allowed HIP compute card:
+            // the receipt cannot authorize a device the authority never allowed.
+            if !self.allowed_devices.iter().any(|d| {
+                d.role == Role::Compute && d.backend == "hip" && d.pci == exclusion.selected_pci
+            }) {
+                return Err(invalid(
+                    "KFD exclusion selected card must be an allowed HIP compute device",
+                ));
+            }
         }
         Ok(())
     }

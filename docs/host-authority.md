@@ -88,6 +88,28 @@ HIP submissions require this authority and the independently correlated exact
 PCI/UUID. Its single-KFD-GPU worker policy rejects another exposed compute GPU;
 durable GPU qualification and multi-GPU exclusion remain separate evidence gates.
 
+### KFD multi-GPU exclusion (`harbor-cad-native-hip-kfd-exclusion-v1`)
+
+Once a second GPU is bound to amdgpu it appears as a second live KFD node and
+the single-KFD-GPU policy refuses all HIP compute. An optional
+`kfd_exclusion` receipt on `HostAuthority` lifts that refusal for one host only,
+travelling the same `authority install` trust path as every other device fact
+(no ad-hoc file beside a job). `HipIdentity::from_topology` admits the selected
+card beside a foreign one **only** when the installed receipt matches the exact
+running kernel release and `/proc/version` digest, the selected compute PCI, and
+the foreign-PCI set exactly; any drift — a different kernel, a changed PCI set,
+an extra third GPU, or a missing receipt — restores the `Unqualified` refusal.
+`HIP_VISIBLE_DEVICES` stays non-enforcing and there is no env-var bypass. The
+admitted identity records `applied_policy =
+harbor-cad-native-hip-kfd-exclusion-v1`; a single-GPU host records the
+single-KFD policy.
+
+The receipt's evidence is produced by `scripts/verify_kfd_exclusion.py`, which
+inside the exact HIP sandbox attempts `ACQUIRE_VM`, `ALLOC_MEMORY_OF_GPU` and
+`CREATE_QUEUE` against the foreign `gpu_id` (expecting `EINVAL` each time) with
+the selected card as positive control, bound to the matched running-kernel
+amdkfd source. It is on security hold until the opt-in amdgpu boot entry lands.
+
 ## Qualification
 
 ```sh

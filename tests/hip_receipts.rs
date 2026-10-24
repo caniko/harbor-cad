@@ -13,6 +13,7 @@ fn hip_receipts_bind_kernel_identity_and_compiled_runtime_without_fallback() {
         unique_id: 9004149066219862957,
         generation: 3,
         qualified: false,
+        applied_policy: "harbor-cad-native-hip-single-kfd-v1".into(),
     };
     let receipt = json!({
         "adapter":"OpenLB", "backend":"hip", "pci":identity.pci,

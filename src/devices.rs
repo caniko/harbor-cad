@@ -5,7 +5,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 #[path = "hip_identity.rs"]
 mod hip_identity;
-pub use hip_identity::{HipIdentity, HipSandbox};
+pub use hip_identity::{HipIdentity, HipSandbox, KernelIdentity, KfdExclusion};
 use std::{
     collections::BTreeSet,
     fs,

@@ -46,6 +46,7 @@ fn authority(profile: &HostExecutionProfile) -> HostAuthority {
         overrides: vec![],
         native_runtimes: vec![],
         allowed_input_roots: vec![profile.allowed_input_root.clone()],
+        kfd_exclusion: None,
     }
 }
 

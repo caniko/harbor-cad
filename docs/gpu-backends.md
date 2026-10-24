@@ -95,6 +95,24 @@ validation still need their own gates.
    selected-node containment and durable CLI/MCP B1, with retained-field hashes,
    worker restart, cancellation and runtime/reservation release. Multi-GPU KFD
    isolation and physical-validation statuses remain separate.
+   - **Multi-GPU KFD exclusion (`harbor-cad-native-hip-kfd-exclusion-v1`).**
+     When a second GPU is bound to amdgpu, `from_topology` admits the selected
+     card beside the foreign one only with an installed `HostAuthority`
+     `kfd_exclusion` receipt that matches the exact running kernel
+     (release + `/proc/version` digest), the selected PCI and the foreign-PCI
+     set; otherwise it keeps the single-KFD refusal. The receipt's direct
+     evidence — foreign `ACQUIRE_VM`/`ALLOC_MEMORY_OF_GPU`/`CREATE_QUEUE` all
+     `EINVAL`, selected card as positive control — is produced in Phase 4 by:
+
+     ```sh
+     python3 scripts/verify_kfd_exclusion.py \
+       --selected-pci 0000:03:00.0 --foreign-pci 0000:7d:00.0 \
+       --kfd-source /nix/store/<kernel>-dev/.../include/uapi/linux/kfd_ioctl.h \
+       --output /absolute/new/exclusion-directory
+     ```
+
+     It is on security hold until the opt-in amdgpu boot entry binds the iGPU;
+     the exclusion logic is unit-tested with a mocked ioctl layer meanwhile.
 5. Advance HIP/Kokkos numerical filters only against an exact compatible
    ParaView/VTK/Viskores set. EGL rendering and VAAPI media retain their own
    selected devices and receipts.

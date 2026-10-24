@@ -27,6 +27,7 @@ fn authority() -> HostAuthority {
         overrides: vec![],
         native_runtimes: vec![],
         allowed_input_roots: vec!["/nonexistent".into()],
+        kfd_exclusion: None,
     }
 }
 
