@@ -46,9 +46,11 @@ with a changed envelope or profile is an idempotency conflict.
   output allowance.
 - `fidelity`: the `screen` template set, plus an optional `refine` set with
   `refine_top_k` ≤ 3 re-evaluations of the best screened candidates.
-- `templates`: named sets of 1–4 `{role, plan}` or chained
+- `templates`: named sets of 1–5 `{role, plan}` or chained
   `{role, plan_request, after?, max_artifact_bytes}` children.
 - `metric_sources`: at most 32 `{metric, unit, source}`.
+- `pareto_metric` (optional): a declared metric that replaces the minimum
+  constraint margin as the second (maximized) Pareto axis.
 
 ## Templates
 
@@ -87,8 +89,13 @@ the same set; without it the request is planned as soon as the candidate is
 created. `{"$job": ROLE}` becomes the job id of an upstream role (`after` or its
 own upstream chain), and `{"$job": ROLE, "artifact": A, "pointer": P[, "unit": U]}`
 becomes a finite number read from that job's registered, checksum-verified
-JSON artifact. Validation substitutes dummy upstreams and checks the request
-schema, the allowlist and the placeholders.
+JSON artifact. `{"$metric": METRIC[, "si": DIMENSION]}` becomes a metric
+(in its declared unit) computed from the upstream roles' job metrics plus the
+parameter, declared, sourced and provider metrics, at screen semantics (a
+derived request sees only upstream results); unknown refuses the request.
+Derivation binds only upstream (after-chain) jobs, so it is reproducible.
+Validation substitutes dummy upstreams and checks the request schema, the
+allowlist and the placeholders.
 
 When `after` has succeeded, the worker's design advance resolves the request
 and calls the same `dispatch` that the CLI and MCP planning calls use. Planning
@@ -114,7 +121,9 @@ first job's `validation.json` (`tests/design.rs`).
 ## Metrics
 
 - `job {role, artifact, pointer}`: a finite number at a JSON pointer inside a
-  registered, checksum-verified JSON artifact of a succeeded child.
+  registered, checksum-verified JSON artifact of a succeeded child. The role
+  must exist in at least one fidelity; where it does not, the metric is
+  unknown (e.g. a refine-only verification solve).
 - `parameter {param}`: the candidate's own continuous value.
 - `provider {name, params}`: a local `MetricProvider` (see
   `design::PROVIDERS`) that receives only the declared parameters and the
@@ -144,6 +153,25 @@ finish only affects the thermal template. Geometry comes from the metrics `volum
 optionally `min_wall_m`. Quantity comes from a `quantity` metric (a parameter
 or a declared input). Any missing input, missing sourced data or incompatible
 route gives an unknown value.
+
+`max_supported_pcb_power_w` (W, `estimated`) is the swept PCB dissipation a
+candidate supports at the hot point. With radiation off and constant films and
+solar, the steady model is linear, so nodal temperatures are affine in power.
+Two solves at `pcb_power_low_w` and `pcb_power_high_w` give per-criterion
+chords. The criteria are the PCB peak and the internal air against
+`component_max_temperature_k` (components sit between them), and the housing
+peak against the route material's conservative service maximum less
+`housing_margin_required_k`. They are kept separate because each is
+(near-)affine while their maximum switches branch. A peak is a maximum over
+nodes and therefore convex, so the chord is an upper bound inside the swept
+interval, which makes the result conservative. The result is the smallest
+power at which a chord reaches its limit, clamped to the high power. It is
+unknown when the low power already exceeds a limit or a temperature does not
+rise with power. Metric names are unprefixed for the low solve, `hi_` for the
+high one and `check_` for verification. On the refine tier, a third solve at
+that power (planned through `$metric`) must match the chords within 0.5 K
+(`AFFINITY_TOLERANCE_K`), otherwise the metric is unknown. Providers see the
+candidate's fidelity through `MetricProvider::evaluate_at`.
 
 A missing metric (failed, cancelled or interrupted child, absent artifact,
 provider error) is unknown. Unknown constraints never pass.
@@ -176,9 +204,11 @@ proposes the next candidate only when nothing is pending. A design ends as
 `completed`, `budget_exhausted`, `wall_time_exhausted`,
 `artifact_budget_exhausted` or `failed` (non-transient error, recorded).
 `design status` reports iterations, metrics, feasibility, incumbent, feasible
-set, a two-objective Pareto set (objective vs minimum constraint margin) and
-budget use. `design export` reports the winner, its child job IDs and labels
-each constraint `simulated`, `calibrated`/`estimated` (provider),
+set, a two-objective Pareto set and budget use. The Pareto set is objective
+vs minimum constraint margin, or, with `pareto_metric`, objective vs that
+metric (maximized) over feasible candidates. `design export` repeats it as
+`{index, fidelity, objective, value}` points. `design export` reports the
+winner, its child job IDs and labels each constraint `simulated`, `calibrated`/`estimated` (provider),
 `prescribed` (parameter or declared input), `measured` (correlation) or
 `unknown`. When the objective minimizes a correlation metric, the winner also
 carries `calibration` entries labelled `calibrated`, with the approved
@@ -193,53 +223,62 @@ manufacturing grids. Its single categorical `route` lists only compatible
 in `data/processes.json` and `data/finishes.json`; `tests/design.rs` checks
 each): white and RAL 7035 powder coat on CNC 6061-T6 and on laser/brake
 5052-H32, and black-pigment MJF PA12. No evaluation is spent on a refused
-route × finish pair. The chain is `variant`
-(`plan_cad_variant` of the enclosure fixture's `Params` sheet, with all five
-thermal regions) → `mesh` (`plan_cad_solid_mesh`, a conformal tetrahedral mesh of
-`gasket`, `housing`, `lid`, `pcb` and `window`) → `thermal`
-(`plan_enclosure_thermal`, steady conduction; see
-[enclosure thermal](enclosure-thermal.md)). The objective minimizes
-`unit_cost_high_usd` at a declared quantity of 50. The constraints are
-`temperature_margin_k ≥ 10 K`, `manufacturability_violations ≤ 0` and
-`component_temperature_margin_k ≥ 0 K`. The temperature margin compares
-`max_temperature_k`, read from the thermal receipt (`/regions/housing/max_k`),
-and the class 4.1 cold-point ambient (`min_temperature_k`) with the route
-material's conservative service limits. The component margin is the operator's
-`component_max_temperature_k` minus the simulated `pcb_max_temperature_k`. The
-minimum wall is checked against the conservative end of the process's
-minimum-wall range.
+route × finish pair. The screen chain is `variant` (`plan_cad_variant` of the
+enclosure fixture's `Params` sheet, with all five thermal regions) → `mesh`
+(`plan_cad_solid_mesh`, a conformal tetrahedral mesh of `gasket`, `housing`,
+`lid`, `pcb` and `window`, 6 mm) → `thermal_lo` and `thermal_hi`
+(`plan_enclosure_thermal` at 1 W and 15 W in radiation-free `power_sweep`
+mode; see [enclosure thermal](enclosure-thermal.md)). The refine tier
+(`refine_top_k` 1) remeshes at 4 mm, chains `thermal_lo` → `thermal_hi` →
+`thermal_check`, and runs the check at the superposed supported power. The
+objective minimizes `unit_cost_high_usd` at a declared quantity of 50. The
+constraints are `temperature_margin_k ≥ 10 K` (housing at 1 W and the class
+4.1 cold point), `manufacturability_violations ≤ 0` and
+`max_supported_pcb_power_w ≥ 1 W`. `pareto_metric` reports cost vs supported
+power. PCB power is no longer an operator input. The swept range (1–15 W) and
+the 10 K housing margin are declared requirements. The component limit
+(`electronics:component-limit-industrial.low`, 85 °C) and the isotropic board
+conductivity (`electronics:pcb-fr4-copper-through-plane.low`, 0.26 W/(m·K))
+are cited conservative defaults, not product data (see
+[design conditions](design-conditions.md)). The minimum wall is checked
+against the conservative end of the process's minimum-wall range.
 
 Ambient, solar irradiance and the exterior film are `sourced` metrics. They
 come from the ETSI EN 300 019-1-4 class 4.1 hot design point (see
 [design conditions](design-conditions.md)). A metric with
-`{"kind": "sourced", "key": "condition:<class>.<hot|cold>.<field>"}` or
-`"finish:<id>.<field>"` carries a cited value in its SI unit. Templates read it
-through `$input`, like a declared input. The internal cavity film is the
-sourced `film:enclosed-cavity-natural.low` (1.2 W/(m²·K), see
-[design conditions](design-conditions.md)). The pc-uv window has no sourced
-absorptance, so its solar load uses the explicit conservative bound
-`transparent_solar: "deposit_incident_in_cavity"` (all incident irradiance
-enters the internal air node); `design export` lists it under
-`conservative_bounds` and prefixes the statement with `CONSERVATIVE BOUND`.
-PCB power, board conductivity and the component limit are product-specific and
-are declared `missing` ("product-specific: supplied by operator").
+`{"kind": "sourced", "key": "condition:<class>.<hot|cold>.<field>"}`,
+`"finish:<id>.<field>"`, `"film:<id>.<low|high>"` or
+`"electronics:<id>.<low|high>"` carries a cited value in its SI unit.
+Templates read it through `$input`, like a declared input. The internal cavity
+film is the sourced `film:enclosed-cavity-natural.low` (1.2 W/(m²·K)). The
+pc-uv window has no sourced absorptance, so its solar load uses the explicit
+conservative bound `transparent_solar: "deposit_incident_in_cavity"` (all
+incident irradiance enters the internal air node); `design export` lists it
+under `conservative_bounds` and prefixes the statement with
+`CONSERVATIVE BOUND`.
 
-Nothing structural blocks feasibility once those three inputs are supplied:
 `python/tests/test_enclosure_feasibility.py` solves the
-`al-6061-t6__cnc-3axis-al__powder-coat-white` candidate on a structured analogue
-of the fixture with the pure-Python reference solver (not CalculiX), with
-synthetic stand-ins for only the operator inputs, and finds both thermal
-margins and the Rust manufacturability screen satisfied. What remains:
+`al-6061-t6__cnc-3axis-al__powder-coat-white` candidate on a structured
+analogue of the fixture with the pure-Python reference solver (not CalculiX),
+using only cited values. Without radiation, the midpoint solve matches the
+chords within 0.06 K, and the air node matches exactly. With radiation the air
+deviates by 0.16 K, which is why `power_sweep` refuses radiation. Findings:
 
+- With the window, the candidate supports no swept power. At 1 W the
+  stacked conservative bounds (window solar deposited in the air, no
+  radiation credit, the 1.2 W/(m²·K) cavity film) give 373.6 K internal air
+  and a 358.8 K PCB peak, both above the 358.15 K default limit.
+- The same analogue with an opaque lid supports 2.04 W, bound by the PCB
+  peak. The verification solve reaches the limit to within 1e-12 K, and the
+  housing chord is 0.14 K conservative.
 - Native FreeCAD/Gmsh/CalculiX runtime qualification waits on the security
   hold.
-- Until the operator supplies the three inputs, the thermal plan refuses, the
-  child is `blocked` and the thermal constraints stay `unknown`.
 - PA12 stays a candidate but can never pass. Its sourced minimum service
   temperature is -40 °C, and the class 4.1 cold point is -33 °C, so the cold
   margin is 7 K, below the 10 K requirement, whatever the thermal result.
 
-`examples/design-enclosure-demo.json` runs the same chain with explicitly
+`examples/design-enclosure-demo.json` runs the earlier single-solve chain
+(fixed PCB power, radiation on) with explicitly
 `synthetic: true` inputs and a declared window. `design status` and
 `design export` list those inputs in `synthetic_inputs`, and the export
 statement starts with `SYNTHETIC`.

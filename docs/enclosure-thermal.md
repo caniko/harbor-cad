@@ -76,6 +76,12 @@ shaded surface takes one label; the receipt's areas make this auditable.
   option exists.
 - Radiation (optional): `*RADIATE` to ambient with each exposed region's
   emissivity; missing emissivity refuses.
+- Power sweep (optional `power_sweep: true`): the design loop superposes solves
+  at two heat-source powers. That is exact only for a linear model, so
+  planning refuses `power_sweep` together with `radiation`. Constant films,
+  constant solar and the air-node coupling are linear, so every nodal
+  temperature is affine in power. Dropping radiation is conservative at the hot
+  point, because surfaces there are above ambient and radiation only cools.
 - Internal air (modelling assumption): every cavity face exchanges heat with
   one well-mixed air node through `internal_film_coefficient`. The adapter
   runs a secant search on the node temperature until its net heat flow is
@@ -115,22 +121,28 @@ at O(h), because the transverse resolution is fixed. Gates are 1e-2 (slab),
 ## Design loop
 
 `examples/design-enclosure.json` chains variant → `plan_cad_solid_mesh` →
-`plan_enclosure_thermal`. `max_temperature_k` reads
-`/regions/housing/max_k` from the thermal receipt, and `temperature_margin_k`
-compares it with the route material's conservative service limit.
+two `plan_enclosure_thermal` solves at 1 W and 15 W PCB power in
+`power_sweep` mode (radiation off). Their receipts (`/regions/pcb/max_k`,
+`/internal_air_k`, `/regions/housing/max_k`) feed `max_supported_pcb_power_w`
+by linear superposition (see [design loop](design-loop.md)). On the refine
+tier, a third solve at that power must match the superposed temperatures
+within 0.5 K. `temperature_margin_k` compares the 1 W housing peak and the
+cold point with the route material's conservative service limits.
 Ambient, irradiance and exterior film come from the cited ETSI EN 300 019-1-4
 class 4.1 hot design point, and the minimum service check uses its cold point
 (see [design conditions](design-conditions.md)). The internal film is the
 cited conservative low end of `enclosed-cavity-natural` (1.2 W/(m²·K)). The
-single categorical `route` lists only compatible `MATERIAL__PROCESS__FINISH`
+component limit (85 °C) and the board conductivity (0.26 W/(m·K), isotropic;
+anisotropy not modelled) are cited conservative defaults, not product data.
+The single categorical `route` lists only compatible `MATERIAL__PROCESS__FINISH`
 triples; the finish's sourced optics override the material's. The pc-uv window
-uses the `transparent_solar` conservative bound. PCB power, board conductivity
-and the component limit are product-specific operator inputs declared
-`missing`, so the thermal child is blocked until they are supplied.
-`python/tests/test_enclosure_feasibility.py` shows that with synthetic stand-ins
-for only those three inputs, an aluminium/white-powder-coat candidate on a
-structured analogue of the fixture is feasible on the pure-Python reference
-solver.
+uses the `transparent_solar` conservative bound.
+`python/tests/test_enclosure_feasibility.py` checks the superposition against
+the pure-Python reference solver on a structured analogue of the fixture.
+Without radiation the chords hold within 0.06 K, and with radiation they do
+not. The aluminium/white-powder-coat candidate with the window supports no
+swept power: the stacked conservative bounds put the internal air at 373.6 K
+at 1 W. With an opaque lid it supports 2.04 W.
 `examples/design-enclosure-demo.json` uses `synthetic: true` values and a
 declared window. `design status`/`export` then list `synthetic_inputs`, and
 the export statement starts with `SYNTHETIC`.

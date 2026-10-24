@@ -1,7 +1,8 @@
 # Design conditions and surface finishes
 
-`data/conditions.json` holds the outdoor climatic classes and external film
-coefficients. `data/finishes.json` holds surface finishes. Both load through
+`data/conditions.json` holds the outdoor climatic classes, external film
+coefficients and conservative electronics defaults. `data/finishes.json`
+holds surface finishes. Both load through
 `conditions::Conditions::builtin()`, in the same way as the
 [material and process library](materials-and-cost.md). The loader enforces the
 following rules:
@@ -58,6 +59,26 @@ These are convective coefficients only. Radiation is modelled separately.
   W/(m²·K), rounded outward. The low end is the design value: cavity radiation
   and gap conduction are not credited, so it is conservative for interior air
   and board temperatures. Read it as `film:enclosed-cavity-natural.low`.
+
+## Electronics defaults
+
+Section `electronics` holds cited conservative defaults. They are not product
+data: replace them with the limiting part's datasheet and the real stack-up
+once those are known. Read them as `electronics:<id>.<low|high>`.
+
+| Id | Range | Design value | Source |
+|---|---|---|---|
+| `component-limit-industrial` | 85 °C | `.low` = 358.15 K | Microchip AN3539 ("standard industrial range of -40 °C to +85 °C"); Microchip dsPIC33A AEC-Q100 Grade 3 (-40 to +85 °C) |
+| `pcb-fr4-copper-in-plane` | 8.1–17.4 W/(m·K) | not used | Graebner, Electronics Cooling 1995 (measured 8.1–15.9); Electronics Cooling 1998 (4-layer example 17.4) |
+| `pcb-fr4-copper-through-plane` | 0.26–0.81 W/(m·K) | `.low` = 0.26 W/(m·K) | Electronics Cooling 1998 (series rule 0.26); Graebner 1995 (measured 0.64–0.81) |
+
+The 85 °C grade is an ambient operating range, and grade codes are
+manufacturer-specific. Applying the limit to the hotter of the board peak and
+the internal air is conservative for a part graded industrial or wider. The
+enclosure model takes one isotropic conductivity per region, so the board uses
+0.26 W/(m·K). That value lies below every cited in-plane and through-plane
+value, so it understates conduction in every direction. Anisotropy is not
+modelled: in-plane spreading is understated 30–70×.
 
 ## Design points
 

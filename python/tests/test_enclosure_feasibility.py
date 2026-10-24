@@ -1,14 +1,16 @@
-"""Nothing structural blocks a feasible enclosure design any more.
+"""Supported PCB power of an enclosure candidate on the reference solver path.
 
 One compatible candidate of examples/design-enclosure.json is solved with the
 pure-Python reference solver (no CalculiX) on a structured analogue of the
 enclosure fixture (housing walls and bosses, lid, pc-uv window, PCB). Every
-environment, material, finish and cavity-film value is the cited conservative
-end the Rust resolver uses; the window takes the explicit conservative
-transparent_solar bound. ONLY the operator inputs (PCB power, board
-conductivity, component limit) are SYNTHETIC stand-ins. The analogue omits the
-fins (less exterior area) and the gasket; it is a demonstration, not design
-evidence.
+environment, material, finish, cavity-film, component-limit and board
+conductivity value is the cited conservative end the Rust resolver uses; the
+window takes the explicit conservative transparent_solar bound. PCB power is
+swept: two radiation-free solves (power_sweep mode) at the swept ends give the
+maximum supported power by linear superposition, mirrored here from
+design_providers::supported_power. Nothing is synthetic. The analogue omits
+the fins (less exterior area) and the gasket; it is a demonstration, not
+design evidence.
 """
 
 import importlib.util
@@ -22,11 +24,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 CANDIDATE = "al-6061-t6__cnc-3axis-al__powder-coat-white"
-SYNTHETIC_OPERATOR = {
-    "pcb_power_w": 3.0,
-    "pcb_conductivity_w_m_k": 20.0,
-    "component_max_temperature_k": 398.15,
-}
+AFFINITY_TOLERANCE_K = 0.5  # design_providers::AFFINITY_TOLERANCE_K
 
 
 def load(name, path):
@@ -45,6 +43,10 @@ def data(name):
     return json.loads((ROOT / "data" / name).read_text())
 
 
+def envelope():
+    return json.loads((ROOT / "examples/design-enclosure.json").read_text())
+
+
 def end(value, high):
     """Conservative end of a cited range in SI (only the units used here)."""
     assert value["availability"] == "known" and not value["synthetic"]
@@ -58,11 +60,17 @@ def by_id(items, key):
     return next(item for item in items if item["id"] == key)
 
 
+def declared(name):
+    source = next(m for m in envelope()["metric_sources"] if m["metric"] == name)
+    return source["source"]["input"]["value"]
+
+
 def sourced():
     materials, finishes = data("materials.json")["materials"], data("finishes.json")
     conditions = data("conditions.json")
     climate = by_id(conditions["classes"], "etsi-4-1")
     still = next(f for f in conditions["films"] if f["wind_speed"] is None)
+    electronics = conditions["electronics"]
     material, _, finish = CANDIDATE.split("__")
     metal = by_id(materials, material)
     coat = by_id(finishes["finishes"], finish)
@@ -78,6 +86,13 @@ def sourced():
                 "coefficient"
             ],
             False,
+        ),
+        # Cited conservative defaults, not product data (the envelope's keys).
+        "component_k": end(
+            by_id(electronics, "component-limit-industrial")["value"], False
+        ),
+        "board_k": end(
+            by_id(electronics, "pcb-fr4-copper-through-plane")["value"], False
         ),
         "metal": {
             "k": end(metal["thermal_conductivity"], False),
@@ -96,14 +111,14 @@ def sourced():
     }
 
 
-def material(k, emissivity, absorptance, synthetic, provenance):
+def material(k, emissivity, absorptance, provenance):
     return {
-        "source": "declared" if synthetic else "library",
+        "source": "library",
         "conductivity_w_m_k": k,
         "emissivity": emissivity,
         "solar_absorptance": absorptance,
         "provenance": provenance,
-        "synthetic": synthetic,
+        "synthetic": False,
     }
 
 
@@ -112,11 +127,11 @@ YS = [0, 0.004, 0.045, 0.051, 0.099, 0.105, 0.146, 0.15]
 ZS = [0, 0.004, 0.012, 0.014, 0.076, 0.08]
 
 
-def region(i, j, k):
+def region(i, j, k, window):
     """Cell region; None is the internal air cavity (no elements)."""
     inner = 0 < i < len(XS) - 2 and 0 < j < len(YS) - 2
     if k == len(ZS) - 2:
-        return "window" if i in (3,) and j in (3,) else "lid"
+        return "window" if window and i in (3,) and j in (3,) else "lid"
     if not inner or k == 0:
         return "housing"
     if k == 1 and i in (2, 4) and j in (2, 4):
@@ -126,7 +141,7 @@ def region(i, j, k):
     return None
 
 
-def analogue():
+def analogue(window=True):
     """Kuhn (conforming) tetrahedra on the rectilinear grid, cavity removed."""
     ids = {
         c: n + 1
@@ -140,7 +155,7 @@ def analogue():
         range(len(XS) - 1), range(len(YS) - 1), range(len(ZS) - 1)
     )
     for i, j, k in cells:
-        name = region(i, j, k)
+        name = region(i, j, k, window)
         if name is None:
             continue
         for order in itertools.permutations(range(3)):
@@ -168,90 +183,164 @@ def analogue():
     return gate.record(nodes, elements, regions, label)
 
 
-def thermal(values, transparent=True):
+def thermal(values, power, transparent=True, radiation=False, window=True):
     metal = values["metal"]
     coat = material(
         metal["k"],
         metal["emissivity"],
         metal["absorptance"],
-        False,
         f"W1 library:{CANDIDATE} conservative ends",
     )
-    direction = json.loads((ROOT / "examples/design-enclosure.json").read_text())[
-        "templates"
-    ]["screen"][2]["plan_request"]["request"]["spec"]["solar"]["direction"]
-    solar = {"irradiance_w_m2": values["solar_w_m2"], "direction": direction}
-    if transparent:
-        solar |= {
-            "transparent_solar": enclosure.TRANSPARENT_SOLAR,
-            "transparent_regions": ["window"],
-        }
+    spec = envelope()["templates"]["screen"][2]["plan_request"]["request"]["spec"]
+    solar = {
+        "irradiance_w_m2": values["solar_w_m2"],
+        "direction": spec["solar"]["direction"],
+    }
+    materials = {
+        "housing": coat,
+        "lid": dict(coat),
+        "pcb": material(
+            values["board_k"],
+            None,
+            None,
+            "electronics:pcb-fr4-copper-through-plane.low (cited conservative default)",
+        ),
+    }
+    exposed = ["housing", "lid"]
+    if window:
+        materials["window"] = material(
+            values["glazing"]["k"],
+            values["glazing"]["emissivity"],
+            None,
+            "W1 library:pc-uv conservative ends",
+        )
+        exposed.append("window")
+        if transparent:
+            solar |= {
+                "transparent_solar": enclosure.TRANSPARENT_SOLAR,
+                "transparent_regions": ["window"],
+            }
     return {
-        "synthetic": True,
-        "materials": {
-            "housing": coat,
-            "lid": dict(coat),
-            "window": material(
-                values["glazing"]["k"],
-                values["glazing"]["emissivity"],
-                None,
-                False,
-                "W1 library:pc-uv conservative ends",
-            ),
-            "pcb": material(
-                SYNTHETIC_OPERATOR["pcb_conductivity_w_m_k"],
-                None,
-                None,
-                True,
-                "SYNTHETIC operator stand-in for the board conductivity",
-            ),
-        },
+        "synthetic": False,
+        "materials": materials,
         "heat_source_region": "pcb",
-        "heat_source_power_w": SYNTHETIC_OPERATOR["pcb_power_w"],
+        "heat_source_power_w": power,
         "ambient_k": values["ambient_k"],
         "film_w_m2_k": values["film"],
-        "exposed_regions": ["housing", "lid", "window"],
+        "exposed_regions": exposed,
         "internal_film_w_m2_k": values["internal_film"],
         "solar": solar,
-        "radiation": True,
+        "radiation": radiation,
         "energy_balance_tolerance": 1e-3,
         "provenance": {
             "environment": "ETSI EN 300 019-1-4 class 4.1 hot point (data/conditions.json)",
             "internal_film": "film:enclosed-cavity-natural.low (data/conditions.json)",
-            "heat_source_power": "SYNTHETIC operator stand-in",
+            "heat_source_power": "swept design power (examples/design-enclosure.json)",
         },
     }
 
 
-def test_compatible_candidate_is_feasible_on_the_reference_solver_path(tmp_path):
-    envelope = json.loads((ROOT / "examples/design-enclosure.json").read_text())
-    assert CANDIDATE in envelope["space"]["categorical"][0]["choices"]
-    values = sourced()
-    rec = analogue()
-    names = sorted(rec["regions"])
-    # Without the explicit transparent_solar bound the window still refuses.
-    with pytest.raises(ValueError, match="absorptance"):
-        enclosure.validate_thermal(thermal(values, transparent=False), names)
-    model_input = thermal(values)
-    enclosure.validate_thermal(model_input, names)
+def solve(rec, values, power, **options):
+    """[PCB peak, internal air, housing peak] (the design_providers criteria)."""
+    model_input = thermal(values, power, **options)
+    enclosure.validate_thermal(model_input, sorted(rec["regions"]))
     model = enclosure.boundary_model(rec, model_input, solid)
     _, result = enclosure.evaluate(
         rec, model_input, model, gate.reference_solver(rec, model, model_input), solid
     )
-    energy = result["energy_balance"]
-    assert energy["relative_error"] <= 1e-3
-    assert energy["solar_cavity_w"] > 0 and energy["solar_absorbed_w"] > 0
-    assert result["internal_air_k"] > values["ambient_k"]
-    housing = result["regions"]["housing"]["max_k"]
-    # Components sit between board and internal air: the hotter bounds them.
-    board = max(result["regions"]["pcb"]["max_k"], result["internal_air_k"])
-    # The design constraints of the envelope, with the providers' definitions.
-    temperature_margin = min(
-        values["metal"]["max_k"] - housing, values["cold_k"] - values["metal"]["min_k"]
-    )
-    component_margin = SYNTHETIC_OPERATOR["component_max_temperature_k"] - board
-    assert temperature_margin >= 10.0, (housing, temperature_margin)
-    assert component_margin >= 0.0, (board, component_margin)
+    assert result["energy_balance"]["relative_error"] <= 1e-3
+    regions = result["regions"]
+    peaks = [regions["pcb"]["max_k"], result["internal_air_k"]]
+    return peaks + [regions["housing"]["max_k"]], result
+
+
+def supported_power(powers, lo, hi, limits):
+    """Mirror of design_providers::supported_power (superposition, clamped)."""
+    p_lo, p_hi = powers
+    best = p_hi
+    for t_lo, t_hi, limit in zip(lo, hi, limits):
+        slope = (t_hi - t_lo) / (p_hi - p_lo)
+        if t_lo > limit or slope <= 0:
+            return None
+        best = min(best, p_lo + (limit - t_lo) / slope)
+    return best
+
+
+def superposed(powers, lo, hi, power):
+    t = (power - powers[0]) / (powers[1] - powers[0])
+    return [a + t * (b - a) for a, b in zip(lo, hi)]
+
+
+def sweep(rec, values, **options):
+    powers = [declared("pcb_power_low_w"), declared("pcb_power_high_w")]
+    assert powers == [1.0, 15.0]
+    lo, low = solve(rec, values, powers[0], **options)
+    hi, _ = solve(rec, values, powers[1], **options)
+    # Components sit between board and air: both stay under the component
+    # limit (separate criteria: each is affine, their maximum is not).
+    component = values["component_k"]
+    housing = values["metal"]["max_k"] - declared("housing_margin_required_k")
+    limits = [component, component, housing]
+    return powers, lo, hi, limits, low
+
+
+def test_superposition_is_affine_without_radiation_and_not_with_it():
+    values = sourced()
+    rec = analogue()
+    powers, mid = [1.0, 15.0], 8.0
+    for radiation in (False, True):
+        lo, hi, actual = (
+            solve(rec, values, p, radiation=radiation)[0] for p in (*powers, mid)
+        )
+        # Chord minus solve at the midpoint, per criterion.
+        gap = [c - a for c, a in zip(superposed(powers, lo, hi, mid), actual)]
+        if not radiation:
+            # Linear model: the single air node is exactly affine; a peak
+            # (maximum over nodes) is convex, so the chord bounds it from
+            # above, here well inside the 0.5 K affinity tolerance.
+            assert abs(gap[1]) < 1e-6, gap
+            assert all(-1e-6 <= g <= 0.1 for g in gap), gap
+        else:
+            # Radiation (T^4) bends the response, so superposition would be
+            # inexact; power_sweep refuses radiation (Rust resolver).
+            assert abs(gap[1]) > 0.05, gap
+
+
+def test_aluminium_candidate_max_supported_power_on_the_reference_solver_path(
+    tmp_path,
+):
+    env = envelope()
+    assert CANDIDATE in env["space"]["categorical"][0]["choices"]
+    values = sourced()
+    assert values["component_k"] == pytest.approx(358.15)
+    assert values["board_k"] == 0.26
+    rec = analogue()
+    names = sorted(rec["regions"])
+    # Without the explicit transparent_solar bound the window still refuses.
+    with pytest.raises(ValueError, match="absorptance"):
+        enclosure.validate_thermal(thermal(values, 1.0, transparent=False), names)
+    # With the window, the stacked conservative bounds (all incident window
+    # solar into the internal air, no radiation credit, 1.2 W/(m2*K) cavity
+    # film) already put the internal air above the 85 degC default limit at
+    # 1 W, so the candidate supports no swept power.
+    powers, lo, hi, limits, low = sweep(rec, values)
+    assert low["energy_balance"]["solar_cavity_w"] > 0
+    assert low["internal_air_k"] > values["component_k"], low["internal_air_k"]
+    assert supported_power(powers, lo, hi, limits) is None
+    # The same analogue with an opaque lid in place of the window: the
+    # maximum supported power, verified like the refine tier by a third
+    # solve at that power reaching the binding limit within 0.5 K.
+    opaque = analogue(window=False)
+    powers, lo, hi, limits, _ = sweep(opaque, values, window=False)
+    power = supported_power(powers, lo, hi, limits)
+    assert power is not None and 1.0 < power < 15.0, power
+    check, _ = solve(opaque, values, power, window=False)
+    expected = superposed(powers, lo, hi, power)
+    assert all(abs(c - e) <= AFFINITY_TOLERANCE_K for c, e in zip(check, expected))
+    binding = min(range(3), key=lambda i: limits[i] - check[i])
+    assert abs(check[binding] - limits[binding]) <= AFFINITY_TOLERANCE_K
+    assert binding == 0  # the component limit on the PCB peak binds
+    assert power == pytest.approx(2.0, abs=0.1), power
     # PA12 stays infeasible: -40 degC service limit vs the -33 degC cold point.
     assert values["cold_k"] - values["pa12_min_k"] == pytest.approx(7.0)
     # Manufacturability and cost through the Rust screen on the analogue housing.
@@ -268,7 +357,7 @@ def test_compatible_candidate_is_feasible_on_the_reference_solver_path(tmp_path)
         },
         "material_id": CANDIDATE.split("__")[0],
         "process_id": CANDIDATE.split("__")[1],
-        "quantity": int(envelope["metric_sources"][0]["source"]["input"]["value"]),
+        "quantity": int(env["metric_sources"][0]["source"]["input"]["value"]),
     }
     path = tmp_path / "cost.json"
     path.write_text(json.dumps(request))
