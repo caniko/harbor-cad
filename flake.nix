@@ -18,9 +18,9 @@
       url = "git+https://gitlab.com/openlb/release.git?ref=1.9.0&rev=145cd54810b468f4b6fd3ed86b10644264841578";
       flake = false;
     };
-    crane.url = "github:ipetkov/crane/73b980519cefc727a5f6cc8e5c0947a2f9be6edd";
+    crane.url = "github:ipetkov/crane/eb35abda9f232cc6610b1d1e3200d15c49b7ac54";
     rust-overlay = {
-      url = "github:oxalica/rust-overlay/89e99bf0778a8f2cd18c9360c3f19c1ee47fc739";
+      url = "github:oxalica/rust-overlay/c1cfa7a2c809d364ac1a7e9b3ec418afa3f19793";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     pyproject-nix = {
@@ -128,7 +128,7 @@
       inherit pkgs;
       python = pkgs.python313;
       name = "harbor-cad-mcp-env";
-      workspaceRoot = ./.;
+      workspaceRoot = ./python;
       dependencies = {harbor-cad-mcp = [];};
     };
     mcp = python.mkPythonApplicationPackage {
@@ -142,8 +142,8 @@
       inherit pkgs;
       python = pkgs.python313;
       name = "harbor-cad-tests";
-      workspaceRoot = ./.;
-      dependencies = (python.loadUvWorkspace {workspaceRoot = ./.;}).deps.all;
+      workspaceRoot = ./python;
+      dependencies = (python.loadUvWorkspace {workspaceRoot = ./python;}).deps.all;
     };
     native = import ./nix/native.nix {inherit pkgs cudaPkgs inputs;};
     filters = import ./nix/filters.nix {inherit pkgs;};
@@ -163,6 +163,9 @@
     atmosphere = import ./nix/atmosphere.nix {inherit pkgs;};
     format = inputs.treefmt-nix.lib.evalModule pkgs {
       projectRootFile = "flake.nix";
+      # Mirrors harbor's root: templates and byte-sensitive fixtures keep their
+      # source policy; simit owns workflow serialization.
+      settings.excludes = ["**/templates/**" "**/tests/fixtures/**" "**/checks/fixtures/**" ".github/workflows/*.yaml"];
       programs.rustfmt = {
         enable = true;
         package = toolchain.rustToolchain;
@@ -264,7 +267,6 @@
         cp -r ${self}/examples ./examples
         cp ${./flake.lock} flake.lock
         cp ${./Cargo.lock} Cargo.lock
-        cp ${./uv.lock} uv.lock
         ${testEnv}/bin/python -m pytest -q python/tests
         mkdir $out
       '';

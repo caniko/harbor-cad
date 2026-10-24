@@ -16,9 +16,26 @@
   "unchanged_normalized_displacement_stress_force_gap_gate": 0.002,
   "maximum_normalized_error": 0.0005404000000002998,
   "maximum_relative_pressure_spread": 1.5085714270493817e-7,
-  "kernel_resources": {"memory_max_bytes": 2147483648, "memory_swap_max_bytes": 0, "memory_peak_bytes": 283418624, "cpu_max": "200000 100000", "cpu_usage_microseconds": 11518422, "pids_max": 128},
-  "failed_attempts_preserved": ["contact-diagnostic-1: exact OCC bounding-box tolerance rejection", "contact-native-1: f20.0 expansion-card truncation"],
-  "passed": ["complete original two-state DAT displacement/stress/reaction-force coverage", "independent analytical series-compliance checks", "exact separate planar native C3D8 blocks and unchanged initial gap", "five mesh-independence checks", "eight pre-output applicability and acceptance rejections", "operation-specific closure-only CPU sandbox"],
+  "kernel_resources": {
+    "memory_max_bytes": 2147483648,
+    "memory_swap_max_bytes": 0,
+    "memory_peak_bytes": 283418624,
+    "cpu_max": "200000 100000",
+    "cpu_usage_microseconds": 11518422,
+    "pids_max": 128
+  },
+  "failed_attempts_preserved": [
+    "contact-diagnostic-1: exact OCC bounding-box tolerance rejection",
+    "contact-native-1: f20.0 expansion-card truncation"
+  ],
+  "passed": [
+    "complete original two-state DAT displacement/stress/reaction-force coverage",
+    "independent analytical series-compliance checks",
+    "exact separate planar native C3D8 blocks and unchanged initial gap",
+    "five mesh-independence checks",
+    "eight pre-output applicability and acceptance rejections",
+    "operation-specific closure-only CPU sandbox"
+  ],
   "worker": "version-10 CLI/MCP and independent Rust original-field verification implemented; exact packaged worker gate pending",
   "physical_validation": "unqualified",
   "scope": "synthetic constant-property zero-Poisson two-block planar linear penalty contact, static preload/final compression and uniform prescribed thermal expansion/opening; no physical time, gasket sealing, contact-property calibration or hybrid GPU FEM claim"

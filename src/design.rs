@@ -212,7 +212,9 @@ impl ChildTemplate {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+crate::json::tagged_enum! {
+"kind";
+#[derive(Clone, Debug, Serialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum MetricSource {
     /// A scalar in one registered checksummed JSON artifact of a child job.
@@ -234,6 +236,7 @@ pub enum MetricSource {
     /// `condition:<class>.<hot|cold>.<field>` or `finish:<id>.<field>`, in
     /// its SI unit. Usable through `$input` like a declared input.
     Sourced { key: String },
+}
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -265,11 +268,31 @@ pub struct DesignEnvelope {
     pub pareto_metric: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, PartialEq, Serialize, JsonSchema)]
 #[serde(untagged)]
 pub enum ParamValue {
     Number(f64),
     Choice(String),
+}
+
+// Untagged decoding buffers numbers, which serde_json's arbitrary_precision
+// (enabled by consumers sharing this crate's feature union) represents as a
+// private map. `Value` understands both representations.
+impl<'de> Deserialize<'de> for ParamValue {
+    fn deserialize<D: serde::Deserializer<'de>>(
+        deserializer: D,
+    ) -> std::result::Result<Self, D::Error> {
+        match Value::deserialize(deserializer)? {
+            Value::Number(number) => number
+                .as_f64()
+                .map(Self::Number)
+                .ok_or_else(|| serde::de::Error::custom("parameter number is not a finite f64")),
+            Value::String(choice) => Ok(Self::Choice(choice)),
+            _ => Err(serde::de::Error::custom(
+                "data did not match any variant of untagged enum ParamValue",
+            )),
+        }
+    }
 }
 
 pub type Params = BTreeMap<String, ParamValue>;

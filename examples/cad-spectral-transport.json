@@ -4,27 +4,52 @@
   "scene": {
     "schema_version": 1,
     "source_job": "00000000-0000-0000-0000-000000000001",
-    "wavelengths": [{"value": 300.0, "unit": "nm"}, {"value": 400.0, "unit": "nm"}],
-    "geometry_tolerance": {"value": 1e-6, "unit": "m"},
-    "materials": [{
-      "name": "synthetic_opaque",
-      "response": {
-        "availability": "known",
-        "value": {"formulation": "opaque_lambertian", "interpolation": "piecewise_linear", "reflectance": [0.2, 0.4], "absorptivity": [0.8, 0.6]},
-        "provenance": "Explicit manufactured opaque optical reference; not measured product properties",
-        "synthetic": true
-      },
-      "ageing_action": {"availability": "missing", "reason": "No calibrated material ageing action supplied"}
-    }],
-    "assignments": [{"region_name": "solid", "material_name": "synthetic_opaque", "provenance": "Explicit whole original region; no native face numbering"}]
+    "wavelengths": [
+      { "value": 300.0, "unit": "nm" },
+      { "value": 400.0, "unit": "nm" }
+    ],
+    "geometry_tolerance": { "value": 1e-6, "unit": "m" },
+    "materials": [
+      {
+        "name": "synthetic_opaque",
+        "response": {
+          "availability": "known",
+          "value": {
+            "formulation": "opaque_lambertian",
+            "interpolation": "piecewise_linear",
+            "reflectance": [0.2, 0.4],
+            "absorptivity": [0.8, 0.6]
+          },
+          "provenance": "Explicit manufactured opaque optical reference; not measured product properties",
+          "synthetic": true
+        },
+        "ageing_action": {
+          "availability": "missing",
+          "reason": "No calibrated material ageing action supplied"
+        }
+      }
+    ],
+    "assignments": [
+      {
+        "region_name": "solid",
+        "material_name": "synthetic_opaque",
+        "provenance": "Explicit whole original region; no native face numbering"
+      }
+    ]
   },
   "source": {
     "kind": "directional",
     "propagation_direction": [0.0, 0.0, -1.0],
-    "irradiance": [{"value": 1.0, "unit": "W/(m2*nm)"}, {"value": 2e9, "unit": "W/(m2*m)"}]
+    "irradiance": [
+      { "value": 1.0, "unit": "W/(m2*nm)" },
+      { "value": 2e9, "unit": "W/(m2*m)" }
+    ]
   },
   "source_provenance": "Explicit manufactured collimated source; no inferred atmospheric or diffuse exposure",
-  "history": [{"time": {"value": 0.0, "unit": "s"}, "scale": 1.0}, {"time": {"value": 1.0, "unit": "h"}, "scale": 3.0}],
+  "history": [
+    { "time": { "value": 0.0, "unit": "s" }, "scale": 1.0 },
+    { "time": { "value": 1.0, "unit": "h" }, "scale": 3.0 }
+  ],
   "history_interpolation": "piecewise_linear_prescribed_scale",
   "history_provenance": "Explicit manufactured source-amplitude history; not measured daylight",
   "samples_per_triangle": 64,

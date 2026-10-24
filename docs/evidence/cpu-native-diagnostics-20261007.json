@@ -81,7 +81,9 @@
     "native_cli_preoutput_rejections": 11,
     "maximum_channel_relative_error": 0.0031445940276881856,
     "unchanged_gate": 0.02,
-    "sampling_error_rms_4096_16384_65536": [0.0009773395532564606, 0.00037565236390244103, 0.0002414243944856635],
+    "sampling_error_rms_4096_16384_65536": [
+      0.0009773395532564606, 0.00037565236390244103, 0.0002414243944856635
+    ],
     "exit_code": 0,
     "service_runtime_s": 6.083,
     "service_peak_memory_reported": "336.3M; swap 0B"
@@ -93,10 +95,14 @@
     "identity_sha256": "d71b0d2e9e3254f13fbefdf7d28b0cb0e42c13250d94182bd43ce75697f6a095",
     "native_solves": 6,
     "preoutput_rejections": 8,
-    "spatial_errors_n2_n4_n8": [0.002777983749763288, 0.0009032615832722993, 0.00043741398902170784],
+    "spatial_errors_n2_n4_n8": [
+      0.002777983749763288, 0.0009032615832722993, 0.00043741398902170784
+    ],
     "maximum_relative_energy_error": 0.019576357114523216,
     "unchanged_temperature_and_energy_gates": 0.02,
-    "maximum_successive_temporal_differences_k": [0.002951388567680624, 0.0014769224982842388],
+    "maximum_successive_temporal_differences_k": [
+      0.002951388567680624, 0.0014769224982842388
+    ],
     "observed_temporal_order": 0.9987997501061895,
     "additional_mount": "read-only current source bridges at /development; exact native Gmsh/CalculiX dependencies from recorded recovery closure",
     "qualification": "unqualified source bridge overlay; campaign's recorded old adapter is replaced only by the explicitly recorded diagnostic launcher",
@@ -105,17 +111,78 @@
     "service_peak_memory_reported": "385.6M; swap 0B"
   },
   "attempts": [
-    {"name":"cpu-remainder-2","command_sha256":"f7c86f4db376f058dc5fa8e89d8647c5e0c545ea05cd72edf46f1a4c6d8e5624","log_sha256":"2b7027d75854a0c3ad9fd274fbe70655a4271fb476c9929be00c94e202c93515","exit_code":1,"outcome":"retention passed; spectral import libraries missing and old snow mesh rejected OCC-padded bounds"},
-    {"name":"spectral-native-diagnostic-4","command_sha256":"ff94f4f97b52d5688aac50878ceb495837c5dfac5725ca06e414af094b09b5e7","log_sha256":"49b2e1d09eb14762390a1adc2a2d454601f88a15291104fa6af5072918054976","exit_code":1,"outcome":"ABI preparation required explicit tool/library paths in systemd environment"},
-    {"name":"spectral-native-diagnostic-5","command_sha256":"d763c44c7c0ffb659a31e6509d89ac22ba852a575eac2422b04d75cab15d9a0f","log_sha256":"c84ece64a0d6ec2f19b2439f29a45f0a2907d82f31ae397273a25606ec0e9a1b","exit_code":1,"outcome":"all nine atmospheric cases passed; broader spectral EXR positional comparison failed"},
-    {"name":"spectral-native-diagnostic-6","command_sha256":"3b2912f67455038d31524ad3ec395087be4da862d2ca546f002658908ddd5cb1","log_sha256":"baf2a2378dd433a542a324681f6066debf18e53463ee8344e650f419cb6abe70","exit_code":1,"outcome":"black reflector rejected zero-mass irregular spectrum"},
-    {"name":"spectral-native-diagnostic-7","command_sha256":"409b6ab052448b2e5b5d2cefc9cb3f3c214d2dc5eb3dbfdd3dd7cf0806e7746f","log_sha256":"c5d1bd0103c261f4ef131b3fcd2a7e0f9de70b62290a9313676662d2c7d80ea3","exit_code":1,"outcome":"11 native numerical cases and sampling refinement passed; qualifier read CLI error envelope from stderr"},
-    {"name":"spectral-native-diagnostic-8","command_sha256":"db0b57bb8b598561cce5777584029a52d7a6d36d05fc96aa24ad2c18aa978e50","log_sha256":"cb1e62ce80667f85128632c3abfe41bf5d6684e5ba3189b59ee9b043deeb8d42","exit_code":0,"outcome":"complete development native spectral campaign passed"},
-    {"name":"exr-roundtrip-1","command_sha256":"a4947fc7f3573f6da0a289bd8109737ed9fd6b278f832a001bee66867f9c99c1","log_sha256":"e3ebf83358a5de5c1d606cf1582cf81d5e1b0efe19cb8a05aa6214914e928793","exit_code":1,"outcome":"isolated direct import exposed missing development zlib dependency; native process aborted"},
-    {"name":"exr-roundtrip-2","command_sha256":"86274b6500404b1aac7a7af8469f9c6a0555d3336a7f7a160f556be91a767af6","log_sha256":"3ccb1085322133c287c156f75ceb04ffb42887c79074a3f1e2418be9b51a93e9","exit_code":0,"outcome":"channel names reorder incident/absorbed/ageing to absorbed/ageing/incident; every Float32 value remains bit-identical by name"},
-    {"name":"snow-source-diagnostic-1","command_sha256":"88a43b63afe3d17b9cc02834990c797af283ab63b1602abd675f0e4caba13808","log_sha256":"101a42f894b4ad8084583ab732d864f8e18be28cecaa285af6b143c95b6fb81d","exit_code":0,"outcome":"exact-vertex source overlay passes six native snow/bare-wall solves, eight rejections and separate spatial/temporal assessments"}
+    {
+      "name": "cpu-remainder-2",
+      "command_sha256": "f7c86f4db376f058dc5fa8e89d8647c5e0c545ea05cd72edf46f1a4c6d8e5624",
+      "log_sha256": "2b7027d75854a0c3ad9fd274fbe70655a4271fb476c9929be00c94e202c93515",
+      "exit_code": 1,
+      "outcome": "retention passed; spectral import libraries missing and old snow mesh rejected OCC-padded bounds"
+    },
+    {
+      "name": "spectral-native-diagnostic-4",
+      "command_sha256": "ff94f4f97b52d5688aac50878ceb495837c5dfac5725ca06e414af094b09b5e7",
+      "log_sha256": "49b2e1d09eb14762390a1adc2a2d454601f88a15291104fa6af5072918054976",
+      "exit_code": 1,
+      "outcome": "ABI preparation required explicit tool/library paths in systemd environment"
+    },
+    {
+      "name": "spectral-native-diagnostic-5",
+      "command_sha256": "d763c44c7c0ffb659a31e6509d89ac22ba852a575eac2422b04d75cab15d9a0f",
+      "log_sha256": "c84ece64a0d6ec2f19b2439f29a45f0a2907d82f31ae397273a25606ec0e9a1b",
+      "exit_code": 1,
+      "outcome": "all nine atmospheric cases passed; broader spectral EXR positional comparison failed"
+    },
+    {
+      "name": "spectral-native-diagnostic-6",
+      "command_sha256": "3b2912f67455038d31524ad3ec395087be4da862d2ca546f002658908ddd5cb1",
+      "log_sha256": "baf2a2378dd433a542a324681f6066debf18e53463ee8344e650f419cb6abe70",
+      "exit_code": 1,
+      "outcome": "black reflector rejected zero-mass irregular spectrum"
+    },
+    {
+      "name": "spectral-native-diagnostic-7",
+      "command_sha256": "409b6ab052448b2e5b5d2cefc9cb3f3c214d2dc5eb3dbfdd3dd7cf0806e7746f",
+      "log_sha256": "c5d1bd0103c261f4ef131b3fcd2a7e0f9de70b62290a9313676662d2c7d80ea3",
+      "exit_code": 1,
+      "outcome": "11 native numerical cases and sampling refinement passed; qualifier read CLI error envelope from stderr"
+    },
+    {
+      "name": "spectral-native-diagnostic-8",
+      "command_sha256": "db0b57bb8b598561cce5777584029a52d7a6d36d05fc96aa24ad2c18aa978e50",
+      "log_sha256": "cb1e62ce80667f85128632c3abfe41bf5d6684e5ba3189b59ee9b043deeb8d42",
+      "exit_code": 0,
+      "outcome": "complete development native spectral campaign passed"
+    },
+    {
+      "name": "exr-roundtrip-1",
+      "command_sha256": "a4947fc7f3573f6da0a289bd8109737ed9fd6b278f832a001bee66867f9c99c1",
+      "log_sha256": "e3ebf83358a5de5c1d606cf1582cf81d5e1b0efe19cb8a05aa6214914e928793",
+      "exit_code": 1,
+      "outcome": "isolated direct import exposed missing development zlib dependency; native process aborted"
+    },
+    {
+      "name": "exr-roundtrip-2",
+      "command_sha256": "86274b6500404b1aac7a7af8469f9c6a0555d3336a7f7a160f556be91a767af6",
+      "log_sha256": "3ccb1085322133c287c156f75ceb04ffb42887c79074a3f1e2418be9b51a93e9",
+      "exit_code": 0,
+      "outcome": "channel names reorder incident/absorbed/ageing to absorbed/ageing/incident; every Float32 value remains bit-identical by name"
+    },
+    {
+      "name": "snow-source-diagnostic-1",
+      "command_sha256": "88a43b63afe3d17b9cc02834990c797af283ab63b1602abd675f0e4caba13808",
+      "log_sha256": "101a42f894b4ad8084583ab732d864f8e18be28cecaa285af6b143c95b6fb81d",
+      "exit_code": 0,
+      "outcome": "exact-vertex source overlay passes six native snow/bare-wall solves, eight rejections and separate spatial/temporal assessments"
+    }
   ],
-  "resource_controls": {"MemoryMax":"2G","MemorySwapMax":0,"CPUQuota":"200%","TasksMax":128,"KillMode":"control-group","guard":"normal Canix Atlas runtime lease"},
+  "resource_controls": {
+    "MemoryMax": "2G",
+    "MemorySwapMax": 0,
+    "CPUQuota": "200%",
+    "TasksMax": 128,
+    "KillMode": "control-group",
+    "guard": "normal Canix Atlas runtime lease"
+  },
   "qualification": "unqualified exact packages/sandboxes/workers; successful subreports are explicitly development diagnostics",
   "physical_validation": "unqualified"
 }

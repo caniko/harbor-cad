@@ -19,7 +19,7 @@
   "log": "/data/scratch/tmp/opencode/harbor-cad-resume-20261007/contact-current-2.log",
   "log_sha256": "0ba3b99e23a210cabadc7a525040de3c691ac11a1dd4083032ce3aa91140b6ee",
   "exit_code": 0,
-  "service_runtime_s": 11.120,
+  "service_runtime_s": 11.12,
   "service_peak_memory_reported": "347.2M; swap 0B",
   "jobs": {
     "cli_succeeded": "7650f2ef-f83d-4b47-8290-9bc99b956f57",

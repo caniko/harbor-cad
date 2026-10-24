@@ -7,18 +7,54 @@
   "original_root": "/data/scratch/tmp/opencode/harbor-cad-resume-20261007/atmosphere-source-inspection-1",
   "license": "GPL-2.0-or-later; configure.in:10–13 and original COPYING",
   "source_files": {
-    "COPYING": {"sha256": "91df39d1816bfb17a4dda2d3d2c83b1f6f2d38d53e53e41e8f97ad5ac46a0cad", "bytes": 17982},
-    "INSTALL": {"sha256": "a130bd6f63214d001e83ab6231f2d39a13d91c942989dc62c206a405cb7a5ff4", "bytes": 5467},
-    "configure.in": {"sha256": "06d3b6df726ae5d76d50969e52e0dc86e7807350528be5bd420cefc8ed96bdea", "bytes": 44486},
-    "Makefile.in": {"sha256": "212cf3a43eb2e8961b6608b09769ee7ab1b17daa24d2cbc9bf4cbaf1e5217f15", "bytes": 4392},
-    "src/uvspec_lex.c": {"sha256": "db1637fe41ecf75a1e9ba04b23979ca08639e7e8b7bda324dee1d0387cdf5892", "bytes": 1086452},
-    "src_py/geometry_options.py": {"sha256": "04aa75080a22983900dfa97b1ff55dabee80da28b11e538a9a6341d80012f7f2", "bytes": 42502},
-    "src_py/output_options.py": {"sha256": "fe94da94d11dc79faa9dd9d91a72d398f12412bb68fb3e9d2249af0c45f738aa", "bytes": 36444},
-    "src_py/spectral_options.py": {"sha256": "f2009ac7ef7ed816dabc8dd6970298d15e3ba0464c07dfce52462013236e5165", "bytes": 13132},
-    "src_py/general_atmosphere_options.py": {"sha256": "575ffb3c8aa5cba69beac913d6ddbf46e7bb0ad5c4d1efa9f099fb4415037e96", "bytes": 14898},
-    "src_py/molecular_options.py": {"sha256": "e941f49690ff80871432b3842c2b1da7618d45346c68c418c6476b7e664ddb71", "bytes": 44983},
-    "data/atmmod/afglms.dat": {"sha256": "875ada621ca86fb24ed49bbca44e540e9bfe81e2a2af7760a8ce7de991652b14", "bytes": 5899},
-    "data/atmmod/afglmw.dat": {"sha256": "4425063a390b9c19f286abb051fcc98fda5cdc014c9e701a6be226e9932e816c", "bytes": 5899}
+    "COPYING": {
+      "sha256": "91df39d1816bfb17a4dda2d3d2c83b1f6f2d38d53e53e41e8f97ad5ac46a0cad",
+      "bytes": 17982
+    },
+    "INSTALL": {
+      "sha256": "a130bd6f63214d001e83ab6231f2d39a13d91c942989dc62c206a405cb7a5ff4",
+      "bytes": 5467
+    },
+    "configure.in": {
+      "sha256": "06d3b6df726ae5d76d50969e52e0dc86e7807350528be5bd420cefc8ed96bdea",
+      "bytes": 44486
+    },
+    "Makefile.in": {
+      "sha256": "212cf3a43eb2e8961b6608b09769ee7ab1b17daa24d2cbc9bf4cbaf1e5217f15",
+      "bytes": 4392
+    },
+    "src/uvspec_lex.c": {
+      "sha256": "db1637fe41ecf75a1e9ba04b23979ca08639e7e8b7bda324dee1d0387cdf5892",
+      "bytes": 1086452
+    },
+    "src_py/geometry_options.py": {
+      "sha256": "04aa75080a22983900dfa97b1ff55dabee80da28b11e538a9a6341d80012f7f2",
+      "bytes": 42502
+    },
+    "src_py/output_options.py": {
+      "sha256": "fe94da94d11dc79faa9dd9d91a72d398f12412bb68fb3e9d2249af0c45f738aa",
+      "bytes": 36444
+    },
+    "src_py/spectral_options.py": {
+      "sha256": "f2009ac7ef7ed816dabc8dd6970298d15e3ba0464c07dfce52462013236e5165",
+      "bytes": 13132
+    },
+    "src_py/general_atmosphere_options.py": {
+      "sha256": "575ffb3c8aa5cba69beac913d6ddbf46e7bb0ad5c4d1efa9f099fb4415037e96",
+      "bytes": 14898
+    },
+    "src_py/molecular_options.py": {
+      "sha256": "e941f49690ff80871432b3842c2b1da7618d45346c68c418c6476b7e664ddb71",
+      "bytes": 44983
+    },
+    "data/atmmod/afglms.dat": {
+      "sha256": "875ada621ca86fb24ed49bbca44e540e9bfe81e2a2af7760a8ce7de991652b14",
+      "bytes": 5899
+    },
+    "data/atmmod/afglmw.dat": {
+      "sha256": "4425063a390b9c19f286abb051fcc98fda5cdc014c9e701a6be226e9932e816c",
+      "bytes": 5899
+    }
   },
   "build_qualification": "unqualified",
   "runtime_qualification": "unqualified",

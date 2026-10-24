@@ -17,7 +17,7 @@ Recorded qualification does not qualify a changed runtime or another host.
   `c82b720484076521ba2a59ca4bf891873b69971a0c9766bd7f58c181d403a807`.
 - `Cargo.lock` SHA-256:
   `086eb4d8227bbdaf2e376c1eba42ec43cba8bdb09d5805b8a17a2a8fbce68ae6`.
-- `uv.lock` SHA-256:
+- `python/uv.lock` SHA-256:
   `b1d44d4f31b32796c5f759964ff934aa9933f6df769f6888ed17982ab7fe0f25`.
 
 ## Requirement map

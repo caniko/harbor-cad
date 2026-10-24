@@ -39,31 +39,69 @@
     "reader_code_sha256": "5ffe9e1b5b69290c87d5a70379f0825b4e0d164cef5dea3438b13ed495c54e58",
     "runtime": "same exact packaged ParaView pvpython; separate CPU-only device-free Bubblewrap and bounded user service",
     "verified": "PVD→VTM→ImageData at steps 0/2560/5120: bit-exact little-endian Float64 velocity/pressure/material arrays against independent zlib decoding, component counts, point association, full extents, SI origin and spacing",
-    "point_shape": [34, 20, 18], "points": 12240,
-    "cell_arrays": 0, "ghost_array_present": false,
+    "point_shape": [34, 20, 18],
+    "points": 12240,
+    "cell_arrays": 0,
+    "ghost_array_present": false,
     "scope_boundary": "only this synthetic single-block ImageData case; cell/ghost arrays, other topologies, multiblock/partition families, GPU filters and VTKHDF remain unqualified"
   },
-  "device": {"pci": "0000:03:00.0", "render_node": "/dev/dri/renderD128", "gpu": "AMD Radeon RX 7900 XTX", "egl": "1.5", "opengl": "4.6 Compatibility Profile; Mesa 26.2.1/radeonsi", "identity": "EGL_DEVICE_EXT from the initialized current display matches the selected DRM node", "software_fallback": false},
-  "presentation": {
-    "dimensions": [640, 480], "camera": [0.04, 0.025, 0.03],
-    "representation": "Surface", "field": "physVelocity", "association": "POINTS", "component": "Magnitude",
-    "fixed_range_m_per_s": [0.0, 0.0015], "requested_times_s": [0, 10, 20],
-    "native_steps": [0, 2560, 5120], "physical_time_labels": "0/10/20 s visibly present in all actual CPU-decoded video frames",
-    "numerical_filter": false, "scientific_fields": "unchanged native Float64 arrays retained independently of lossy video"
+  "device": {
+    "pci": "0000:03:00.0",
+    "render_node": "/dev/dri/renderD128",
+    "gpu": "AMD Radeon RX 7900 XTX",
+    "egl": "1.5",
+    "opengl": "4.6 Compatibility Profile; Mesa 26.2.1/radeonsi",
+    "identity": "EGL_DEVICE_EXT from the initialized current display matches the selected DRM node",
+    "software_fallback": false
   },
-  "video": {"encoder": "h264_vaapi", "decode": "actual CPU decode", "frames": 3, "pixel_format": "yuv420p", "presentation_fps": 24, "presentation_timestamps_s": [0.0, 0.041667, 0.083333], "bytes": 17012, "sha256": "37e98b2949287f25948c9440aa3ae855646d3894040b96eb1dadaf9048f58f6e"},
+  "presentation": {
+    "dimensions": [640, 480],
+    "camera": [0.04, 0.025, 0.03],
+    "representation": "Surface",
+    "field": "physVelocity",
+    "association": "POINTS",
+    "component": "Magnitude",
+    "fixed_range_m_per_s": [0.0, 0.0015],
+    "requested_times_s": [0, 10, 20],
+    "native_steps": [0, 2560, 5120],
+    "physical_time_labels": "0/10/20 s visibly present in all actual CPU-decoded video frames",
+    "numerical_filter": false,
+    "scientific_fields": "unchanged native Float64 arrays retained independently of lossy video"
+  },
+  "video": {
+    "encoder": "h264_vaapi",
+    "decode": "actual CPU decode",
+    "frames": 3,
+    "pixel_format": "yuv420p",
+    "presentation_fps": 24,
+    "presentation_timestamps_s": [0.0, 0.041667, 0.083333],
+    "bytes": 17012,
+    "sha256": "37e98b2949287f25948c9440aa3ae855646d3894040b96eb1dadaf9048f58f6e"
+  },
   "pixel_inspection": {
     "decode_verification": "/data/scratch/tmp/opencode/harbor-cad-egl-surface-vaapi-dd3ccbc/decode-verification.json",
     "decode_verification_sha256": "84e9f84ead08f54624db778cc054b3490b1705a92a0d068af79de213550165d6",
     "final_video_identical_to_inspected_video": true,
     "decoder_isolation": "separate device-free Bubblewrap and bounded user service; no GPU decode requested",
     "observed": "0/10/20 s annotations, Velocity (m/s) Magnitude legend, fixed 0..1.5e-3 scale, solid zero-velocity surface at 0 s and resolved color variation at 10/20 s",
-    "decoded_frame_sha256": ["49af947a0f0e033bdd69b29d0d7556ff5656195fc9cff4346fdda2c5e568c003", "ebb03c5dcccb7793ed5486663aaf80c8c255a7c49763740dffe8ba8925676812", "a6ced96c51e83775ee90ecb449bde9651e87ad31ac88839e5ad94e647600621b"]
+    "decoded_frame_sha256": [
+      "49af947a0f0e033bdd69b29d0d7556ff5656195fc9cff4346fdda2c5e568c003",
+      "ebb03c5dcccb7793ed5486663aaf80c8c255a7c49763740dffe8ba8925676812",
+      "a6ced96c51e83775ee90ecb449bde9651e87ad31ac88839e5ad94e647600621b"
+    ]
   },
   "measured_resources": {
     "scope": "entire owned stage service, including probe startup, imports, transfers, output and native cleanup",
-    "render": {"wall_s": 1.2657589000009466, "cpu_usage_usec": 918277, "peak_ram_bytes": 189026304},
-    "video": {"wall_s": 0.41429409000556916, "cpu_usage_usec": 170067, "peak_ram_bytes": 74137600},
+    "render": {
+      "wall_s": 1.2657589000009466,
+      "cpu_usage_usec": 918277,
+      "peak_ram_bytes": 189026304
+    },
+    "video": {
+      "wall_s": 0.41429409000556916,
+      "cpu_usage_usec": 170067,
+      "peak_ram_bytes": 74137600
+    },
     "work_tree_bytes": 217075,
     "limits": "2 GiB service RAM, 1 CPU, 128 tasks, 200 s service maximum; 160 s native maximum and 64 MiB per-file limit",
     "card_reservation": "production per-user shared physical-card anchor held by each probe",
@@ -72,7 +110,8 @@
   "rejection": {
     "verification": "/data/scratch/tmp/opencode/harbor-cad-egl-unretained-rejection-dd3ccbc/verification.json",
     "verification_sha256": "30f71c900ffc6474ce5b8322f6776be63c24d21afa043e184e9e88c0eccfa2e9",
-    "requested_times_s": [0, 5, 20], "result": "exit 1 before any frame or success receipt; native fields unchanged; no solver relaunch"
+    "requested_times_s": [0, 5, 20],
+    "result": "exit 1 before any frame or success receipt; native fields unchanged; no solver relaunch"
   },
   "presentation_regression": {
     "red_observation": "/data/scratch/tmp/opencode/harbor-cad-render-presentation-red-9511dba-v2/work/presentation-observed.json",

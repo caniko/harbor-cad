@@ -8,19 +8,78 @@
   "source_hash": "sha256-VB2jxacRtpLeVaCMuHqGDzNZKx5wqOJXYlbJEpDXB70=",
   "nixpkgs_revision": "73e728ddb6b7a12d18808f510813a13ee1fe4cce",
   "advisories": [
-    {"id": "GHSA-9624-pf2m-8cgg", "summary": "FCStd VRML resources arbitrary file write", "patched_version": "1.1.4", "applicability": "document import; patched version selected"},
-    {"id": "GHSA-9vjf-h8f4-c229", "summary": "Zip-Slip via FEM post-processing data", "patched_version": "1.1.4", "applicability": "document import; patched version selected"},
-    {"id": "GHSA-2rq3-gx3h-489q", "cve": "CVE-2026-73233", "summary": "FEM formula incomplete escape", "patched_version": "1.1.2", "applicability": "patched version selected"},
-    {"id": "GHSA-cp6c-87x9-xf49", "cve": "CVE-2026-73235", "summary": "Document.xml external entity file read and SSRF", "patched_version": "1.1.2", "applicability": "document import; patched version selected"},
-    {"id": "GHSA-5vqh-3v38-jw2r", "cve": "CVE-2026-73234", "summary": "FCStd PropertyFileIncluded path traversal", "patched_version": "1.1.2", "applicability": "document import; patched version selected"},
-    {"id": "GHSA-493w-pp4h-h77v", "cve": "CVE-2026-34789", "summary": "Unsandboxed PropertyPythonObject module import", "patched_version": "1.1.2", "applicability": "document import; patched version selected"},
-    {"id": "GHSA-chv4-vm6r-wjqj", "cve": "CVE-2026-34399", "summary": "Untrusted BIM TechDraw template scale evaluation", "patched_version": "1.1.1", "applicability": "patched version selected"},
-    {"id": "GHSA-8rfj-7956-6gwf", "cve": "CVE-2026-34398", "summary": "Untrusted FCStd BIM metadata evaluation", "patched_version": "1.1.1", "applicability": "patched version selected"},
-    {"id": "GHSA-2mfq-2h69-c873", "summary": "FreeCAD.exe DLL search-path hijacking", "patched_version": "26.3.0 as reported by advisory", "applicability": "Windows executable; not the qualified x86_64 Linux FreeCADCmd path"}
+    {
+      "id": "GHSA-9624-pf2m-8cgg",
+      "summary": "FCStd VRML resources arbitrary file write",
+      "patched_version": "1.1.4",
+      "applicability": "document import; patched version selected"
+    },
+    {
+      "id": "GHSA-9vjf-h8f4-c229",
+      "summary": "Zip-Slip via FEM post-processing data",
+      "patched_version": "1.1.4",
+      "applicability": "document import; patched version selected"
+    },
+    {
+      "id": "GHSA-2rq3-gx3h-489q",
+      "cve": "CVE-2026-73233",
+      "summary": "FEM formula incomplete escape",
+      "patched_version": "1.1.2",
+      "applicability": "patched version selected"
+    },
+    {
+      "id": "GHSA-cp6c-87x9-xf49",
+      "cve": "CVE-2026-73235",
+      "summary": "Document.xml external entity file read and SSRF",
+      "patched_version": "1.1.2",
+      "applicability": "document import; patched version selected"
+    },
+    {
+      "id": "GHSA-5vqh-3v38-jw2r",
+      "cve": "CVE-2026-73234",
+      "summary": "FCStd PropertyFileIncluded path traversal",
+      "patched_version": "1.1.2",
+      "applicability": "document import; patched version selected"
+    },
+    {
+      "id": "GHSA-493w-pp4h-h77v",
+      "cve": "CVE-2026-34789",
+      "summary": "Unsandboxed PropertyPythonObject module import",
+      "patched_version": "1.1.2",
+      "applicability": "document import; patched version selected"
+    },
+    {
+      "id": "GHSA-chv4-vm6r-wjqj",
+      "cve": "CVE-2026-34399",
+      "summary": "Untrusted BIM TechDraw template scale evaluation",
+      "patched_version": "1.1.1",
+      "applicability": "patched version selected"
+    },
+    {
+      "id": "GHSA-8rfj-7956-6gwf",
+      "cve": "CVE-2026-34398",
+      "summary": "Untrusted FCStd BIM metadata evaluation",
+      "patched_version": "1.1.1",
+      "applicability": "patched version selected"
+    },
+    {
+      "id": "GHSA-2mfq-2h69-c873",
+      "summary": "FreeCAD.exe DLL search-path hijacking",
+      "patched_version": "26.3.0 as reported by advisory",
+      "applicability": "Windows executable; not the qualified x86_64 Linux FreeCADCmd path"
+    }
   ],
   "exact_source_observations": [
-    {"url": "https://raw.githubusercontent.com/FreeCAD/FreeCAD/4fd3bf320d9566a27e60069fc8387448aaa3a094/src/App/VRMLObject.cpp", "function": "VRMLObject::restoreTextureFinished", "observation": "Base::FileInfo::safeArchiveEntryPath validates the resource before directory creation and writing; unsafe entries skip the file-write sink"},
-    {"url": "https://raw.githubusercontent.com/FreeCAD/FreeCAD/4fd3bf320d9566a27e60069fc8387448aaa3a094/src/Mod/Fem/App/PropertyPostDataObject.cpp", "function": "PropertyPostDataObject::RestoreDocFile", "observation": "Base::FileInfo::safeArchiveEntryPath validates each inner ZIP entry before joining to the extraction directory; unsafe entries skip extraction"}
+    {
+      "url": "https://raw.githubusercontent.com/FreeCAD/FreeCAD/4fd3bf320d9566a27e60069fc8387448aaa3a094/src/App/VRMLObject.cpp",
+      "function": "VRMLObject::restoreTextureFinished",
+      "observation": "Base::FileInfo::safeArchiveEntryPath validates the resource before directory creation and writing; unsafe entries skip the file-write sink"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/FreeCAD/FreeCAD/4fd3bf320d9566a27e60069fc8387448aaa3a094/src/Mod/Fem/App/PropertyPostDataObject.cpp",
+      "function": "PropertyPostDataObject::RestoreDocFile",
+      "observation": "Base::FileInfo::safeArchiveEntryPath validates each inner ZIP entry before joining to the extraction directory; unsafe entries skip extraction"
+    }
   ],
   "limitations": "Published advisory and exact-source review; exploit payloads were not executed. This does not replace the mandatory operation-specific import sandbox or ongoing dependency security review."
 }

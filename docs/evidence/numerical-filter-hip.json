@@ -24,7 +24,7 @@
     "mcp_pressure": "511379c5-3724-41d3-908b-6ea4669fe76d",
     "forced_death": "324dd7cb-cd12-4518-a89c-d008f1871987"
   },
-  "hip_space_tracked_peaks_bytes": {"velocity": 1176064, "pressure": 392704},
+  "hip_space_tracked_peaks_bytes": { "velocity": 1176064, "pressure": 392704 },
   "lifecycle": "CLI/MCP source-bound approvals, source mutation before/after acknowledgment, restart/retry with same invocation, complete-tree forced death/cancellation, source preservation and admission/runtime-root release passed",
   "resource_scope": "effective owned-service kernel limits and aggregate process-tree RAM/CPU counters; native process RSS and post-initialization Kokkos HIPSpace allocations",
   "source_state": "/data/scratch/tmp/opencode/harbor-cad-authority-20261005/native-hip-1/state",
@@ -36,5 +36,13 @@
   "native_report_sha256": "239e88cb2c0c154c29f18748383f09df7e47a1d9773890ba6dd2800ac92466b8",
   "worker_report": "/data/scratch/tmp/opencode/harbor-cad-authority-20261005/filter-worker-1/verification.json",
   "worker_report_sha256": "c75227d57c333341baa98ca702977fa6f13a5662b1f860b69d2f1548040bcdb0",
-  "unqualified": ["instruction trace", "whole-card VRAM peak/headroom", "multi-GPU KFD exclusion", "ghost arrays", "nonidentity image directions", "broader topology/filter operations", "physical validation"]
+  "unqualified": [
+    "instruction trace",
+    "whole-card VRAM peak/headroom",
+    "multi-GPU KFD exclusion",
+    "ghost arrays",
+    "nonidentity image directions",
+    "broader topology/filter operations",
+    "physical validation"
+  ]
 }

@@ -49,10 +49,10 @@ amplitude 3600 s and absorbed exposure 475200 J/m².
 Official release metadata pins Mitsuba **3.9.1** to Dr.Jit **1.5.0**; the
 Python-3.13 manylinux wheels are immutable by SHA-256:
 
-| Package | Wheel SHA-256 |
-|---|---|
+| Package       | Wheel SHA-256                                                      |
+| ------------- | ------------------------------------------------------------------ |
 | Mitsuba 3.9.1 | `8959e8de33427cf4d9b515a52d741dca7624e7c17094c5849f123a96504ca123` |
-| Dr.Jit 1.5.0 | `33a4b146cc56a02ea0dd9c43034277c59ae3c5dd3490678c2cbc8ef69a1e8c93` |
+| Dr.Jit 1.5.0  | `33a4b146cc56a02ea0dd9c43034277c59ae3c5dd3490678c2cbc8ef69a1e8c93` |
 
 Mitsuba tag v3.9.1 resolves to commit
 `478e193a183c21723f4a8251afc3ad29a8da4c5e`. Source-backed contracts:

@@ -27,7 +27,9 @@
     "maximum_normalized_temperature_error": 0.007558324480261552,
     "maximum_relative_energy_error": 0.015384615389630334,
     "unchanged_temperature_and_energy_tolerances": 0.02,
-    "maximum_successive_temporal_differences_k": [0.001858940129864095, 0.0009295318611748371],
+    "maximum_successive_temporal_differences_k": [
+      0.001858940129864095, 0.0009295318611748371
+    ],
     "observed_temporal_order": 0.9999040849481661,
     "qualification": "native temperature/energy, spatial and temporal gates passed; recovered exact thermal worker/source passed below; coupled qualification pending"
   },
@@ -40,14 +42,31 @@
     "report_sha256": "913ddf4543b97c1ead78301ca9df36d46b4002690b6cf02fb106e8ea703dc63c",
     "runtime": "/nix/store/4ics7k5zqhwv6p8blxx9s6vyif9d3his-harbor-cad-native-runtime.json",
     "runtime_sha256": "bf6a4f9a24ca1485e895d6d776185a617e55da57a4249f7723f349d814511400",
-    "successful_jobs": ["e695a98d-9b37-473c-9ad2-63b4416388d1", "b3e6028d-4ac7-4fa6-ae61-ccae682b3b4d"],
-    "passed": ["CLI and MCP native solves with independent original-field thermal/energy recheck", "worker restart and idempotency", "shared CPU admission and exact stage sandbox", "historical qualification and complete exports", "owned kill/cancel failures retained and retries available", "reservation/runtime roots released after verified tree closure"]
+    "successful_jobs": [
+      "e695a98d-9b37-473c-9ad2-63b4416388d1",
+      "b3e6028d-4ac7-4fa6-ae61-ccae682b3b4d"
+    ],
+    "passed": [
+      "CLI and MCP native solves with independent original-field thermal/energy recheck",
+      "worker restart and idempotency",
+      "shared CPU admission and exact stage sandbox",
+      "historical qualification and complete exports",
+      "owned kill/cancel failures retained and retries available",
+      "reservation/runtime roots released after verified tree closure"
+    ]
   },
   "temperature_projection": {
     "report": "/data/scratch/tmp/opencode/harbor-cad-authority-20261005/projection-results-1/verification.json",
     "report_sha256": "08e34867da438fa96cf9129dcf6fd6417bf61e5392d6d3b5f5fe9f15eb4c6459",
     "source_report_sha256": "913ddf4543b97c1ead78301ca9df36d46b4002690b6cf02fb106e8ea703dc63c",
-    "passed": ["CLI/MCP retained-time temperature sample and signed comparison parity", "complete C3D8 capacitance projection from native fields to lower/upper translated congruent boxes", "independent capacitance, temperature integral and projection-loss checks", "rejected invented fields, times, caller temperatures/materials, scaling, weak gates and unapproved losses", "rejected mutated originals and self-consistent serialized-field substitutions", "original sources and database counts unchanged"],
+    "passed": [
+      "CLI/MCP retained-time temperature sample and signed comparison parity",
+      "complete C3D8 capacitance projection from native fields to lower/upper translated congruent boxes",
+      "independent capacitance, temperature integral and projection-loss checks",
+      "rejected invented fields, times, caller temperatures/materials, scaling, weak gates and unapproved losses",
+      "rejected mutated originals and self-consistent serialized-field substitutions",
+      "original sources and database counts unchanged"
+    ],
     "moisture_screening_requested": false,
     "scope": "read-only registered v6 source projection; no v11 contact execution"
   },
@@ -57,8 +76,18 @@
     "runtime": "/nix/store/gf8v6wzrlhm4lgdnbs6y00hmsx9x3lsn-harbor-cad-native-runtime.json",
     "runtime_sha256": "aa4169b49af1d94b535b3b66c85c0914ebf8948151a319f015330da8fee350f0",
     "native_reference_sha256": "2ab489170c6fe5e98c4b4aa8a48e366602abcfb5002980614b6e46a821691ea3",
-    "successful_jobs": ["8fd6ea05-fae2-434b-94ea-b77fc01e6b91", "108ef75a-3bc4-4284-bd43-3d2d551d9f8d"],
-    "passed": ["repaired Python and native output guards with the empty worker log", "CLI n24 and MCP n36 original Float64 wetting solves", "independent phase-mass and whole-contour angle reconstruction", "approval mutation rejection, owned kill and complete-tree cancellation", "worker restart/idempotency, immutable export and historical qualification", "shared CPU admission, bounded services and released reservations/runtime roots"]
+    "successful_jobs": [
+      "8fd6ea05-fae2-434b-94ea-b77fc01e6b91",
+      "108ef75a-3bc4-4284-bd43-3d2d551d9f8d"
+    ],
+    "passed": [
+      "repaired Python and native output guards with the empty worker log",
+      "CLI n24 and MCP n36 original Float64 wetting solves",
+      "independent phase-mass and whole-contour angle reconstruction",
+      "approval mutation rejection, owned kill and complete-tree cancellation",
+      "worker restart/idempotency, immutable export and historical qualification",
+      "shared CPU admission, bounded services and released reservations/runtime roots"
+    ]
   },
   "execution": "all five qualifier subprocesses exited zero; service harbor-cad-cpu-requalification-20261007 exited 0 after 20min 10.574s, CPU 10min 45.858s and peak RAM 658.7 MiB; no swap",
   "physical_validation": "unqualified",

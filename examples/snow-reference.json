@@ -18,8 +18,14 @@
     "max_step_s": 40.0,
     "integration_substeps": 8,
     "observation_times_s": [2000.0, 4000.0, 8000.0],
-    "ambient_history": [[0.0, 253.15], [8000.0, 253.15]],
-    "heater_history": [[0.0, 0.0], [8000.0, 0.0]],
+    "ambient_history": [
+      [0.0, 253.15],
+      [8000.0, 253.15]
+    ],
+    "heater_history": [
+      [0.0, 0.0],
+      [8000.0, 0.0]
+    ],
     "numerical_tolerance": 0.02,
     "energy_tolerance": 0.02,
     "geometry_provenance": "synthetic plane wall; exposed x faces; transverse faces insulated; no openings",
@@ -37,10 +43,10 @@
     "model": "dry_quasi_steady_series_resistance",
     "coverage": "complete_both_x_faces",
     "opening_model": "no_openings_in_plane_wall_fixture",
-    "thickness": {"value": 2.0, "unit": "mm"},
-    "conductivity": {"value": 0.05, "unit": "W/(m*K)"},
-    "density": {"value": 100.0, "unit": "kg/m3"},
-    "specific_heat": {"value": 2000.0, "unit": "J/(kg*K)"},
+    "thickness": { "value": 2.0, "unit": "mm" },
+    "conductivity": { "value": 0.05, "unit": "W/(m*K)" },
+    "density": { "value": 100.0, "unit": "kg/m3" },
+    "specific_heat": { "value": 2000.0, "unit": "J/(kg*K)" },
     "material_temperature_domain_k": [243.15, 273.0],
     "maximum_omitted_capacity_ratio": 0.02,
     "maximum_diffusion_timescale_ratio": 0.02,

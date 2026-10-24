@@ -10,10 +10,30 @@
   "worker_report_sha256": "9e109ee11072064751f397201ec0f5c83cb0325470f235b2026fdf6059b688fe",
   "scope": "Exact immutable synthetic CPU atmosphere native and registered CLI/MCP worker originals, angular transfer preparation, units, numerical/refinement checks and complete owned lifecycle; separate spectral transport remains unqualified",
   "worker_jobs": [
-    {"interface": "cli", "id": "94685eff-ef61-4f68-b096-6590092aa9fb", "state": "succeeded", "roots_and_reservation_released": true},
-    {"interface": "mcp", "id": "ec579a0c-4ef2-4412-9b9f-65eaf0b8ca79", "state": "succeeded", "roots_and_reservation_released": true},
-    {"action": "forced-death", "id": "dd7fdaf2-08a0-4060-ad4d-2e87553e4540", "state": "failed", "roots_and_reservation_released": true},
-    {"action": "cancel", "id": "409ebd96-9d9e-467a-aebc-ccd46a7f65ad", "state": "cancelled", "roots_and_reservation_released": true}
+    {
+      "interface": "cli",
+      "id": "94685eff-ef61-4f68-b096-6590092aa9fb",
+      "state": "succeeded",
+      "roots_and_reservation_released": true
+    },
+    {
+      "interface": "mcp",
+      "id": "ec579a0c-4ef2-4412-9b9f-65eaf0b8ca79",
+      "state": "succeeded",
+      "roots_and_reservation_released": true
+    },
+    {
+      "action": "forced-death",
+      "id": "dd7fdaf2-08a0-4060-ad4d-2e87553e4540",
+      "state": "failed",
+      "roots_and_reservation_released": true
+    },
+    {
+      "action": "cancel",
+      "id": "409ebd96-9d9e-467a-aebc-ccd46a7f65ad",
+      "state": "cancelled",
+      "roots_and_reservation_released": true
+    }
   ],
   "independent_failures_retained": [
     "c8-23 downstream transport launcher used an incorrect argument name before dispatch",

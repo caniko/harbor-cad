@@ -4,6 +4,9 @@ provider = "actions"
 runtime = "cargo"
 runner = "ubuntu-24.04"
 check_command = "python3 scripts/check_cpu.py"
-extra_setup = ["python3 -m venv .ci-bootstrap", ".ci-bootstrap/bin/python -m pip install --require-hashes -r scripts/ci-bootstrap.txt"]
+extra_setup = [
+  "python3 -m venv .ci-bootstrap",
+  ".ci-bootstrap/bin/python -m pip install --require-hashes -r scripts/ci-bootstrap.txt",
+]
 extra_env = { CARGO_BUILD_JOBS = "2", UV_BIN = ".ci-bootstrap/bin/uv", UV_PYTHON = "3.13.15" }
 all_features = false

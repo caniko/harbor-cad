@@ -4,26 +4,113 @@
   "source_revision": "637ef959a1de9b63aba4e8a2cb815803980957f3",
   "flake_lock_sha256": "c82b720484076521ba2a59ca4bf891873b69971a0c9766bd7f58c181d403a807",
   "evidence_root": "/data/scratch/tmp/opencode/harbor-cad-authority-20261005",
-  "package_command": {"path": "b1-packages-2-command.json", "sha256": "38e1ce216db87caa02129f61d82691055e6c626d3d3c4c4c6a456e93d4edc350"},
-  "qualification_command": {"path": "b1-qualification-1-command.json", "sha256": "5eb85db61a956f202394c6b85bc0b3aad799985b30f457f0850a5c75cf4359a3"},
-  "b1_report": {"path": "native-hip-1/verification.json", "sha256": "f2621cb0a744c43c9c71815e6ee2a100e61b4cc7e2897f9b48446994ef841c52"},
-  "recovery_report": {"path": "hip-recovery-1/verification.json", "sha256": "2118a1f5f0d5a257602c35d577f3ba5b7cc3584a39062af06f3dbadb80653a76"},
-  "post_check": {"path": "b1-post-check-1.json", "sha256": "f847798f2faef63955a0c79cb2ee47a46275299ee93acb8ae356f1707caeb7b0"},
-  "runner": {"path": "/nix/store/dpwlsva748dl0lr07lx6dh78sqr3n99c-harbor-cad-0.1.0/bin/harbor-cad", "sha256": "e806a0fb0911dbef2caa57a26945a3ac21eb29545ff73ad890e9b616cb87eafc"},
-  "runtime": {"path": "/nix/store/lqhbmy2yy04g20djl1d1qazllzvrirsz-harbor-cad-native-runtime.json", "sha256": "563032a5f2d833cbd6920170a51649c288f0ae1a3b39b0a8d1bcf61f96f628e8"},
-  "mcp": {"path": "/nix/store/51k6x5gjmzbsawcmnhzbv00gjbvyk7ai-harbor-cad-mcp/bin/harbor-cad-mcp", "sha256": "c8a856f3222eaa2d639750b5fcebb193194cf3518563d228452ec0e82161ecfa"},
-  "authority": {"path": "b1-authority-1.json", "sha256": "1623e735642a5cc1b2c6a7f804abb5c7d10826d8d4ef7daf244d7c18e550dafe", "digest": "8511b311b1a413f31cbf21293450019b805b9f10e9592d34b385df569b99f893"},
-  "device": {"pci": "0000:03:00.0", "backend_uuid": "GPU-37636635323964656134623333626164", "architecture": "gfx1100", "render_node": "/dev/dri/renderD128", "live_kfd_gpu_count": 1},
-  "solver": {"source_revision": "145cd54810b468f4b6fd3ed86b10644264841578", "precision": "float64", "gpu_blocks": 1, "kernel_completion_verified": true, "compiled_runtime_driver_hip_version": 70253211},
+  "package_command": {
+    "path": "b1-packages-2-command.json",
+    "sha256": "38e1ce216db87caa02129f61d82691055e6c626d3d3c4c4c6a456e93d4edc350"
+  },
+  "qualification_command": {
+    "path": "b1-qualification-1-command.json",
+    "sha256": "5eb85db61a956f202394c6b85bc0b3aad799985b30f457f0850a5c75cf4359a3"
+  },
+  "b1_report": {
+    "path": "native-hip-1/verification.json",
+    "sha256": "f2621cb0a744c43c9c71815e6ee2a100e61b4cc7e2897f9b48446994ef841c52"
+  },
+  "recovery_report": {
+    "path": "hip-recovery-1/verification.json",
+    "sha256": "2118a1f5f0d5a257602c35d577f3ba5b7cc3584a39062af06f3dbadb80653a76"
+  },
+  "post_check": {
+    "path": "b1-post-check-1.json",
+    "sha256": "f847798f2faef63955a0c79cb2ee47a46275299ee93acb8ae356f1707caeb7b0"
+  },
+  "runner": {
+    "path": "/nix/store/dpwlsva748dl0lr07lx6dh78sqr3n99c-harbor-cad-0.1.0/bin/harbor-cad",
+    "sha256": "e806a0fb0911dbef2caa57a26945a3ac21eb29545ff73ad890e9b616cb87eafc"
+  },
+  "runtime": {
+    "path": "/nix/store/lqhbmy2yy04g20djl1d1qazllzvrirsz-harbor-cad-native-runtime.json",
+    "sha256": "563032a5f2d833cbd6920170a51649c288f0ae1a3b39b0a8d1bcf61f96f628e8"
+  },
+  "mcp": {
+    "path": "/nix/store/51k6x5gjmzbsawcmnhzbv00gjbvyk7ai-harbor-cad-mcp/bin/harbor-cad-mcp",
+    "sha256": "c8a856f3222eaa2d639750b5fcebb193194cf3518563d228452ec0e82161ecfa"
+  },
+  "authority": {
+    "path": "b1-authority-1.json",
+    "sha256": "1623e735642a5cc1b2c6a7f804abb5c7d10826d8d4ef7daf244d7c18e550dafe",
+    "digest": "8511b311b1a413f31cbf21293450019b805b9f10e9592d34b385df569b99f893"
+  },
+  "device": {
+    "pci": "0000:03:00.0",
+    "backend_uuid": "GPU-37636635323964656134623333626164",
+    "architecture": "gfx1100",
+    "render_node": "/dev/dri/renderD128",
+    "live_kfd_gpu_count": 1
+  },
+  "solver": {
+    "source_revision": "145cd54810b468f4b6fd3ed86b10644264841578",
+    "precision": "float64",
+    "gpu_blocks": 1,
+    "kernel_completion_verified": true,
+    "compiled_runtime_driver_hip_version": 70253211
+  },
   "results": [
-    {"resolution": 8, "interface": "CLI", "velocity_relative_l2": 0.011124428266122175, "tolerance": 0.05, "bundle_records": 42, "snapshot_sha256": "2399112140bb85c9ad4298edde34e65af34748e9ab89776ba1edab5a06f623d7"},
-    {"resolution": 16, "interface": "official MCP stdio client", "velocity_relative_l2": 0.0027813873418746048, "tolerance": 0.05, "bundle_records": 42, "snapshot_sha256": "05e5d550aa02d3dc96d2fd2e5e1fe8685d31446238ac8d74a7d1f81141078ef9"}
+    {
+      "resolution": 8,
+      "interface": "CLI",
+      "velocity_relative_l2": 0.011124428266122175,
+      "tolerance": 0.05,
+      "bundle_records": 42,
+      "snapshot_sha256": "2399112140bb85c9ad4298edde34e65af34748e9ab89776ba1edab5a06f623d7"
+    },
+    {
+      "resolution": 16,
+      "interface": "official MCP stdio client",
+      "velocity_relative_l2": 0.0027813873418746048,
+      "tolerance": 0.05,
+      "bundle_records": 42,
+      "snapshot_sha256": "05e5d550aa02d3dc96d2fd2e5e1fe8685d31446238ac8d74a7d1f81141078ef9"
+    }
   ],
-  "presentation": {"renderer": "EGL / AMD Radeon RX 7900 XTX / radeonsi / Mesa 26.2.1", "frames": 3, "dimensions": [640, 480], "requested_times_s": [0, 10, 20], "observed_times_s": [0, 10.000000000000002, 20.000000000000004], "encoder": "h264_vaapi", "decoded_codec": "h264", "pixel_format": "yuv420p", "playback_fps": 24, "decode": "actual CPU verification"},
-  "lifecycle": {"worker_restart": "same owned service invocation", "disconnect_and_retry": "same durable job", "reservations_and_gc_roots_released": true},
-  "recovery": {"resolution": 64, "forced_death_state": "failed", "cancellation_state": "cancelled", "records_per_bundle": 26, "initial_vti_bytes": 61287, "initial_vti_sha256": "06aa89916379e447bc43a43bf9799cd2ab7f1f3ac7779df205711f41ea2bd9e8", "shape": [130, 68, 66], "unchanged_float64_fields": true, "reservations_and_gc_roots_released": true},
+  "presentation": {
+    "renderer": "EGL / AMD Radeon RX 7900 XTX / radeonsi / Mesa 26.2.1",
+    "frames": 3,
+    "dimensions": [640, 480],
+    "requested_times_s": [0, 10, 20],
+    "observed_times_s": [0, 10.000000000000002, 20.000000000000004],
+    "encoder": "h264_vaapi",
+    "decoded_codec": "h264",
+    "pixel_format": "yuv420p",
+    "playback_fps": 24,
+    "decode": "actual CPU verification"
+  },
+  "lifecycle": {
+    "worker_restart": "same owned service invocation",
+    "disconnect_and_retry": "same durable job",
+    "reservations_and_gc_roots_released": true
+  },
+  "recovery": {
+    "resolution": 64,
+    "forced_death_state": "failed",
+    "cancellation_state": "cancelled",
+    "records_per_bundle": 26,
+    "initial_vti_bytes": 61287,
+    "initial_vti_sha256": "06aa89916379e447bc43a43bf9799cd2ab7f1f3ac7779df205711f41ea2bd9e8",
+    "shape": [130, 68, 66],
+    "unchanged_float64_fields": true,
+    "reservations_and_gc_roots_released": true
+  },
   "scope": "packaged synthetic FreeCAD/HIP OpenLB/retained fields/EGL/VAAPI/offline bundle on one observed AMD card; separate roles intentionally select the same physical card",
   "compute_override": "explicit qualification-only selection; Atlas has no default compute route",
-  "unqualified": ["multi-GPU KFD exclusion", "GPU numerical filters", "measured VRAM peaks", "standalone retained-field presentation jobs", "pressure accuracy", "convergence", "physical validation"],
+  "unqualified": [
+    "multi-GPU KFD exclusion",
+    "GPU numerical filters",
+    "measured VRAM peaks",
+    "standalone retained-field presentation jobs",
+    "pressure accuracy",
+    "convergence",
+    "physical validation"
+  ],
   "cuda": "best-effort; hardware unavailable"
 }

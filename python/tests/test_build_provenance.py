@@ -18,9 +18,14 @@ def test_doctor_compiled_lock_provenance_is_not_checkout_or_runtime_qualificatio
     doctor = json.loads(subprocess.check_output([binary, "doctor"]))
     provenance = doctor["build_provenance"]
     assert provenance["schema_version"] == 1
+    locks = {
+        "flake.lock": "flake.lock",
+        "Cargo.lock": "Cargo.lock",
+        "uv.lock": "python/uv.lock",
+    }
     assert provenance["lockfiles_sha256"] == {
-        name: hashlib.sha256((repo / name).read_bytes()).hexdigest()
-        for name in ("flake.lock", "Cargo.lock", "uv.lock")
+        name: hashlib.sha256((repo / path).read_bytes()).hexdigest()
+        for name, path in locks.items()
     }
     lock = json.loads((repo / "flake.lock").read_text())
     assert provenance["flake_inputs"] == {

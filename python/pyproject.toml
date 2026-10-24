@@ -14,13 +14,13 @@ dependencies = ["mcp==2.3.0", "jsonschema==4.26.0"]
 harbor-cad-mcp = "harbor_cad_mcp.server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["python/harbor_cad_mcp"]
+packages = ["harbor_cad_mcp"]
 
 [dependency-groups]
 dev = ["pytest==9.0.2", "ruff==0.16.10"]
 
 [tool.pytest.ini_options]
-testpaths = ["python/tests"]
+testpaths = ["tests"]
 
 [tool.uv]
 python-downloads = "never"

@@ -10,46 +10,182 @@
   "viskores_research_snapshot": "6fddd7edee9aea5f0388672b7f817960dc3429fb",
   "viskores_dependency_added": false,
   "sources": [
-    {"path": "research/rules.mk", "sha256": "4390947f051fbb664a199f4da1656ddf4c722c6824393881cd84a550e475fe5f"},
-    {"path": "research/config/gpu_only_amd.mk", "sha256": "9b06d181c2ab136ff87fedd2ad5f8530b44855fe519ff1c0f6dbec6677a0c858"},
-    {"path": "research/src/core/platform/platform.h", "sha256": "0e1da89ab5136d265608f621bb305ff5c11dcbe65758e6f0a451c07e67dfb145"},
-    {"path": "research/nixpkgs-clr.nix", "sha256": "e0eae38c5aa1aef3f1615bb54683dd43fff9c2c9d6427b9319464615c3b49a08"},
-    {"path": "research/viskores-device-adapters.cmake", "sha256": "a5eefc49732bcbce6e30fef99f21eb9383dcb6f552ea80f82938a6516dbd1076"},
-    {"path": "research/src/core/platform/gpu/hip/column.hh", "sha256": "95fa718f4cbaceda7d263448378cc643cba613f60247c616803914773bc84326"}
+    {
+      "path": "research/rules.mk",
+      "sha256": "4390947f051fbb664a199f4da1656ddf4c722c6824393881cd84a550e475fe5f"
+    },
+    {
+      "path": "research/config/gpu_only_amd.mk",
+      "sha256": "9b06d181c2ab136ff87fedd2ad5f8530b44855fe519ff1c0f6dbec6677a0c858"
+    },
+    {
+      "path": "research/src/core/platform/platform.h",
+      "sha256": "0e1da89ab5136d265608f621bb305ff5c11dcbe65758e6f0a451c07e67dfb145"
+    },
+    {
+      "path": "research/nixpkgs-clr.nix",
+      "sha256": "e0eae38c5aa1aef3f1615bb54683dd43fff9c2c9d6427b9319464615c3b49a08"
+    },
+    {
+      "path": "research/viskores-device-adapters.cmake",
+      "sha256": "a5eefc49732bcbce6e30fef99f21eb9383dcb6f552ea80f82938a6516dbd1076"
+    },
+    {
+      "path": "research/src/core/platform/gpu/hip/column.hh",
+      "sha256": "95fa718f4cbaceda7d263448378cc643cba613f60247c616803914773bc84326"
+    }
   ],
-  "host_inventory": {"path": "host-inventory.json", "sha256": "e4ab7011d928b7b33ef95dc39d7cbd020545035133cadc678b3c96fb694eddca", "scope": "read-only PCI/KFD sysfs and PATH inventory; not kernel evidence"},
-  "hip_target": {"architecture": "gfx1100", "precision": "float64", "rocm_runtime": "7.2.3", "rocm_compiler_package": "22.0.0-rocm"},
-  "qualified_device": {"pci": "0000:03:00.0", "backend_uuid": "GPU-37636635323964656134623333626164", "name": "AMD Radeon RX 7900 XTX", "architecture": "gfx1100", "reported_total_vram_bytes": 25753026560, "kernel_release": "7.2.8-cachyos-lto"},
+  "host_inventory": {
+    "path": "host-inventory.json",
+    "sha256": "e4ab7011d928b7b33ef95dc39d7cbd020545035133cadc678b3c96fb694eddca",
+    "scope": "read-only PCI/KFD sysfs and PATH inventory; not kernel evidence"
+  },
+  "hip_target": {
+    "architecture": "gfx1100",
+    "precision": "float64",
+    "rocm_runtime": "7.2.3",
+    "rocm_compiler_package": "22.0.0-rocm"
+  },
+  "qualified_device": {
+    "pci": "0000:03:00.0",
+    "backend_uuid": "GPU-37636635323964656134623333626164",
+    "name": "AMD Radeon RX 7900 XTX",
+    "architecture": "gfx1100",
+    "reported_total_vram_bytes": 25753026560,
+    "kernel_release": "7.2.8-cachyos-lto"
+  },
   "implementation_files": [
-    {"path": "adapters/openlb.cpp", "sha256": "f5318d32d56d83d3330b089af9c059a2c5349f7e1613f3ac8eca4b4c7fd107f5"},
-    {"path": "examples/openlb_hip_probe.rs", "sha256": "5edee0bb235102071cbd708b8356d974e9269beb7cd7f47610b4346392f66548"},
-    {"path": "scripts/verify_openlb_cpu.py", "sha256": "1ad2e86d9339dba0e9127dc3d17f5b88b1fd280aea172c0c78ff189528d691eb"},
-    {"path": "scripts/verify_openlb_hip.py", "sha256": "9f1090da1b30410ee7ce16e9841c4157ccdf0e5320fbc5b9f715bf1719e508de"},
-    {"path": "nix/openlb.nix", "sha256": "c96311e561932041f7b8b0bbc12665b1bc6e395ac2536ac0a9ef36e2a2182bf7"},
-    {"path": "nix/patches/openlb-hip-dependencies.patch", "sha256": "4e17d29071121754f53acf32b509d1b82a17c84117189e2a65dedb4ba97e8ca5"}
+    {
+      "path": "adapters/openlb.cpp",
+      "sha256": "f5318d32d56d83d3330b089af9c059a2c5349f7e1613f3ac8eca4b4c7fd107f5"
+    },
+    {
+      "path": "examples/openlb_hip_probe.rs",
+      "sha256": "5edee0bb235102071cbd708b8356d974e9269beb7cd7f47610b4346392f66548"
+    },
+    {
+      "path": "scripts/verify_openlb_cpu.py",
+      "sha256": "1ad2e86d9339dba0e9127dc3d17f5b88b1fd280aea172c0c78ff189528d691eb"
+    },
+    {
+      "path": "scripts/verify_openlb_hip.py",
+      "sha256": "9f1090da1b30410ee7ce16e9841c4157ccdf0e5320fbc5b9f715bf1719e508de"
+    },
+    {
+      "path": "nix/openlb.nix",
+      "sha256": "c96311e561932041f7b8b0bbc12665b1bc6e395ac2536ac0a9ef36e2a2182bf7"
+    },
+    {
+      "path": "nix/patches/openlb-hip-dependencies.patch",
+      "sha256": "4e17d29071121754f53acf32b509d1b82a17c84117189e2a65dedb4ba97e8ca5"
+    }
   ],
   "packages": {
-    "openlb_hip": {"derivation": "/nix/store/2263k6abxc4awmw3f7vd7np3i5n3fphg-harbor-cad-openlb-hip-1.9.0.drv", "executable": "/nix/store/lrjgzm6v1zkfvhfr8m4xbr8bfx4487d6-harbor-cad-openlb-hip-1.9.0/bin/harbor-cad-openlb", "sha256": "ce8ed7086494bff01fadfce70f6ad63b799a2f6903c834734b39566ff54f42b3", "build_command": "hip-build-7-command.json", "build_log": "hip-build-7.log"},
-    "openlb_cpu": {"derivation": "/nix/store/p9ds5pn5iyfrwgxjagy7ynb6kx0qv35h-harbor-cad-openlb-cpu-1.9.0.drv", "executable": "/nix/store/fyqnja1g2rvdyd92fnch4dhx2m1vd5fk-harbor-cad-openlb-cpu-1.9.0/bin/harbor-cad-openlb", "sha256": "ca8d7a9444e2b0913e7da3e0e9e58d81c5346c53e1b733bea3262a46f94e451e", "build_command": "cpu-build-final-command.json", "build_log": "cpu-build-final.log"},
-    "runtime_hip": {"derivation": "/nix/store/0vpcpdh19hx2xzwbjs3ssvax26vxvyzg-harbor-cad-native-runtime.json.drv", "path": "/nix/store/7wqqqsjgbaqq83kzhrr2jk6s8p3qj5ia-harbor-cad-native-runtime.json", "sha256": "8c5ad0b421ca5114db0fa027cd6e7f79fe5cf9a6c4e1cf24dd1044007c8e9aaf", "build_command": "runtime-build-7-command.json", "build_log": "runtime-build-7.log"},
+    "openlb_hip": {
+      "derivation": "/nix/store/2263k6abxc4awmw3f7vd7np3i5n3fphg-harbor-cad-openlb-hip-1.9.0.drv",
+      "executable": "/nix/store/lrjgzm6v1zkfvhfr8m4xbr8bfx4487d6-harbor-cad-openlb-hip-1.9.0/bin/harbor-cad-openlb",
+      "sha256": "ce8ed7086494bff01fadfce70f6ad63b799a2f6903c834734b39566ff54f42b3",
+      "build_command": "hip-build-7-command.json",
+      "build_log": "hip-build-7.log"
+    },
+    "openlb_cpu": {
+      "derivation": "/nix/store/p9ds5pn5iyfrwgxjagy7ynb6kx0qv35h-harbor-cad-openlb-cpu-1.9.0.drv",
+      "executable": "/nix/store/fyqnja1g2rvdyd92fnch4dhx2m1vd5fk-harbor-cad-openlb-cpu-1.9.0/bin/harbor-cad-openlb",
+      "sha256": "ca8d7a9444e2b0913e7da3e0e9e58d81c5346c53e1b733bea3262a46f94e451e",
+      "build_command": "cpu-build-final-command.json",
+      "build_log": "cpu-build-final.log"
+    },
+    "runtime_hip": {
+      "derivation": "/nix/store/0vpcpdh19hx2xzwbjs3ssvax26vxvyzg-harbor-cad-native-runtime.json.drv",
+      "path": "/nix/store/7wqqqsjgbaqq83kzhrr2jk6s8p3qj5ia-harbor-cad-native-runtime.json",
+      "sha256": "8c5ad0b421ca5114db0fa027cd6e7f79fe5cf9a6c4e1cf24dd1044007c8e9aaf",
+      "build_command": "runtime-build-7-command.json",
+      "build_log": "runtime-build-7.log"
+    },
     "qualification_hip_executable": "/nix/store/7xlj7wps41r48ngn2gy1h2fnzcm1mdmq-harbor-cad-openlb-hip-1.9.0/bin/harbor-cad-openlb",
     "final_hip_executable_byte_identical_to_qualification": true,
     "repack_reason": "trim dependency patch context for whitespace checks; identical applied patch and executable bytes",
     "retention": "Canix .nix-results roots; no publication or host activation"
   },
   "verification": {
-    "cpu_gate": {"path": "cpu-gate-final.log", "sha256": "6793653ac18342a5577e202d1dfffb66c43e300f019c9f4d738af86c56a23bb8", "rust_tests": 52, "python_cases": 31, "clippy": "passed with -D warnings", "format_and_ruff": "passed"},
-    "cpu_fallback_regression": {"path": "cpu-fallback-red-command.json", "expected_failure_against_previous_cpu_package": true},
+    "cpu_gate": {
+      "path": "cpu-gate-final.log",
+      "sha256": "6793653ac18342a5577e202d1dfffb66c43e300f019c9f4d738af86c56a23bb8",
+      "rust_tests": 52,
+      "python_cases": 31,
+      "clippy": "passed with -D warnings",
+      "format_and_ruff": "passed"
+    },
+    "cpu_fallback_regression": {
+      "path": "cpu-fallback-red-command.json",
+      "expected_failure_against_previous_cpu_package": true
+    },
     "hip_build": "passed; explicit gfx1100 compilation/linking in the Nix build sandbox",
     "hip_runtime": "passed in the bounded procedural native probe; production worker isolation unqualified",
-    "hip_numerical": {"path": "hip-qualified/verification.json", "sha256": "e6a64199584cf679b1b483192b7d49ca013f560a9dce2be9b32c84786910ade7", "scope": "synthetic Float64 periodic_forced_channel, forced BGK D3Q19, one local HIP block, resolutions 8 and 16, 20 s, retained 0/10/20 s", "command": "hip-qualified-command.json", "command_sha256": "f42c286af807c9470dc5da3413e2233c201561b33676f6b934302f6b28bc9eda", "velocity_l2_tolerance": 0.05, "cpu_hip_velocity_relative_l2_tolerance": 1e-10, "material_ids": "exact at every retained step", "pressure": "finite retained Float64, CPU differences diagnostic only; accuracy unqualified", "convergence": "not assessed", "results": [
-      {"resolution": 8, "cpu_relative_l2_error": 0.01112442826614978, "hip_relative_l2_error": 0.011124428266122175, "max_retained_velocity_cpu_hip_relative_l2_difference": 3.124827453983309e-14},
-      {"resolution": 16, "cpu_relative_l2_error": 0.0027813873419648702, "hip_relative_l2_error": 0.0027813873418746048, "max_retained_velocity_cpu_hip_relative_l2_difference": 1.0485508411701897e-13}
-    ], "rejections": ["ambiguous_stage", "stale_uuid", "wrong_backend", "missing_card", "architecture_spoof", "cpu_fallback"]},
-    "bounded_service": {"unit": "harbor-cad-hip-numerical-125283a77af9.service", "kernel_observed_memory_max_bytes": 2147483648, "kernel_observed_memory_peak_bytes": 354652160, "kernel_observed_swap_max_bytes": 0, "kernel_observed_cpu_max": "200000 100000", "kernel_observed_tasks_max": 128, "runtime_max_s": 900, "reported_service_runtime_s": 4.729, "card_reservation": "production try_reserve_cards helper; no independently induced contention in this probe", "scope": "trusted native numerical fixture; not production sandbox evidence", "measured_vram_peak": null},
-    "gpu_context_regression": {"failed_receipt": "hip-numerical/hip/resolution-8/openlb-receipt.json", "failed_relative_l2_error": 0.9615692648832852, "cause": "Simulation processing context copied stale host populations to HIP each step", "fix": "keep device-resident steps; context changes at retained observations", "scientific_parameters_or_tolerances_changed": false},
-    "dependency_scan_regression": {"binary_output": "hip-dependency-2-stdout.bin", "fixed_make_dependency_output": "hip-dependency-3-stdout.txt", "scope": "host-only dependency preprocessing; GPU compilation/linking remain enabled"},
-    "retained_comparison_regression": {"path": "comparison-regression/result.txt", "sha256": "4c36c1e353f6b57dd943b46679440ae5f4219e91014ed14a4cb4076e669739d5", "changed_float64_velocity_rejected": true},
+    "hip_numerical": {
+      "path": "hip-qualified/verification.json",
+      "sha256": "e6a64199584cf679b1b483192b7d49ca013f560a9dce2be9b32c84786910ade7",
+      "scope": "synthetic Float64 periodic_forced_channel, forced BGK D3Q19, one local HIP block, resolutions 8 and 16, 20 s, retained 0/10/20 s",
+      "command": "hip-qualified-command.json",
+      "command_sha256": "f42c286af807c9470dc5da3413e2233c201561b33676f6b934302f6b28bc9eda",
+      "velocity_l2_tolerance": 0.05,
+      "cpu_hip_velocity_relative_l2_tolerance": 1e-10,
+      "material_ids": "exact at every retained step",
+      "pressure": "finite retained Float64, CPU differences diagnostic only; accuracy unqualified",
+      "convergence": "not assessed",
+      "results": [
+        {
+          "resolution": 8,
+          "cpu_relative_l2_error": 0.01112442826614978,
+          "hip_relative_l2_error": 0.011124428266122175,
+          "max_retained_velocity_cpu_hip_relative_l2_difference": 3.124827453983309e-14
+        },
+        {
+          "resolution": 16,
+          "cpu_relative_l2_error": 0.0027813873419648702,
+          "hip_relative_l2_error": 0.0027813873418746048,
+          "max_retained_velocity_cpu_hip_relative_l2_difference": 1.0485508411701897e-13
+        }
+      ],
+      "rejections": [
+        "ambiguous_stage",
+        "stale_uuid",
+        "wrong_backend",
+        "missing_card",
+        "architecture_spoof",
+        "cpu_fallback"
+      ]
+    },
+    "bounded_service": {
+      "unit": "harbor-cad-hip-numerical-125283a77af9.service",
+      "kernel_observed_memory_max_bytes": 2147483648,
+      "kernel_observed_memory_peak_bytes": 354652160,
+      "kernel_observed_swap_max_bytes": 0,
+      "kernel_observed_cpu_max": "200000 100000",
+      "kernel_observed_tasks_max": 128,
+      "runtime_max_s": 900,
+      "reported_service_runtime_s": 4.729,
+      "card_reservation": "production try_reserve_cards helper; no independently induced contention in this probe",
+      "scope": "trusted native numerical fixture; not production sandbox evidence",
+      "measured_vram_peak": null
+    },
+    "gpu_context_regression": {
+      "failed_receipt": "hip-numerical/hip/resolution-8/openlb-receipt.json",
+      "failed_relative_l2_error": 0.9615692648832852,
+      "cause": "Simulation processing context copied stale host populations to HIP each step",
+      "fix": "keep device-resident steps; context changes at retained observations",
+      "scientific_parameters_or_tolerances_changed": false
+    },
+    "dependency_scan_regression": {
+      "binary_output": "hip-dependency-2-stdout.bin",
+      "fixed_make_dependency_output": "hip-dependency-3-stdout.txt",
+      "scope": "host-only dependency preprocessing; GPU compilation/linking remain enabled"
+    },
+    "retained_comparison_regression": {
+      "path": "comparison-regression/result.txt",
+      "sha256": "4c36c1e353f6b57dd943b46679440ae5f4219e91014ed14a4cb4076e669739d5",
+      "changed_float64_velocity_rejected": true
+    },
     "kfd_isolation": "unqualified",
     "cli_mcp_b1": "unqualified",
     "vulkan_hip_equal_accuracy_performance": "not measured",

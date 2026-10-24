@@ -18,9 +18,22 @@
     "100": [1.0320762348166994, 0.28597364109545254, 0.2080321159660059]
   },
   "maximum_phase_mass_relative_error": 0.0007972988105164891,
-  "unchanged_gates": {"mass_relative_tolerance": 0.001, "angle_tolerance_deg": 5, "late_angle_change_deg": 0.2, "refinement": "strictly decreasing angle error at equal physical time"},
+  "unchanged_gates": {
+    "mass_relative_tolerance": 0.001,
+    "angle_tolerance_deg": 5,
+    "late_angle_change_deg": 0.2,
+    "refinement": "strictly decreasing angle error at equal physical time"
+  },
   "memory_peak_bytes": 59043840,
-  "passed": ["complete original Float64 phase and lattice-velocity fields independently reconstructed", "native mass and whole-contour wall-angle checks", "both equal-physical-time refinement sequences", "late-angle settling gate on all cases", "twelve rejected science, domain, budget and acceptance substitutions", "eight closure-only CPU sandbox canaries", "bounded effective CPU, RAM, no-swap and task controls"],
+  "passed": [
+    "complete original Float64 phase and lattice-velocity fields independently reconstructed",
+    "native mass and whole-contour wall-angle checks",
+    "both equal-physical-time refinement sequences",
+    "late-angle settling gate on all cases",
+    "twelve rejected science, domain, budget and acceptance substitutions",
+    "eight closure-only CPU sandbox canaries",
+    "bounded effective CPU, RAM, no-swap and task controls"
+  ],
   "repaired_standalone": {
     "package_revision": "8ee49c22bc15e6516193b117d1fb449461666ea3",
     "qualifier_revision": "52dc14941efb1a27d73dd5c4bb9ebb80b8f8f260",

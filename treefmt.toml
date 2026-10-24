@@ -9,5 +9,5 @@ includes = ["*.nix"]
 
 [formatter.python]
 command = "uv"
-options = ["run", "--locked", "ruff", "format"]
+options = ["run", "--locked", "--project", "python", "ruff", "format"]
 includes = ["*.py"]

@@ -3,10 +3,10 @@
   "source_job": "00000000-0000-0000-0000-000000000000",
   "region_name": "solid",
   "dimensions": [
-    {"value": 30.0, "unit": "mm"},
-    {"value": 20.0, "unit": "mm"},
-    {"value": 10.0, "unit": "mm"}
+    { "value": 30.0, "unit": "mm" },
+    { "value": 20.0, "unit": "mm" },
+    { "value": 10.0, "unit": "mm" }
   ],
-  "geometry_tolerance": {"value": 1e-6, "unit": "m"},
+  "geometry_tolerance": { "value": 1e-6, "unit": "m" },
   "provenance": "explicit synthetic box-copy example; replace source_job with an authorized registered CAD inspection"
 }
