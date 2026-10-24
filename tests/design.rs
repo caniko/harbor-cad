@@ -1043,14 +1043,17 @@ fn power_sweep_superposes_two_solves_clamps_and_verifies_on_refine() {
     // The component limit on the board binds ...
     let board = 1. + 18.15 / 5.;
     assert!(close(run(Level::Screen, &al, &base), board));
-    // ... the hotter of board peak and internal air is the board ...
+    // ... or on the internal air (components sit between board and air) ...
     assert!(close(
         run(
             Level::Screen,
             &al,
-            &with(&[("internal_air_temperature_k", 345.)])
+            &with(&[
+                ("internal_air_temperature_k", 350.),
+                ("hi_internal_air_temperature_k", 420.)
+            ])
         ),
-        1. + 13.15 / (65. / 14.)
+        1. + 8.15 / 5.
     ));
     // ... else the housing service limit less the margin binds ...
     let housing = 1. + 33.15 / 3.;

@@ -90,18 +90,21 @@ pub fn superposed(powers: [f64; 2], lo: &[f64], hi: &[f64], power: f64) -> Vec<f
         .collect()
 }
 
-/// [board, housing] peaks of one solve: board is the hotter of the PCB peak
-/// and the internal air (components sit between them).
-fn sweep_point(metrics: &BTreeMap<String, f64>, prefix: &str) -> Option<[f64; 2]> {
+/// [PCB peak, internal air, housing peak] of one solve. Components sit
+/// between board and air, so both must stay under the component limit; they
+/// are separate criteria because each is (near-)affine in power while their
+/// maximum switches branch and is not.
+fn sweep_point(metrics: &BTreeMap<String, f64>, prefix: &str) -> Option<[f64; 3]> {
     let get = |name: &str| metrics.get(&format!("{prefix}{name}")).copied();
     Some([
-        get("pcb_max_temperature_k")?.max(get("internal_air_temperature_k")?),
+        get("pcb_max_temperature_k")?,
+        get("internal_air_temperature_k")?,
         get("max_temperature_k")?,
     ])
 }
 
 /// Maximum steady PCB dissipation the design supports at the hot point:
-/// the component limit bounds the board, and the route material's
+/// the component limit bounds the PCB peak and the internal air, and the route material's
 /// conservative service maximum less `housing_margin_required_k` bounds the
 /// housing (as `temperature_margin_k`). Clamped to the swept
 /// `[pcb_power_low_w, pcb_power_high_w]`; unknown if even the low power
@@ -151,7 +154,7 @@ impl MetricProvider for PowerSweep {
             return Ok(None);
         };
         let Some(service) =
-            service_margins(&Library::builtin()?, material, lo[1], lo[1], None, 1.)?
+            service_margins(&Library::builtin()?, material, lo[2], lo[2], None, 1.)?
                 .into_iter()
                 .find(|m| m.check == MarginCheck::MaxTemperature)
                 .and_then(|m| m.capacity)
@@ -159,7 +162,8 @@ impl MetricProvider for PowerSweep {
             return Ok(None);
         };
         let powers = [p_lo, p_hi];
-        let Some(power) = supported_power(powers, &lo, &hi, &[component, service - margin]) else {
+        let limits = [component, component, service - margin];
+        let Some(power) = supported_power(powers, &lo, &hi, &limits) else {
             return Ok(None);
         };
         if level == Level::Refine {
