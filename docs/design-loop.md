@@ -181,16 +181,51 @@ provider error) is unknown. Unknown constraints never pass.
 
 Deterministic and seeded; no surrogate model. For each categorical
 combination it screens `2d+1` Latin-hypercube points snapped to the grid
-(fewer when combinations would exceed the budget). It then runs a compass
-search around each combination's incumbent, best combination first: steps
-start at a quarter of the range, are kept after an improvement and halved
-after a failed poll down to the step floor, where pairwise diagonals are also
-polled. Remaining budget then refines the top-k screened candidates.
+(fewer when combinations would exceed the budget). It then runs multi-start
+pattern searches from the screening points, ranked feasibility-first (unknown
+points never start one). Up to three starts split the remaining screen budget
+in cumulative equal quotas, but only as many as can each afford a convergence
+check: one compass poll per level down to the step floor plus the floor's
+diagonals, `2d(levels + d − 1)` polls. A start that converges early passes its
+rest on, and further ranked points start once the first ones converge. Each
+search is an opportunistic compass poll. Steps start at an eighth of the range
+(about half a screening cell), are kept after an improvement and halved after a
+failed poll. At the step floor the poll order is compass, edge-following, then
+pairwise diagonals. The edge step follows an active constraint. For an
+infeasible unit poll `c ± e_i`, it takes an axis `j` whose unit poll raised the
+minimum margin and walks the line `c ± e_i + t·e_j` by a secant on the known
+margins (regula falsi once a feasible point brackets it). It proposes the first
+grid point predicted feasible. Remaining budget then refines the top-k screened
+candidates.
+
+Every proposal is a pure function of the envelope and the stored candidates.
+Each search is replayed over the evaluated points, and each evaluated point is
+charged to the first search that visits it. A restarted worker therefore
+regenerates the same sequence, and no point is proposed twice
+(`proposals_regenerate_from_persisted_history_after_restart`). A design whose
+searches do not all converge ends `budget_exhausted` rather than `completed`.
 
 Ranking is feasibility-first: feasible candidates by objective, infeasible by
 total normalized violation, unknown last. The incumbent is the best feasible
-refined candidate, else the best feasible screened one. Pattern search can stop
-short on a diagonal constraint boundary within 32 evaluations; swap for a
+refined candidate, else the best feasible screened one.
+
+Measured on the CI example (optimum on a curved `mean_velocity ≥ 0.1`
+boundary), seeds 0–39, 32 evaluations, gap of the incumbent to the
+brute-force grid optimum
+(`constrained_example_seed_sweep_beats_the_single_start_baseline`):
+
+| proposer | worst gap | median gap | exact optimum |
+| --- | --- | --- | --- |
+| single-start compass (trunk `c8a66b5`) | 27.7 % | 5.3 % | 6/40 |
+| multi-start + edge-following | 11.7 % | 0 % | 34/40 |
+
+Most of the gain comes from the edge step and the finer first level. On this
+2-D example only one start fits a convergence check, so later starts run only
+after the first search converges. Forcing three equal splits trims the worst
+gap (9.6 %) but loses the rest: median 2.1 %, 5/40 exact, and the bowl no longer
+converges, because each start stops before the step floor. All six misses run
+out of budget while still following the boundary.
+The unconstrained bowl still converges exactly for all 24 seeds. Swap for a
 surrogate if the budget binds.
 
 External candidates (`design propose`) must assign every parameter on its grid
