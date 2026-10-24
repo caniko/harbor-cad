@@ -513,6 +513,26 @@
         "provenance": "https://www.electronics-cooling.com/1998/05/conduction-heat-transfer-in-a-printed-circuit-board/ | Conduction Heat Transfer in a Printed Circuit Board, Electronics Cooling (1998-05-01) | accessed 2026-10-24 | series (through-plane) rule for the typical four-layer board gives k through-plane 0.26 W/(m*K) ;; https://www.electronics-cooling.com/1995/10/thermal-conductivity-of-printed-wiring-boards/ | J. E. Graebner, Thermal Conductivity of Printed Wiring Boards, Electronics Cooling (1995-10-01) | accessed 2026-10-24 | measured perpendicular 0.64-0.81 W/(m*K); kappa_N = [1.69 (1 - Z_Cu/Z) + 0.0026 Z_Cu/Z]^-1 ;; design use: the low end 0.26 W/(m*K) lies below every in-plane and through-plane value cited here, so it is a lower bound along the board normal and, used isotropically, in every direction (conservative for board temperatures). Orthotropic boards pair it with the in-plane low end (pcb-fr4-copper-in-plane); isotropic use understates in-plane spreading (8.1-17.4) 30-70x",
         "synthetic": false
       }
+    },
+    {
+      "id": "pcb-surface-emissivity",
+      "name": "Infrared emissivity of populated board surfaces: metal (coating-dependent) to plastic/solder mask; its low end is the conservative cavity-radiation value",
+      "dimension": "dimensionless",
+      "value": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 0.15,
+            "unit": "1"
+          },
+          "high": {
+            "value": 0.9,
+            "unit": "1"
+          }
+        },
+        "provenance": "https://www.flir.com/en-ca/support/instruments2/what-emissivity-settings-should-i-use-when-looking-at-pcbs-and-electronics/ | FLIR support: What emissivity settings should I use when looking at PCBs and electronics? | accessed 2026-10-24 | 'For plastic surfaces, use an emissivity of 0.9'; for metal surfaces 'the emissivity should be about 0.15 (depending on the metal and its coating)' ;; design use: the low end 0.15 assumes no worse than FLIR's metal value over the board faces; boards dominated by polished bare metal (unplated shield cans, bare copper pours) can be lower (a board requirement); a thermography setting, not a measured board emissivity",
+        "synthetic": false
+      }
     }
   ]
 }

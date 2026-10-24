@@ -1188,3 +1188,191 @@ fn enclosure_examples_chain_variant_general_mesh_and_enclosure_thermal() {
         assert_eq!(housing["source"]["pointer"], "/regions/housing/max_k");
     }
 }
+
+/// Cavity-radiation inputs: a 0.9-emissivity declared board, no solar.
+fn cavity_inputs() -> Value {
+    let mut spec = inputs();
+    spec["materials"]["pcb"]["emissivity"] = known(0.9, "1");
+    spec["radiation"] = json!(false);
+    spec["solar"] = Value::Null;
+    spec["power_sweep"] = json!(true);
+    spec["cavity_radiation"] = json!("linearized_lower_bound");
+    spec
+}
+
+#[test]
+fn cavity_radiation_resolves_low_interior_emissivities_and_needs_a_box_board() {
+    let temp = tempfile::tempdir().unwrap();
+    let store = Store::open(&temp.path().join("state")).unwrap();
+    let id = boxes(&store);
+    let (_, source) = et::solids(&store, &id, &request(&id).regions, &mesh_spec()).unwrap();
+    let resolve = |value: Value, geometry: &et::SolidsGeometry| {
+        et::resolve(
+            &serde_json::from_value::<EnclosureThermalInputs>(value)?,
+            geometry,
+        )
+    };
+    // Linear, so power_sweep accepts it; the declared board keeps its value.
+    let model = resolve(cavity_inputs(), &source.geometry).unwrap();
+    let cavity = model.cavity_radiation.unwrap();
+    assert_eq!(cavity.mode, et::CavityRadiationMode::LinearizedLowerBound);
+    assert_eq!(cavity.emissivity["pcb"], Some(0.9));
+    assert_eq!(cavity.emissivity["housing"], Some(0.03));
+    // A finished housing: the exterior takes the coat (0.82), the interior the
+    // lower of coat and bare aluminium, since interiors may be uncoated.
+    let mut coated = cavity_inputs();
+    coated["materials"]["housing"]["id"] = json!("al-6061-t6__cnc-3axis-al__powder-coat-white");
+    let model = resolve(coated, &source.geometry).unwrap();
+    assert_eq!(model.materials["housing"].emissivity, Some(0.82));
+    assert_eq!(
+        model.cavity_radiation.unwrap().emissivity["housing"],
+        Some(0.03)
+    );
+    // No sourced board emissivity: no credit (null), not a default.
+    let mut bare = cavity_inputs();
+    bare["materials"]["pcb"]
+        .as_object_mut()
+        .unwrap()
+        .remove("emissivity");
+    let model = resolve(bare, &source.geometry).unwrap();
+    assert_eq!(model.cavity_radiation.unwrap().emissivity["pcb"], None);
+    // The board must be a convex (axis-aligned) box.
+    let other = Store::open(&temp.path().join("notched")).unwrap();
+    let notched = archived(&other, &[("housing", HOUSING, 2e-6), ("pcb", PCB, 0.8e-6)]);
+    let (_, notched) =
+        et::solids(&other, &notched, &request(&notched).regions, &mesh_spec()).unwrap();
+    let message = resolve(cavity_inputs(), &notched.geometry)
+        .unwrap_err()
+        .to_string();
+    assert!(message.contains("convex box board"), "{message}");
+    let mut wrong = cavity_inputs();
+    wrong["cavity_radiation"] = json!("linearized");
+    assert!(resolve(wrong, &source.geometry).is_err());
+}
+
+#[test]
+fn cavity_radiation_receipt_is_labelled_balanced_and_refuses_a_hotter_wall() {
+    let temp = tempfile::tempdir().unwrap();
+    let store = Store::open(&temp.path().join("state")).unwrap();
+    let cad = boxes(&store);
+    let root = temp.path().join("native");
+    std::fs::create_dir(&root).unwrap();
+    // Every pcb face (5e-4 m2) and the housing top y = 0.01 (2e-4 m2) bound
+    // the cavity; the remaining 7e-4 m2 of housing faces are exterior.
+    let mut mesh_value = box_mesh(2);
+    let nodes = mesh_value["nodes"].clone();
+    let elements = mesh_value["elements"].clone();
+    let pcb: Vec<Value> = mesh_value["regions"]["pcb"].as_array().unwrap().clone();
+    for face in mesh_value["boundary_faces"].as_array_mut().unwrap() {
+        let element = &elements[face[0].as_u64().unwrap().to_string()];
+        let corners =
+            [[0, 1, 2], [0, 3, 1], [1, 3, 2], [2, 3, 0]][face[1].as_u64().unwrap() as usize - 1];
+        let top = corners.iter().all(|c| {
+            nodes[element[*c].as_u64().unwrap().to_string()][1]
+                .as_f64()
+                .unwrap()
+                > 0.01 - 1e-12
+        });
+        if pcb.contains(&face[0]) || top {
+            face[2] = json!("cavity");
+        }
+    }
+    let mesh = commit_artifact(
+        &root,
+        "mesh.json",
+        &serde_json::to_vec(&mesh_value).unwrap(),
+        "json",
+        "fixture",
+    )
+    .unwrap();
+    let (_, source) = et::solids(&store, &cad, &request(&cad).regions, &mesh_spec()).unwrap();
+    let model = et::resolve(
+        &serde_json::from_value(cavity_inputs()).unwrap(),
+        &source.geometry,
+    )
+    .unwrap();
+    let (ta, film) = (model.ambient_k, model.film_w_m2_k);
+    let plan = ExecutionPlan::cad_solids(
+        CadSolidsRecipe {
+            source,
+            thermal: Some(EnclosureThermalSpec {
+                schema_version: 1,
+                mesh_job: uuid::Uuid::new_v4().to_string(),
+                mesh_plan_digest: "c".repeat(64),
+                mesh_sha256: mesh.sha256.clone(),
+                thermal: model,
+            }),
+        },
+        "research".into(),
+    )
+    .unwrap();
+    // eps_eff = 1/(1/0.9 + (5e-4/2e-4)(1/0.03 - 1)); a uniform field balances
+    // the 2 W source on the 7e-4 m2 exterior with both nodes at the surface.
+    let effective = 1. / (1. / 0.9 + 2.5 * (1. / 0.03 - 1.));
+    let h = 4. * effective * 5.670374419e-8 * ta.powi(3);
+    let uniform = ta + 2. / (film * 7e-4);
+    let write_field = |temperature: &dyn Fn(f64) -> f64| {
+        let mut text = String::from(" temperatures for set NALL and time  0.1000000E+01\n\n");
+        let mut ids: Vec<u64> = nodes
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(|k| k.parse().unwrap())
+            .collect();
+        ids.sort_unstable();
+        for n in ids {
+            let x = nodes[&n.to_string()][0].as_f64().unwrap();
+            text.push_str(&format!("{n:10} {:.15E}\n", temperature(x)));
+        }
+        std::fs::write(root.join("reference.dat"), &text).unwrap();
+        use sha2::{Digest, Sha256};
+        format!("{:x}", Sha256::digest(text.as_bytes()))
+    };
+    let field = write_field(&|_| uniform);
+    let mut receipt = receipt_fixture(&plan, &mesh.sha256, &mesh_value, &field, uniform, 2.);
+    receipt["internal_air_k"] = json!(uniform);
+    receipt["applicability"]["cavity_radiation"] = json!(et::CAVITY_RADIATION_STATEMENT);
+    receipt["cavity_radiation"] = json!({"mode":"linearized_lower_bound","board_region":"pcb",
+        "board_area_m2":5e-4,"wall_area_m2":2e-4,"board_emissivity":0.9,"wall_emissivity":0.03,
+        "effective_emissivity":effective,"h_w_m2_k":h,"radiation_node_k":uniform,
+        "board_surface_min_k":uniform,"wall_max_k":uniform,"wall_min_k":uniform});
+    let evidence = et::verify_thermal_receipt(&plan, &root, &receipt).unwrap();
+    assert!(evidence.error < 1e-9, "{evidence:?}");
+    assert!(evidence.scope.contains(et::CAVITY_RADIATION_STATEMENT));
+    for (pointer, value) in [
+        ("/applicability/cavity_radiation", Value::Null),
+        ("/cavity_radiation/h_w_m2_k", json!(2. * h)),
+        ("/cavity_radiation/wall_area_m2", json!(3e-4)),
+        ("/cavity_radiation/radiation_node_k", Value::Null),
+        // A radiation node away from the surface leaves it unbalanced.
+        ("/cavity_radiation/radiation_node_k", json!(uniform - 50.)),
+        ("/cavity_radiation", Value::Null),
+    ] {
+        let mut changed = receipt.clone();
+        *changed.pointer_mut(pointer).unwrap() = value;
+        assert!(
+            et::verify_thermal_receipt(&plan, &root, &changed).is_err(),
+            "{pointer}"
+        );
+    }
+    // Walls hotter than the board's coldest surface void the credit before
+    // any balance check: the result is refused (unknown), never optimistic.
+    let tilted = |x: f64| uniform + 100. * (0.02 - x);
+    let mut hotter = receipt.clone();
+    hotter["native_field_sha256"] = json!(write_field(&tilted));
+    hotter["cavity_radiation"]["board_surface_min_k"] = json!(tilted(0.03));
+    hotter["cavity_radiation"]["wall_max_k"] = json!(tilted(0.));
+    hotter["cavity_radiation"]["wall_min_k"] = json!(tilted(0.02));
+    let message = et::verify_thermal_receipt(&plan, &root, &hotter)
+        .unwrap_err()
+        .to_string();
+    assert!(
+        message.contains("min board surface >= max wall"),
+        "{message}"
+    );
+    // The label is refused on a plan without the bound.
+    let plain = thermal_plan(&store, &cad, &mesh.sha256);
+    let mut labelled = receipt_fixture(&plain, &mesh.sha256, &mesh_value, &field, uniform, 2.);
+    labelled["applicability"]["cavity_radiation"] = json!(et::CAVITY_RADIATION_STATEMENT);
+    assert!(et::verify_thermal_receipt(&plain, &root, &labelled).is_err());
+}

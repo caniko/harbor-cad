@@ -417,3 +417,166 @@ def test_orthotropic_tetra_stiffness_matches_1d_conduction_along_each_axis(axis)
         x = xyz[axis]
         exact = 300 + q * length / (2 * h) + q * x * (length - x) / (2 * k)
         assert abs(temperatures[node] - exact) <= 1e-2 * rise
+
+
+def floating_board(emissivity=0.9, power=0.5, solar=None, housing_k=150.0):
+    """Hollow 50 mm housing (10 mm walls) with a free 20x20x4 mm board inside."""
+    nodes, elements, _ = gate.box_mesh([0, 0, 0], [0.05] * 3, (5, 5, 5), lambda x: "h")
+    shell = {
+        e: n
+        for e, n in elements.items()
+        if max(abs(sum(nodes[i][k] for i in n) / 4 - 0.025) for k in range(3)) > 0.015
+    }
+    board_nodes, board, _ = gate.box_mesh(
+        [0.015, 0.015, 0.02],
+        [0.02, 0.02, 0.004],
+        (2, 2, 1),
+        lambda x: "pcb",
+        1000,
+        10000,
+    )
+    regions = {"housing": sorted(shell), "pcb": sorted(board)}
+    nodes = {n: nodes[n] for n in {i for e in shell.values() for i in e}}
+    outer = [gate.on_plane(a, v) for a in range(3) for v in (0, 0.05)]
+    rec = gate.record(
+        nodes | board_nodes,
+        shell | board,
+        regions,
+        lambda p: "ambient" if any(on(p) for on in outer) else "cavity",
+    )
+    data = gate.thermal(
+        {"housing": gate.material(housing_k, 0.9, 0.9), "pcb": gate.material(5.0)},
+        "pcb",
+        power,
+        ["housing"],
+        film=10.0,
+        internal=2.0,
+    )
+    data["solar"] = solar
+    data[enclosure.CAVITY] = {
+        "mode": enclosure.LINEARIZED,
+        "emissivity": {"housing": 0.9, "pcb": emissivity},
+    }
+    return rec, data
+
+
+def test_cavity_radiation_pair_bound_holds_only_under_the_postcondition():
+    # T_b^4 - T_w^4 >= 4 T_w^3 (T_b - T_w) >= 4 Ta^3 (T_b - T_w) for
+    # T_b >= T_w >= Ta: tangent of the convex T^4 at T_w, then T_w^3 >= Ta^3.
+    ambient = 313.15
+    for wall in (ambient, ambient + 0.5, ambient + 20.0):
+        for rise in (0.0, 1e-3, 1.0, 30.0, 150.0):
+            board = wall + rise
+            assert board**4 - wall**4 >= 4 * ambient**3 * (board - wall)
+    # Without the postcondition the linear credit is optimistic: a wall
+    # hotter than the board heats it more than credited, and a pair below
+    # ambient exchanges less than credited.
+    board, wall = ambient + 1.0, ambient + 3.0
+    assert board**4 - wall**4 < 4 * ambient**3 * (board - wall)
+    board, wall = ambient - 5.0, ambient - 10.0
+    assert board**4 - wall**4 < 4 * ambient**3 * (board - wall)
+    # Equal board and wall conductances (2h*A_b each) put the radiation node
+    # at the mean of the area-weighted means; it transfers h*A_b*(Tb - Tw).
+    h, a_b, a_w, t_b, t_w = 1.7, 0.002, 0.03, 340.0, 320.0
+    node = (2 * h * a_b * t_b + 2 * h * a_b / a_w * a_w * t_w) / (4 * h * a_b)
+    assert 2 * h * a_b * (t_b - node) == pytest.approx(h * a_b * (t_b - t_w))
+
+
+def test_cavity_radiation_deck_solve_receipt_and_superposition():
+    rec, data = floating_board()
+    enclosure.validate_thermal(data, ["housing", "pcb"])
+    model = enclosure.boundary_model(rec, data, solid)
+    cavity = model["cavity_radiation"]
+    ratio = cavity["board_area_m2"] / cavity["wall_area_m2"]
+    eff = 1 / (1 / 0.9 + ratio * (1 / 0.9 - 1))
+    assert cavity["effective_emissivity"] == pytest.approx(eff)
+    h = 4 * eff * enclosure.SIGMA * 300.0**3
+    assert cavity["h_w_m2_k"] == pytest.approx(h)
+    assert cavity["board_area_m2"] == pytest.approx(2 * 0.02**2 + 4 * 0.02 * 0.004)
+    assert cavity["wall_area_m2"] == pytest.approx(6 * 0.03**2)
+    # One combined *FILM per credited face: (h_a + h_r)(T - sink).
+    e, f, _ = cavity["board"][0]
+    text = enclosure.deck(rec, data, model, 310.0, 320.0)
+    h_total = 2.0 + cavity["films"][e, f]
+    sink = (2.0 * 310.0 + cavity["films"][e, f] * 320.0) / h_total
+    line = f"{e},F{f},{enclosure.ccx_number(sink)},{enclosure.ccx_number(h_total)}"
+    assert line in text.splitlines()
+    assert cavity["films"][e, f] == pytest.approx(2 * h)
+    exact = gate.reference_solver(rec, model, data)
+    _, result = enclosure.evaluate(rec, data, model, exact, solid)
+    block = result["cavity_radiation"]
+    energy = result["energy_balance"]
+    assert energy["relative_error"] < 1e-6
+    assert energy["radiation_node_relative_error"] <= 1e-4
+    assert len(result["air_iterations"]) <= 6
+    assert block["board_surface_min_k"] >= block["wall_max_k"] >= block["wall_min_k"]
+    assert block["wall_min_k"] >= data["ambient_k"]
+    assert block["h_w_m2_k"] == pytest.approx(h)
+    statement = enclosure.applicability(data)["cavity_radiation"]
+    assert statement == enclosure.CAVITY_STATEMENT
+    assert f'"{statement}"' in (ROOT / "src/enclosure_thermal.rs").read_text()
+    # The credit only cools the board.
+    plain = copy.deepcopy(data)
+    del plain[enclosure.CAVITY]
+    plain_model = enclosure.boundary_model(rec, plain, solid)
+    _, uncredited = enclosure.evaluate(
+        rec, plain, plain_model, gate.reference_solver(rec, plain_model, plain), solid
+    )
+    assert result["regions"]["pcb"]["max_k"] < uncredited["regions"]["pcb"]["max_k"]
+    # Linear model: the air and radiation nodes are affine in power.
+    nodes = []
+    for power in (0.5, 1.0, 1.5):
+        rec, data = floating_board(power=power)
+        model = enclosure.boundary_model(rec, data, solid)
+        _, swept = enclosure.evaluate(
+            rec, data, model, gate.reference_solver(rec, model, data), solid
+        )
+        cavity = swept["cavity_radiation"]
+        nodes.append([swept["internal_air_k"], cavity["radiation_node_k"]])
+    for low, mid, high in zip(*nodes, strict=True):
+        assert abs(mid - (low + high) / 2) < 1e-3
+
+
+def test_cavity_radiation_violation_is_refused_and_missing_emissivity_gets_no_credit():
+    # A sun-heated low-conductivity lid and a 10 mW board: the hottest wall
+    # exceeds the coldest board surface, so the credit is invalid and nothing
+    # is claimed.
+    sun = {"irradiance_w_m2": 1000.0, "direction": [0.0, 0.0, 1.0]}
+    rec, data = floating_board(power=0.01, solar=sun, housing_k=0.2)
+    model = enclosure.boundary_model(rec, data, solid)
+    with pytest.raises(ValueError, match="cavity radiation lower bound"):
+        enclosure.evaluate(
+            rec, data, model, gate.reference_solver(rec, model, data), solid
+        )
+    # No sourced board emissivity: zero credit, no radiation node, no check.
+    rec, data = floating_board(emissivity=None, power=0.01, solar=sun, housing_k=0.2)
+    model = enclosure.boundary_model(rec, data, solid)
+    assert model["cavity_radiation"]["h_w_m2_k"] == 0.0
+    _, result = enclosure.evaluate(
+        rec, data, model, gate.reference_solver(rec, model, data), solid
+    )
+    assert result["cavity_radiation"]["radiation_node_k"] is None
+    assert "radiation_node_k" not in result["air_iterations"][-1]
+    # A board with an exterior face is not enclosed (view factor < 1), and a
+    # board without cavity faces has nothing to radiate to.
+    rec, data = floating_board()
+    pcb = set(rec["regions"]["pcb"])
+    face = next(f for f in rec["boundary_faces"] if f[0] in pcb)
+    face[2] = "ambient"
+    with pytest.raises(ValueError, match="enclosed"):
+        enclosure.boundary_model(rec, data, solid)
+    rec, data = series_case(radiation=False, solar=False)
+    data[enclosure.CAVITY] = {
+        "mode": enclosure.LINEARIZED,
+        "emissivity": {"housing": 0.8, "pcb": 0.9},
+    }
+    with pytest.raises(ValueError, match="board cavity faces"):
+        enclosure.boundary_model(rec, data, solid)
+    for cavity in (
+        {"mode": "linearized", "emissivity": {"housing": 0.8, "pcb": 0.9}},
+        {"mode": enclosure.LINEARIZED, "emissivity": {"pcb": 0.9}},
+        {"mode": enclosure.LINEARIZED, "emissivity": {"housing": 0.0, "pcb": 0.9}},
+    ):
+        data[enclosure.CAVITY] = cavity
+        with pytest.raises(ValueError, match="emissivity"):
+            enclosure.validate_thermal(data, ["housing", "pcb"])

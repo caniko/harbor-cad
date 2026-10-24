@@ -41,6 +41,21 @@ LINEARIZED_STATEMENT = (
     " exterior surface temperatures verified >= ambient"
 )
 # Same text as enclosure_thermal::TRANSPARENT_SOLAR_STATEMENT; Rust gates it.
+# Same text as enclosure_thermal::CAVITY_RADIATION_STATEMENT; Rust gates it.
+CAVITY_STATEMENT = (
+    "conservative_bound: board-to-wall cavity radiation credited as"
+    " h_cr = 4*eps_eff*sigma*Ta^3 on the board area A_b with"
+    " eps_eff = 1/(1/eps_b + (A_b/A_w)*(1/eps_w - 1)) (two-surface grey diffuse"
+    " enclosure: convex box board enclosed by cavity faces, walls every other"
+    " cavity face, view factor board->walls 1; low-end interior emissivities,"
+    " eps_w the minimum"
+    " over wall regions and, for finished library materials, over finish and bare"
+    " material); one radiation node (board 2*h_cr, walls 2*h_cr*A_b/A_w) transfers"
+    " h_cr*A_b*(mean board - mean wall) <= the exchange, since"
+    " T_b^4 - T_w^4 >= 4*Ta^3*(T_b - T_w) for every pair with T_b >= T_w >= Ta;"
+    " verified: min board surface >= max wall and min wall >= ambient; no credit"
+    " without every emissivity"
+)
 TRANSPARENT_SOLAR_STATEMENT = (
     "conservative_bound: the full solar irradiance incident on sun-facing exterior"
     " faces of transparent glazing is deposited into the internal air node (no"
@@ -61,6 +76,7 @@ THERMAL_KEYS = {
     "energy_balance_tolerance",
     "provenance",
 }
+CAVITY = "cavity_radiation"  # optional {"mode": LINEARIZED, "emissivity": {...}}
 MATERIAL_KEYS = {
     "source",
     "conductivity_w_m_k",
@@ -70,6 +86,16 @@ MATERIAL_KEYS = {
     "synthetic",
 }
 AXES = "conductivity_axes_w_m_k"  # optional diagonal orthotropic tensor (x, y, z)
+# Corner (C3D4) and corner + midside (C3D10) nodes of faces F1..F4.
+FACE_NODES = {
+    "C3D4": [[0, 1, 2], [0, 3, 1], [1, 3, 2], [2, 3, 0]],
+    "C3D10": [
+        [0, 1, 2, 4, 5, 6],
+        [0, 3, 1, 7, 8, 4],
+        [1, 3, 2, 8, 9, 5],
+        [2, 3, 0, 9, 7, 6],
+    ],
+}
 
 
 def load_bridge(name, path):
@@ -112,7 +138,7 @@ def text(value):
 
 
 def validate_thermal(thermal, names):
-    if not isinstance(thermal, dict) or set(thermal) != THERMAL_KEYS:
+    if not isinstance(thermal, dict) or set(thermal) - {CAVITY} != THERMAL_KEYS:
         raise ValueError("exact resolved enclosure thermal model required")
     materials = thermal["materials"]
     if not isinstance(materials, dict) or sorted(materials) != sorted(names):
@@ -206,6 +232,19 @@ def validate_thermal(thermal, names):
             raise ValueError(
                 "solar load requires a sourced absorptance per exposed region"
             )
+    if CAVITY in thermal:
+        cavity = thermal[CAVITY]
+        if (
+            not isinstance(cavity, dict)
+            or set(cavity) != {"mode", "emissivity"}
+            or cavity["mode"] != LINEARIZED
+            or not isinstance(cavity["emissivity"], dict)
+            or sorted(cavity["emissivity"]) != sorted(names)
+        ):
+            raise ValueError("exact cavity radiation bound with per-region emissivity")
+        for value in cavity["emissivity"].values():
+            if value is not None:
+                bounded(value, 0, 1, "cavity emissivity in (0, 1] required")
     provenance = thermal["provenance"]
     if (
         not isinstance(provenance, dict)
@@ -268,6 +307,7 @@ def boundary_model(record, thermal, solid):
                     )
     if deposit and not cavity:
         raise ValueError("transparent solar deposit needs an internal cavity air node")
+    radiant = cavity_radiation(record, thermal, cavity, region_of)
     source = thermal["heat_source_region"]
     volume = sum(
         solid.tet_volume(*(nodes[n] for n in elements[e][:4]))
@@ -279,10 +319,89 @@ def boundary_model(record, thermal, solid):
         "cavity": cavity,
         "sun": sun,
         "cavity_solar": deposit,
+        "cavity_radiation": radiant,
         "adiabatic_ambient_area_m2": adiabatic,
         "source_volume_m3": volume,
         "power_density_w_m3": thermal["heat_source_power_w"] / volume,
     }
+
+
+def cavity_radiation(record, thermal, cavity, region_of):
+    """Board/wall faces and films of the cavity radiation lower bound, or None.
+
+    The board (heat-source region) must be enclosed by cavity faces. Walls are
+    every other cavity face: like the air node, the model assumes one cavity.
+    Without a sourced emissivity for the board or a wall region the credit is
+    zero. Otherwise h_cr = 4*eps_eff*sigma*Ta^3 is applied through one
+    radiation node: board faces at 2*h_cr and wall faces at 2*h_cr*A_b/A_w, so
+    equal board and wall conductances put the node at the mean of the two
+    area-weighted surface means and the node transfers
+    h_cr*A_b*(mean board - mean wall).
+    """
+    spec = thermal.get(CAVITY)
+    if spec is None:
+        return None
+    board = thermal["heat_source_region"]
+    if any(
+        region_of[e] == board and label != "cavity"
+        for e, _, label in record["boundary_faces"]
+    ):
+        raise ValueError("cavity radiation needs the board enclosed by cavity faces")
+    boards = [face for face in cavity if region_of[face[0]] == board]
+    walls = [face for face in cavity if region_of[face[0]] != board]
+    if not boards:
+        raise ValueError("cavity radiation needs board cavity faces")
+    emissivity = spec["emissivity"]
+    board_area = sum(a for _, _, a in boards)
+    wall_area = sum(a for _, _, a in walls)
+    wall_values = [emissivity[r] for r in sorted({region_of[e] for e, _, _ in walls})]
+    result = {
+        "board": boards,
+        "walls": walls,
+        "board_area_m2": board_area,
+        "wall_area_m2": wall_area,
+        "board_emissivity": emissivity[board],
+        "wall_emissivity": None
+        if None in wall_values
+        else min(wall_values, default=None),
+        "effective_emissivity": None,
+        "h_w_m2_k": 0.0,
+        "films": {},
+    }
+    if result["board_emissivity"] is None or result["wall_emissivity"] is None:
+        return result  # no sourced emissivity: no credit, never a default
+    effective = 1 / (
+        1 / result["board_emissivity"]
+        + board_area / wall_area * (1 / result["wall_emissivity"] - 1)
+    )
+    h = 4 * effective * SIGMA * thermal["ambient_k"] ** 3
+    result["effective_emissivity"], result["h_w_m2_k"] = effective, h
+    result["films"] = {(e, f): 2 * h for e, f, _ in boards} | {
+        (e, f): 2 * h * board_area / wall_area for e, f, _ in walls
+    }
+    return result
+
+
+def radiation_films(model):
+    """{(element, face): conductance to the radiation node}; empty without credit."""
+    return (model.get("cavity_radiation") or {}).get("films", {})
+
+
+def cavity_films(thermal, model, internal_air_k, radiation_node_k=None):
+    """(element, face, area, h, sink) per cavity face.
+
+    A credited face exchanges with the air node and the radiation node, which
+    is one film: h_a(T - T_air) + h_r(T - T_rad) = (h_a + h_r)(T - T_sink) with
+    T_sink = (h_a T_air + h_r T_rad)/(h_a + h_r) (CalculiX keeps one *FILM per face).
+    """
+    inner, films = thermal["internal_film_w_m2_k"], radiation_films(model)
+    for e, f, area in model["cavity"]:
+        extra = films.get((e, f), 0.0)
+        if extra:
+            h = inner + extra
+            yield e, f, area, h, (inner * internal_air_k + extra * radiation_node_k) / h
+        else:
+            yield e, f, area, inner, internal_air_k
 
 
 def ccx_number(value):
@@ -294,12 +413,14 @@ def ccx_number(value):
     return text
 
 
-def deck(record, thermal, model, internal_air_k):
+def deck(record, thermal, model, internal_air_k, radiation_node_k=None):
     """CalculiX input; *FILM/*RADIATE/*DFLUX S use derived exterior faces.
 
     An orthotropic region gets `*CONDUCTIVITY,TYPE=ORTHO` (k11,k22,k33) with an
     explicit identity `*ORIENTATION` so its axes are the world axes. The
-    linearized radiation bound is folded into each exposed region's `*FILM`.
+    linearized radiation bound is folded into each exposed region's `*FILM`;
+    a cavity face credited with cavity radiation gets one combined `*FILM`
+    to the air and radiation nodes (`cavity_films`).
     """
     lines = [
         "*HEADING",
@@ -353,10 +474,12 @@ def deck(record, thermal, model, internal_air_k):
         + ccx_number(thermal["film_w_m2_k"] + radiation_coefficient(thermal, region))
         for e, f, _, region in model["film"]
     ]
-    if model["cavity"]:
-        air = ccx_number(internal_air_k)
-        inner = ccx_number(thermal["internal_film_w_m2_k"])
-        lines += [f"{e},F{f},{air},{inner}" for e, f, _ in model["cavity"]]
+    lines += [
+        f"{e},F{f},{ccx_number(sink)},{ccx_number(h)}"
+        for e, f, _, h, sink in cavity_films(
+            thermal, model, internal_air_k, radiation_node_k
+        )
+    ]
     if nonlinear(thermal):
         lines.append("*RADIATE")
         for e, f, _, region in model["film"]:
@@ -379,8 +502,13 @@ def face_temperatures(record, temperatures, eid, face, solid):
     ]
 
 
-def balance(record, thermal, model, temperatures, internal_air_k, solid):
-    """Heat in (source + solar) against film + radiation out, midside quadrature."""
+def balance(
+    record, thermal, model, temperatures, internal_air_k, solid, radiation_node_k=None
+):
+    """Heat in (source + solar) against film + radiation out, midside quadrature.
+
+    The air and radiation node residuals are their net inflows (zero at steady state).
+    """
     ambient = thermal["ambient_k"]
     film = radiation = 0.0
     for eid, face, area, region in model["film"]:
@@ -406,6 +534,13 @@ def balance(record, thermal, model, temperatures, internal_air_k, solid):
             / 3
             * sum(t - internal_air_k for t in values)
         )
+    node, films = 0.0, radiation_films(model)
+    for eid, face, area in model["cavity"]:
+        if (eid, face) in films:
+            values = face_temperatures(record, temperatures, eid, face, solid)
+            node += (
+                films[eid, face] * area / 3 * sum(t - radiation_node_k for t in values)
+            )
     solar = sum(q * area for _, _, area, q in model["sun"])
     deposit = sum(q * area for _, _, area, q in model["cavity_solar"])
     # Net heat into the air node: cavity faces plus the deposited solar.
@@ -424,6 +559,8 @@ def balance(record, thermal, model, temperatures, internal_air_k, solid):
         "tolerance": thermal["energy_balance_tolerance"],
         "internal_air_residual_w": air,
         "internal_air_relative_error": abs(air) / heat_in,
+        "radiation_node_residual_w": node,
+        "radiation_node_relative_error": abs(node) / heat_in,
     }
 
 
@@ -458,47 +595,94 @@ def statistics(record, temperatures, solid):
     }
 
 
-def solve(record, thermal, model, runner, solid):
-    """Secant search for the internal air node so its net heat flow vanishes.
+def linear_solve(matrix, rhs):
+    """Gaussian elimination with partial pivoting for the 1x1/2x2 node systems."""
+    n = len(rhs)
+    rows = [list(row) + [b] for row, b in zip(matrix, rhs, strict=True)]
+    for c in range(n):
+        pivot = max(range(c, n), key=lambda r: abs(rows[r][c]))
+        rows[c], rows[pivot] = rows[pivot], rows[c]
+        if rows[c][c] == 0:
+            raise ValueError("internal node balance is singular")
+        for r in range(c + 1, n):
+            factor = rows[r][c] / rows[c][c]
+            rows[r] = [a - factor * b for a, b in zip(rows[r], rows[c], strict=True)]
+    x = [0.0] * n
+    for r in reversed(range(n)):
+        solved = sum(rows[r][c] * x[c] for c in range(r + 1, n))
+        x[r] = (rows[r][n] - solved) / rows[r][r]
+    return x
 
-    `runner(internal_air_k)` returns nodal temperatures for a fixed air node.
-    Linear models converge on the third evaluation; radiation adds a few.
+
+def solve(record, thermal, model, runner, solid):
+    """Broyden search for the internal nodes so their net heat flows vanish.
+
+    The nodes are the air node and, when cavity radiation is credited, the
+    radiation node. `runner(internal_air_k[, radiation_node_k])` returns nodal
+    temperatures for fixed nodes. The start Jacobian is diagonal (each node
+    loses its total surface conductance per kelvin), so with one node this
+    is the secant search. A linear model converges after at most 2n updates;
+    T^4 radiation adds a few.
     """
     ambient = thermal["ambient_k"]
     if not model["cavity"]:
         temperatures = runner(ambient)
-        return temperatures, None, []
+        return temperatures, None, None, []
     target = 0.1 * thermal["energy_balance_tolerance"] * thermal["heat_source_power_w"]
-    history = []
-    conductance = thermal["internal_film_w_m2_k"] * sum(
-        a for _, _, a in model["cavity"]
-    )
-    x = ambient
-    previous = None
+    films = radiation_films(model)
+    conductances = [
+        thermal["internal_film_w_m2_k"] * sum(a for _, _, a in model["cavity"])
+    ]
+    if films:
+        conductances.append(
+            sum(films.get((e, f), 0.0) * a for e, f, a in model["cavity"])
+        )
+    n = len(conductances)
+    jacobian = [
+        [-g if i == j else 0.0 for j in range(n)] for i, g in enumerate(conductances)
+    ]
+    history, x, previous = [], [ambient] * n, None
     for _ in range(MAX_AIR_RUNS):
-        temperatures = runner(x)
-        residual = balance(record, thermal, model, temperatures, x, solid)[
-            "internal_air_residual_w"
-        ]
-        history.append({"internal_air_k": x, "residual_w": residual})
-        if abs(residual) <= target:
-            return temperatures, x, history
-        if previous is None or residual == previous[1]:
-            step = residual / conductance
-        else:
-            step = -residual * (x - previous[0]) / (residual - previous[1])
+        temperatures = runner(*x)
+        energy = balance(record, thermal, model, temperatures, x[0], solid, *x[1:])
+        residual = [energy["internal_air_residual_w"]]
+        entry = {"internal_air_k": x[0], "residual_w": residual[0]}
+        if n == 2:
+            residual.append(energy["radiation_node_residual_w"])
+            entry |= {
+                "radiation_node_k": x[1],
+                "radiation_node_residual_w": residual[1],
+            }
+        history.append(entry)
+        if all(abs(r) <= target for r in residual):
+            return temperatures, x[0], x[1] if n == 2 else None, history
+        if previous is not None:
+            dx = [a - b for a, b in zip(x, previous[0], strict=True)]
+            dr = [a - b for a, b in zip(residual, previous[1], strict=True)]
+            norm = sum(v * v for v in dx)
+            if norm > 0:
+                miss = [
+                    dr[i] - sum(jacobian[i][j] * dx[j] for j in range(n))
+                    for i in range(n)
+                ]
+                for i in range(n):
+                    for j in range(n):
+                        jacobian[i][j] += miss[i] * dx[j] / norm
         previous = (x, residual)
-        x += step
-        if not 150 < x < 1000:
+        step = linear_solve(jacobian, [-r for r in residual])
+        x = [a + b for a, b in zip(x, step, strict=True)]
+        if not all(150 < v < 1000 for v in x):
             break
     raise ValueError("internal air balance did not converge within the run budget")
 
 
 def ccx_runner(record, thermal, model, fem, calculix, version, log):
-    def run(internal_air_k):
+    def run(internal_air_k, radiation_node_k=None):
         for stale in Path.cwd().glob("reference.*"):
             stale.unlink()
-        Path("reference.inp").write_text(deck(record, thermal, model, internal_air_k))
+        Path("reference.inp").write_text(
+            deck(record, thermal, model, internal_air_k, radiation_node_k)
+        )
         environment = {
             "OMP_NUM_THREADS": "1",
             "CCX_NPROC_RESULTS": "1",
@@ -546,7 +730,9 @@ def ccx_runner(record, thermal, model, fem, calculix, version, log):
 
 def evaluate(record, thermal, model, runner, solid):
     """Solve, then gate and summarize; shared by the stage and verification."""
-    temperatures, internal_air_k, history = solve(record, thermal, model, runner, solid)
+    temperatures, internal_air_k, radiation_node_k, history = solve(
+        record, thermal, model, runner, solid
+    )
     # The linearized radiation bound is claimed only for exterior faces at or
     # above ambient (checked first: a violation voids the model, not the solve).
     exterior = exterior_min(record, model, temperatures)
@@ -558,6 +744,21 @@ def evaluate(record, thermal, model, runner, solid):
         raise ValueError(
             "linearized radiation lower bound needs exterior surfaces >= ambient"
         )
+    # Cavity radiation: the pairwise tangent bound needs every board surface
+    # at or above every wall and the walls at or above ambient (also checked
+    # first: a violation voids the credit, so the result is not claimed).
+    cavity = cavity_report(record, thermal, model, temperatures, radiation_node_k)
+    if (
+        cavity is not None
+        and cavity["h_w_m2_k"] > 0
+        and not (
+            cavity["board_surface_min_k"] >= cavity["wall_max_k"]
+            and cavity["wall_min_k"] >= thermal["ambient_k"]
+        )
+    ):
+        raise ValueError(
+            "cavity radiation lower bound needs min board surface >= max wall >= ambient"
+        )
     energy = balance(
         record,
         thermal,
@@ -565,9 +766,12 @@ def evaluate(record, thermal, model, runner, solid):
         temperatures,
         thermal["ambient_k"] if internal_air_k is None else internal_air_k,
         solid,
+        radiation_node_k,
     )
-    if energy["relative_error"] > energy["tolerance"] or (
-        energy["internal_air_relative_error"] > energy["tolerance"]
+    if (
+        energy["relative_error"] > energy["tolerance"]
+        or energy["internal_air_relative_error"] > energy["tolerance"]
+        or energy["radiation_node_relative_error"] > energy["tolerance"]
     ):
         raise ValueError(f"steady energy balance gate failed: {energy}")
     regions, hottest = statistics(record, temperatures, solid)
@@ -586,28 +790,48 @@ def evaluate(record, thermal, model, runner, solid):
         },
         "heat_source_volume_m3": model["source_volume_m3"],
         "exterior_min_k": exterior,
+        **({} if cavity is None else {CAVITY: cavity}),
     }
+
+
+def face_node_temperatures(record, faces, temperatures):
+    """Temperatures of every node (corners and C3D10 midsides) on the faces."""
+    nodes = FACE_NODES[record["element_type"]]
+    return [
+        temperatures[record["elements"][face[0]][i]]
+        for face in faces
+        for i in nodes[face[1] - 1]
+    ]
 
 
 def exterior_min(record, model, temperatures):
     """Coldest node (corners and C3D10 midsides) on exposed exterior faces."""
-    faces = {
-        "C3D4": [[0, 1, 2], [0, 3, 1], [1, 3, 2], [2, 3, 0]],
-        "C3D10": [
-            [0, 1, 2, 4, 5, 6],
-            [0, 3, 1, 7, 8, 4],
-            [1, 3, 2, 8, 9, 5],
-            [2, 3, 0, 9, 7, 6],
-        ],
-    }[record["element_type"]]
     return min(
-        (
-            temperatures[record["elements"][e][i]]
-            for e, f, _, _ in model["film"]
-            for i in faces[f - 1]
-        ),
-        default=None,
+        face_node_temperatures(record, model["film"], temperatures), default=None
     )
+
+
+def cavity_report(record, thermal, model, temperatures, radiation_node_k):
+    """Receipt block of the cavity radiation bound and its postcondition inputs."""
+    cavity = model.get("cavity_radiation")
+    if cavity is None:
+        return None
+    board = face_node_temperatures(record, cavity["board"], temperatures)
+    walls = face_node_temperatures(record, cavity["walls"], temperatures)
+    return {
+        "mode": LINEARIZED,
+        "board_region": thermal["heat_source_region"],
+        "board_area_m2": cavity["board_area_m2"],
+        "wall_area_m2": cavity["wall_area_m2"],
+        "board_emissivity": cavity["board_emissivity"],
+        "wall_emissivity": cavity["wall_emissivity"],
+        "effective_emissivity": cavity["effective_emissivity"],
+        "h_w_m2_k": cavity["h_w_m2_k"],
+        "radiation_node_k": radiation_node_k,
+        "board_surface_min_k": min(board),
+        "wall_max_k": max(walls, default=None),
+        "wall_min_k": min(walls, default=None),
+    }
 
 
 def applicability(thermal):
@@ -616,6 +840,8 @@ def applicability(thermal):
         result["transparent_solar"] = TRANSPARENT_SOLAR_STATEMENT
     if thermal["radiation"] == LINEARIZED:
         result["radiation"] = LINEARIZED_STATEMENT
+    if CAVITY in thermal:
+        result[CAVITY] = CAVITY_STATEMENT
     return result
 
 

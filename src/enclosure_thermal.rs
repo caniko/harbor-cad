@@ -356,6 +356,34 @@ impl Radiation {
 }
 
 pub const LINEARIZED_RADIATION_STATEMENT: &str = "conservative_bound: exterior radiation credited as h_r = 4*eps*sigma*Ta^3 (low-end sourced emissivity, surroundings at the ambient air temperature) added to the film coefficient; eps*sigma*(T^4 - Ta^4) >= h_r*(T - Ta) for T >= Ta (and, by convexity, for any T), surroundings colder than ambient (sky) only add cooling, regions without a sourced emissivity get no credit; exterior surface temperatures verified >= ambient";
+/// Board-to-wall cavity radiation inside the enclosure.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum CavityRadiationMode {
+    /// Conservative bound, linear: the heat-source board (a convex box fully
+    /// enclosed by cavity faces, view factor 1 to the walls: every other
+    /// cavity face, one cavity as for the air node)
+    /// exchanges h_cr = 4·ε_eff·σ·Ta³ per board area with the walls through one
+    /// radiation node, ε_eff = 1/(1/ε_b + (A_b/A_w)(1/ε_w − 1)) from low-end
+    /// interior emissivities. Valid only while every board surface node is at
+    /// or above every wall node and the walls at or above ambient (verified);
+    /// no credit without a sourced emissivity for the board and every wall.
+    LinearizedLowerBound,
+}
+
+/// Resolved cavity radiation bound: low-end interior emissivity per region
+/// (`None`: none sourced, so no credit when the region bounds the cavity).
+/// A finished library material takes the lower of the finish and the bare
+/// material, since interior faces may be uncoated.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct CavityRadiation {
+    pub mode: CavityRadiationMode,
+    pub emissivity: BTreeMap<String, Option<f64>>,
+}
+
+pub const CAVITY_RADIATION_STATEMENT: &str = "conservative_bound: board-to-wall cavity radiation credited as h_cr = 4*eps_eff*sigma*Ta^3 on the board area A_b with eps_eff = 1/(1/eps_b + (A_b/A_w)*(1/eps_w - 1)) (two-surface grey diffuse enclosure: convex box board enclosed by cavity faces, walls every other cavity face, view factor board->walls 1; low-end interior emissivities, eps_w the minimum over wall regions and, for finished library materials, over finish and bare material); one radiation node (board 2*h_cr, walls 2*h_cr*A_b/A_w) transfers h_cr*A_b*(mean board - mean wall) <= the exchange, since T_b^4 - T_w^4 >= 4*Ta^3*(T_b - T_w) for every pair with T_b >= T_w >= Ta; verified: min board surface >= max wall and min wall >= ambient; no credit without every emissivity";
+
 /// Relative |CAD volume − bounding-box volume| of an orthotropic plate region.
 pub const PLATE_TOLERANCE: f64 = 1e-9;
 
@@ -395,6 +423,10 @@ pub struct EnclosureThermalInputs {
     /// allowed. Constant films and solar keep it affine.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub power_sweep: bool,
+    /// Board-to-wall cavity radiation lower bound (linear, so power_sweep
+    /// accepts it); the board is `heat_source_region`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cavity_radiation: Option<CavityRadiationMode>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -447,6 +479,8 @@ pub struct ThermalModel {
     pub radiation: Radiation,
     pub energy_balance_tolerance: f64,
     pub provenance: BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cavity_radiation: Option<CavityRadiation>,
 }
 
 /// World axis normal to an axis-aligned plate region: its CAD volume fills
@@ -454,11 +488,19 @@ pub struct ThermalModel {
 /// most half of each other one. `None` for a rotated, non-box or non-plate solid.
 pub fn plate_normal(region: &SolidRegion) -> Option<usize> {
     let sizes = [0, 2, 4].map(|i| region.bounds_m[i + 1] - region.bounds_m[i]);
-    let boxed = sizes.iter().product::<f64>();
     let normal = (0..3).min_by(|a, b| sizes[*a].total_cmp(&sizes[*b]))?;
-    ((region.volume_m3 - boxed).abs() <= PLATE_TOLERANCE * boxed
-        && sizes.iter().filter(|s| **s < 2. * sizes[normal]).count() == 1)
+    (boxed(region) && sizes.iter().filter(|s| **s < 2. * sizes[normal]).count() == 1)
         .then_some(normal)
+}
+
+/// Axis-aligned box (hence convex): the CAD volume fills the world bounding
+/// box within `PLATE_TOLERANCE`.
+pub fn boxed(region: &SolidRegion) -> bool {
+    let volume = [0, 2, 4]
+        .map(|i| region.bounds_m[i + 1] - region.bounds_m[i])
+        .iter()
+        .product::<f64>();
+    (region.volume_m3 - volume).abs() <= PLATE_TOLERANCE * volume
 }
 
 impl ThermalModel {
@@ -506,6 +548,28 @@ impl ThermalModel {
             return Err(invalid(
                 "resolved enclosure thermal model differs from approved regions, ranges or provenance",
             ));
+        }
+        if let Some(cavity) = &self.cavity_radiation
+            && (cavity
+                .emissivity
+                .keys()
+                .map(String::as_str)
+                .collect::<BTreeSet<_>>()
+                != names
+                || cavity
+                    .emissivity
+                    .values()
+                    .flatten()
+                    .any(|v| !positive(*v, 1.))
+                || !geometry
+                    .regions
+                    .iter()
+                    .any(|r| r.name == self.heat_source_region && boxed(r)))
+        {
+            return Err(invalid(format!(
+                "cavity radiation needs a convex box board ({} must fill its axis-aligned bounding box within {PLATE_TOLERANCE}) and one interior emissivity in (0, 1] or null per region",
+                self.heat_source_region
+            )));
         }
         let lacks = |pick: fn(&ResolvedMaterial) -> Option<f64>| {
             exposed
@@ -698,11 +762,12 @@ fn range(input: &PhysicalInput<QuantityRange>, high: bool) -> Result<Option<(f64
     })
 }
 
+/// Resolved material and its low-end interior (cavity) emissivity.
 fn material(
     region: &SolidRegion,
     input: &MaterialInput,
     library: &Library,
-) -> Result<ResolvedMaterial> {
+) -> Result<(ResolvedMaterial, Option<f64>)> {
     let (plate, region) = (region, region.name.as_str());
     match input {
         MaterialInput::Library { id, finish } => {
@@ -737,6 +802,14 @@ fn material(
             };
             let emissivity = range(&emissivity, false)?;
             let absorptance = range(&absorptance, true)?;
+            // Interior faces may be uncoated: the lower of finish and bare material.
+            let interior = match finish {
+                None => emissivity.as_ref().map(|v| v.0),
+                Some(_) => emissivity
+                    .as_ref()
+                    .zip(range(&entry.emissivity, false)?)
+                    .map(|(a, b)| a.0.min(b.0)),
+            };
             let source = finish.map_or(format!("library:{id}"), |f| {
                 format!("library:{id}+finish:{f}")
             });
@@ -753,15 +826,18 @@ fn material(
                 }
             }
             provenance.truncate(4096);
-            Ok(ResolvedMaterial {
-                source,
-                conductivity_w_m_k: conductivity.0,
-                emissivity: emissivity.map(|v| v.0),
-                solar_absorptance: absorptance.map(|v| v.0),
-                provenance,
-                synthetic: false,
-                conductivity_axes_w_m_k: None,
-            })
+            Ok((
+                ResolvedMaterial {
+                    source,
+                    conductivity_w_m_k: conductivity.0,
+                    emissivity: emissivity.map(|v| v.0),
+                    solar_absorptance: absorptance.map(|v| v.0),
+                    provenance,
+                    synthetic: false,
+                    conductivity_axes_w_m_k: None,
+                },
+                interior,
+            ))
         }
         MaterialInput::Declared {
             conductivity,
@@ -810,15 +886,18 @@ fn material(
             }
             provenance.truncate(4096);
             synthetic |= eps_synthetic || alpha_synthetic;
-            Ok(ResolvedMaterial {
-                source: "declared".into(),
-                conductivity_w_m_k: k,
-                emissivity: eps,
-                solar_absorptance: alpha,
-                provenance,
-                synthetic,
-                conductivity_axes_w_m_k: axes,
-            })
+            Ok((
+                ResolvedMaterial {
+                    source: "declared".into(),
+                    conductivity_w_m_k: k,
+                    emissivity: eps,
+                    solar_absorptance: alpha,
+                    provenance,
+                    synthetic,
+                    conductivity_axes_w_m_k: axes,
+                },
+                eps,
+            ))
         }
     }
 }
@@ -847,6 +926,7 @@ pub fn resolve(inputs: &EnclosureThermalInputs, geometry: &SolidsGeometry) -> Re
         return Err(invalid(format!("region {region} has no material")));
     }
     let library = Library::builtin()?;
+    let mut interior = BTreeMap::new();
     let materials = inputs
         .materials
         .iter()
@@ -856,7 +936,9 @@ pub fn resolve(inputs: &EnclosureThermalInputs, geometry: &SolidsGeometry) -> Re
                 .iter()
                 .find(|r| &r.name == region)
                 .ok_or_else(|| invalid(format!("region {region} is not meshed")))?;
-            Ok((region.clone(), material(solid, input, &library)?))
+            let (resolved, emissivity) = material(solid, input, &library)?;
+            interior.insert(region.clone(), emissivity);
+            Ok((region.clone(), resolved))
         })
         .collect::<Result<BTreeMap<_, _>>>()?;
     let mut provenance = BTreeMap::new();
@@ -923,6 +1005,10 @@ pub fn resolve(inputs: &EnclosureThermalInputs, geometry: &SolidsGeometry) -> Re
         radiation: inputs.radiation,
         energy_balance_tolerance: inputs.energy_balance_tolerance,
         provenance,
+        cavity_radiation: inputs.cavity_radiation.map(|mode| CavityRadiation {
+            mode,
+            emissivity: interior,
+        }),
     };
     model.validate(geometry)?;
     Ok(model)
@@ -1731,6 +1817,77 @@ pub struct ThermalFacts {
     pub exterior_min_k: f64,
     pub regions: BTreeMap<String, [f64; 3]>,
     pub max_k: f64,
+    /// Present when the plan requests the cavity radiation bound.
+    pub cavity: Option<CavityFacts>,
+}
+
+/// Recomputed cavity radiation bound: geometry, coefficient, radiation-node
+/// residual and the postcondition extremes (corner and C3D10 midside nodes).
+#[derive(Debug)]
+pub struct CavityFacts {
+    pub board_area_m2: f64,
+    pub wall_area_m2: f64,
+    pub effective_emissivity: Option<f64>,
+    /// 0 without a sourced emissivity for the board or a wall region.
+    pub h_w_m2_k: f64,
+    pub radiation_node_residual_w: f64,
+    pub board_surface_min_k: f64,
+    pub wall_max_k: f64,
+    pub wall_min_k: f64,
+}
+
+/// Cavity faces (element, 0-based face) of the board and of the walls it sees.
+type Faces = Vec<(u64, usize)>;
+
+/// Board (heat-source) cavity faces, the wall faces (every other cavity face:
+/// one cavity, as for the air node), their areas, ε_eff and h_cr; refuses a
+/// board that is not enclosed by cavity faces.
+fn cavity_faces(
+    mesh: &MeshFile,
+    model: &ThermalModel,
+    region_of: &BTreeMap<u64, &str>,
+) -> Result<(Faces, Faces, f64, f64, Option<f64>, f64)> {
+    let board = model.heat_source_region.as_str();
+    let (mut boards, mut walls) = (vec![], vec![]);
+    for (eid, face, label) in &mesh.boundary_faces {
+        let entry = (*eid, usize::from(*face) - 1);
+        match (region_of[eid] == board, label == "cavity") {
+            (true, false) => {
+                return Err(invalid(
+                    "cavity radiation needs the board enclosed by cavity faces",
+                ));
+            }
+            (true, true) => boards.push(entry),
+            (false, true) => walls.push(entry),
+            _ => {}
+        }
+    }
+    if boards.is_empty() {
+        return Err(invalid("cavity radiation needs board cavity faces"));
+    }
+    let area = |faces: &[(u64, usize)]| {
+        faces
+            .iter()
+            .map(|(e, f)| mesh.face(&mesh.elements[e], *f).1)
+            .sum::<f64>()
+    };
+    let (a_b, a_w) = (area(&boards), area(&walls));
+    let emissivity = &model
+        .cavity_radiation
+        .as_ref()
+        .ok_or_else(|| invalid("cavity radiation model required"))?
+        .emissivity;
+    let regions: BTreeSet<&str> = walls.iter().map(|(e, _)| region_of[e]).collect();
+    let wall = regions
+        .iter()
+        .map(|r| emissivity[*r])
+        .try_fold(f64::INFINITY, |low, e| e.map(|e| low.min(e)));
+    let effective = match (emissivity[board], wall) {
+        (Some(b), Some(w)) if !walls.is_empty() => Some(1. / (1. / b + a_b / a_w * (1. / w - 1.))),
+        _ => None,
+    };
+    let h = effective.map_or(0., |e| 4. * e * SIGMA * model.ambient_k.powi(3));
+    Ok((boards, walls, a_b, a_w, effective, h))
 }
 
 fn thermal_facts(
@@ -1738,6 +1895,7 @@ fn thermal_facts(
     model: &ThermalModel,
     temperatures: &BTreeMap<u64, f64>,
     internal_air_k: f64,
+    radiation_node_k: Option<f64>,
 ) -> Result<ThermalFacts> {
     if temperatures.keys().ne(mesh.nodes.keys())
         || temperatures.values().any(|t| !(t.is_finite() && *t > 0.))
@@ -1812,7 +1970,60 @@ fn thermal_facts(
     }
     let heat_source_w = model.heat_source_power_w;
     let heat_in = heat_source_w + solar + cavity_solar;
+    let cavity = match &model.cavity_radiation {
+        None => None,
+        Some(_) => {
+            let (boards, walls, a_b, a_w, effective, h) = cavity_faces(mesh, model, &region_of)?;
+            let nodes = |faces: &[(u64, usize)]| -> Vec<f64> {
+                faces
+                    .iter()
+                    .flat_map(|(e, f)| {
+                        let element = &mesh.elements[e];
+                        let mids = if element.len() == 10 {
+                            &FACE_MIDS[*f][..]
+                        } else {
+                            &[]
+                        };
+                        FACES[*f]
+                            .iter()
+                            .chain(mids)
+                            .map(|i| temperatures[&element[*i]])
+                            .collect::<Vec<_>>()
+                    })
+                    .collect()
+            };
+            let mut residual = 0.;
+            if h > 0. {
+                let node = radiation_node_k
+                    .ok_or_else(|| invalid("credited cavity radiation needs its radiation node"))?;
+                for (faces, film) in [(&boards, 2. * h), (&walls, 2. * h * a_b / a_w)] {
+                    for (e, f) in faces {
+                        let element = &mesh.elements[e];
+                        let area = mesh.face(element, *f).1;
+                        residual += film * area / 3.
+                            * mesh
+                                .face_values(element, *f, temperatures)
+                                .iter()
+                                .map(|t| t - node)
+                                .sum::<f64>();
+                    }
+                }
+            }
+            let (board, wall) = (nodes(&boards), nodes(&walls));
+            Some(CavityFacts {
+                board_area_m2: a_b,
+                wall_area_m2: a_w,
+                effective_emissivity: effective,
+                h_w_m2_k: h,
+                radiation_node_residual_w: residual,
+                board_surface_min_k: board.iter().copied().fold(f64::INFINITY, f64::min),
+                wall_max_k: wall.iter().copied().fold(f64::NEG_INFINITY, f64::max),
+                wall_min_k: wall.iter().copied().fold(f64::INFINITY, f64::min),
+            })
+        }
+    };
     Ok(ThermalFacts {
+        cavity,
         heat_source_w,
         solar_absorbed_w: solar,
         solar_cavity_w: cavity_solar,
@@ -1869,7 +2080,14 @@ pub fn verify_thermal_receipt(
             ));
         }
     };
-    let thermal = thermal_facts(&mesh, model, &temperatures, internal_air_k)?;
+    let block = &receipt["cavity_radiation"];
+    let thermal = thermal_facts(
+        &mesh,
+        model,
+        &temperatures,
+        internal_air_k,
+        block["radiation_node_k"].as_f64(),
+    )?;
     let energy = &receipt["energy_balance"];
     let tolerance = model.energy_balance_tolerance;
     let heat_in = thermal.heat_source_w + thermal.solar_absorbed_w + thermal.solar_cavity_w;
@@ -1897,6 +2115,47 @@ pub fn verify_thermal_receipt(
     {
         return Err(invalid(
             "linearized radiation lower bound requires exterior surfaces at or above ambient, reported and labelled in the receipt applicability",
+        ));
+    }
+    // The cavity radiation bound is claimed only on a field whose board
+    // surface is at or above every wall and whose walls are at or above
+    // ambient (checked before the balance gate: a violation voids the credit).
+    let cavity_label = receipt["applicability"]["cavity_radiation"] == CAVITY_RADIATION_STATEMENT;
+    let cavity_valid = match &thermal.cavity {
+        None => !cavity_label && block.is_null(),
+        Some(c) => {
+            let extreme = |key: &str, value: f64| {
+                if value.is_finite() {
+                    close(&block[key], value, 1e-12)
+                } else {
+                    block[key].is_null()
+                }
+            };
+            cavity_label
+                && block["mode"] == "linearized_lower_bound"
+                && block["board_region"] == model.heat_source_region.as_str()
+                && close(&block["board_area_m2"], c.board_area_m2, 1e-9)
+                && close(&block["wall_area_m2"], c.wall_area_m2, 1e-9)
+                && close(&block["h_w_m2_k"], c.h_w_m2_k, 1e-9)
+                && c.effective_emissivity
+                    .map_or(block["effective_emissivity"].is_null(), |e| {
+                        close(&block["effective_emissivity"], e, 1e-9)
+                    })
+                && extreme("board_surface_min_k", c.board_surface_min_k)
+                && extreme("wall_max_k", c.wall_max_k)
+                && extreme("wall_min_k", c.wall_min_k)
+                && if c.h_w_m2_k > 0. {
+                    c.board_surface_min_k >= c.wall_max_k
+                        && c.wall_min_k >= model.ambient_k
+                        && c.radiation_node_residual_w.abs() / heat_in <= tolerance
+                } else {
+                    block["radiation_node_k"].is_null()
+                }
+        }
+    };
+    if !cavity_valid {
+        return Err(invalid(
+            "cavity radiation lower bound requires min board surface >= max wall >= ambient, a balanced radiation node, recomputed geometry and coefficient, and its receipt applicability label",
         ));
     }
     if !common_receipt(
@@ -1947,7 +2206,7 @@ pub fn verify_thermal_receipt(
     Ok(NumericalEvidence {
         reference: "steady global energy balance: heat source + absorbed solar (+ transparent-glazing solar deposited in the internal air) against film + radiation, recomputed from the native field".into(),
         scope: format!(
-            "steady solid conduction with declared boundary inputs and one effective internal air node; no internal convection, condensation or physical validation{}{}",
+            "steady solid conduction with declared boundary inputs and one effective internal air node; no internal convection, condensation or physical validation{}{}{}",
             if transparent {
                 format!("; {TRANSPARENT_SOLAR_STATEMENT}")
             } else {
@@ -1955,6 +2214,11 @@ pub fn verify_thermal_receipt(
             },
             if linearized {
                 format!("; {LINEARIZED_RADIATION_STATEMENT}")
+            } else {
+                String::new()
+            },
+            if thermal.cavity.is_some() {
+                format!("; {CAVITY_RADIATION_STATEMENT}")
             } else {
                 String::new()
             }

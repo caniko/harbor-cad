@@ -109,6 +109,10 @@ fn electronics_defaults_are_cited_conservative_ends() {
             .provenance
             .contains("only for boards with continuous copper planes")
     );
+    // Board surface emissivity: dimensionless, the metal-surface low end.
+    let emissivity = k("electronics:pcb-surface-emissivity.low");
+    assert_eq!((emissivity.value, emissivity.unit), (0.15, "1"));
+    assert!(emissivity.provenance.contains("a board requirement"));
     for key in [
         "electronics:component-limit-industrial.mid",
         "electronics:nope.low",

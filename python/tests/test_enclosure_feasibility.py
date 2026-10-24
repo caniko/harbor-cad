@@ -99,11 +99,15 @@ def sourced():
         "board_in_plane_k": end(
             by_id(electronics, "pcb-fr4-copper-in-plane")["value"], False
         ),
+        "board_emissivity": end(
+            by_id(electronics, "pcb-surface-emissivity")["value"], False
+        ),
         "metal": {
             "k": end(metal["thermal_conductivity"], False),
             "max_k": end(metal["max_service_temperature"], False),
             "min_k": end(metal["min_service_temperature"], True),
             "emissivity": end(coat["emissivity"], False),
+            "bare_emissivity": end(metal["emissivity"], False),
             "absorptance": end(coat["solar_absorptance"], True),
         },
         "glazing": {
@@ -189,7 +193,13 @@ def analogue(window=True):
 
 
 def thermal(
-    values, power, transparent=True, radiation=False, window=True, orthotropic=False
+    values,
+    power,
+    transparent=True,
+    radiation=False,
+    window=True,
+    orthotropic=False,
+    cavity=False,
 ):
     metal = values["metal"]
     coat = material(
@@ -232,7 +242,21 @@ def thermal(
                 "transparent_solar": enclosure.TRANSPARENT_SOLAR,
                 "transparent_regions": ["window"],
             }
-    return {
+    extra = {}
+    if cavity:
+        # Interior emissivities, low ends: the board's cited surface value;
+        # the finished metal the lower of coat and bare (interiors may be
+        # uncoated), as the Rust resolver does.
+        metal_interior = min(metal["emissivity"], metal["bare_emissivity"])
+        emissivity = {"housing": metal_interior, "lid": metal_interior}
+        emissivity["pcb"] = values["board_emissivity"]
+        if window:
+            emissivity["window"] = values["glazing"]["emissivity"]
+        extra[enclosure.CAVITY] = {
+            "mode": enclosure.LINEARIZED,
+            "emissivity": emissivity,
+        }
+    return extra | {
         "synthetic": False,
         "materials": materials,
         "heat_source_region": "pcb",
@@ -400,3 +424,35 @@ def test_aluminium_candidate_max_supported_power_on_the_reference_solver_path(
     )
     assert report["manufacturability"] == []
     assert report["estimate"]["high"] is not None
+
+
+def test_cavity_radiation_postcondition_fails_on_the_analogue():
+    """The pilot leaves cavity_radiation off: on the analogue (both bounds on)
+    the strict postcondition fails, so every credited solve is refused."""
+    values = sourced()
+    assert values["board_emissivity"] == 0.15
+    assert values["metal"]["bare_emissivity"] == 0.03
+    options = {"radiation": enclosure.LINEARIZED, "orthotropic": True, "cavity": True}
+    # (window, power): (board surface min, wall max) in K, reference solver.
+    expected = {
+        (True, 1.0): (325.28, 325.81),
+        (True, 15.0): (345.97, 351.34),
+        (False, 1.0): (323.27, 323.96),
+    }
+    for (window, power), (board_min, wall_max) in expected.items():
+        rec = analogue(window=window)
+        data = thermal(values, power, window=window, **options)
+        enclosure.validate_thermal(data, sorted(rec["regions"]))
+        model = enclosure.boundary_model(rec, data, solid)
+        runner = gate.reference_solver(rec, model, data)
+        temperatures, _, node, _ = enclosure.solve(rec, data, model, runner, solid)
+        report = enclosure.cavity_report(rec, data, model, temperatures, node)
+        # Upper limit of the credit: eps_eff 0.11 gives h_cr ~ 0.77 W/(m2*K),
+        # below the 1.2 W/(m2*K) cavity film, on the 7.5e-3 m2 board.
+        assert report["effective_emissivity"] == pytest.approx(0.1108, abs=1e-4)
+        assert report["h_w_m2_k"] == pytest.approx(0.772, abs=1e-3)
+        assert report["board_surface_min_k"] == pytest.approx(board_min, abs=0.01)
+        assert report["wall_max_k"] == pytest.approx(wall_max, abs=0.01)
+        assert report["board_surface_min_k"] < report["wall_max_k"]
+        with pytest.raises(ValueError, match="cavity radiation lower bound"):
+            enclosure.evaluate(rec, data, model, runner, solid)

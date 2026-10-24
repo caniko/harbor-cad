@@ -2664,28 +2664,27 @@ pub struct DesignReport {
     pub conservative_bounds: Vec<String>,
 }
 
-/// `transparent_solar` and string `radiation` modes named anywhere in the
+/// `transparent_solar`, string `radiation` and `cavity_radiation` modes named anywhere in the
 /// envelope's child requests.
 pub fn conservative_bounds(env: &DesignEnvelope) -> Vec<String> {
     fn walk(value: &Value, found: &mut BTreeSet<String>) {
         match value {
             Value::Object(map) => {
+                use crate::enclosure_thermal::{
+                    CAVITY_RADIATION_STATEMENT, LINEARIZED_RADIATION_STATEMENT,
+                    TRANSPARENT_SOLAR_STATEMENT,
+                };
                 for (key, value) in map {
-                    if key == "transparent_solar"
-                        && let Some(mode) = value.as_str()
-                    {
-                        found.insert(format!(
-                            "transparent_solar={mode}: {}",
-                            crate::enclosure_thermal::TRANSPARENT_SOLAR_STATEMENT
-                        ));
-                    }
-                    if key == "radiation"
-                        && let Some(mode) = value.as_str()
-                    {
-                        found.insert(format!(
-                            "radiation={mode}: {}",
-                            crate::enclosure_thermal::LINEARIZED_RADIATION_STATEMENT
-                        ));
+                    for (name, statement) in [
+                        ("transparent_solar", TRANSPARENT_SOLAR_STATEMENT),
+                        ("radiation", LINEARIZED_RADIATION_STATEMENT),
+                        ("cavity_radiation", CAVITY_RADIATION_STATEMENT),
+                    ] {
+                        if key == name
+                            && let Some(mode) = value.as_str()
+                        {
+                            found.insert(format!("{key}={mode}: {statement}"));
+                        }
                     }
                     walk(value, found);
                 }

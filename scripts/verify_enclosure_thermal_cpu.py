@@ -131,7 +131,8 @@ def reference_solver(rec, model_, data):
     Element stiffness uses the diagonal conductivity tensor (isotropic or
     orthotropic). Face terms use the same three edge-midpoint points (weight
     A/3) as the energy balance; the linearized radiation bound adds h_r to the
-    film, and T^4 radiation is linearized by Picard iteration.
+    film, credited cavity faces take the combined air/radiation-node film, and
+    T^4 radiation is linearized by Picard iteration.
     """
     nodes, elements = rec["nodes"], rec["elements"]
     order = sorted(nodes)
@@ -154,7 +155,7 @@ def reference_solver(rec, model_, data):
         for i in solid.FACES[face - 1]:
             load[index[elements[e][i]]] += flux * area / 3
 
-    def solve(internal_air_k):
+    def solve(internal_air_k, radiation_node_k=None):
         temperature = [data["ambient_k"]] * len(order)
         for _ in range(100):
             rows = [dict(r) for r in base]
@@ -163,8 +164,10 @@ def reference_solver(rec, model_, data):
                 (e, f, a, data["film_w_m2_k"], data["ambient_k"], r)
                 for e, f, a, r in model_["film"]
             ] + [
-                (e, f, a, data["internal_film_w_m2_k"], internal_air_k, None)
-                for e, f, a in model_["cavity"]
+                (e, f, a, h, sink, None)
+                for e, f, a, h, sink in enclosure.cavity_films(
+                    data, model_, internal_air_k, radiation_node_k
+                )
             ]
             for e, face, area, h, sink, region in faces:
                 corners = [index[elements[e][i]] for i in solid.FACES[face - 1]]

@@ -56,7 +56,7 @@ pub struct Finish {
 pub struct ElectronicsDefault {
     pub id: String,
     pub name: String,
-    /// `temperature` or `thermal_conductivity`.
+    /// `temperature`, `thermal_conductivity` or `dimensionless` (e.g. an emissivity).
     pub dimension: String,
     pub value: PhysicalInput<QuantityRange>,
 }
@@ -299,9 +299,10 @@ impl Conditions {
             let (min, max) = match e.dimension.as_str() {
                 "temperature" => (150., 500.),
                 "thermal_conductivity" => (0.01, 1e3),
+                "dimensionless" => (f64::MIN_POSITIVE, 1.),
                 _ => {
                     return Err(invalid(format!(
-                        "{}: dimension temperature or thermal_conductivity required",
+                        "{}: dimension temperature, thermal_conductivity or dimensionless required",
                         e.id
                     )));
                 }
