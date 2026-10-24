@@ -316,3 +316,104 @@ def test_transparent_solar_is_explicit_and_needs_a_cavity_air_node():
     assert statement.startswith("conservative_bound")
     # Rust gates the receipt on the same label text.
     assert f'"{statement}"' in (ROOT / "src/enclosure_thermal.rs").read_text()
+
+
+def test_linearized_radiation_coefficient_is_a_proven_lower_bound():
+    # T^4 - Ta^4 = (T - Ta)(T^3 + T^2 Ta + T Ta^2 + Ta^3) >= 4 Ta^3 (T - Ta)
+    # for T >= Ta (each factor term >= Ta^3), and for T < Ta by convexity of
+    # T^4 (its tangent at Ta lies below it): the credited flux never exceeds
+    # the grey exchange with surroundings at ambient.
+    for emissivity in (0.03, 0.5, 0.95):
+        for ambient in (230.0, 273.15, 313.15, 330.0):
+            h_r = 4 * emissivity * enclosure.SIGMA * ambient**3
+            for rise in (-80.0, -1.0, -1e-3, 1e-3, 0.5, 5.0, 50.0, 200.0):
+                t = ambient + rise
+                exact = emissivity * enclosure.SIGMA * (t**4 - ambient**4)
+                assert h_r * rise <= exact
+                if rise > 0:
+                    assert h_r <= exact / rise  # coefficient form
+    data = thermal()
+    data["radiation"] = enclosure.LINEARIZED
+    data["materials"]["pcb"]["emissivity"] = None
+    enclosure.validate_thermal(data, ["housing", "pcb"])
+    assert enclosure.radiation_coefficient(data, "housing") == pytest.approx(
+        4 * 0.8 * enclosure.SIGMA * 300.0**3
+    )
+    assert enclosure.radiation_coefficient(data, "pcb") == 0.0  # no credit
+    for mode in ("linearized", 1, None):
+        data["radiation"] = mode
+        with pytest.raises(ValueError, match="radiation"):
+            enclosure.validate_thermal(data, ["housing", "pcb"])
+
+
+def test_linearized_radiation_deck_receipt_and_precondition():
+    rec, data = series_case(radiation=enclosure.LINEARIZED, solar=True)
+    model = enclosure.boundary_model(rec, data, solid)
+    text = enclosure.deck(rec, data, model, 300.0)
+    h_r = enclosure.radiation_coefficient(data, "housing")
+    assert f",300.0,{enclosure.ccx_number(50.0 + h_r)}" in text
+    assert "*RADIATE" not in text and "STEFAN BOLTZMANN" not in text
+    assert "SOLVER=SPOOLES,DIRECT" in text and "FREQUENCY=999999" in text
+    exact = gate.reference_solver(rec, model, data)
+    _, result = enclosure.evaluate(rec, data, model, exact, solid)
+    energy = result["energy_balance"]
+    assert energy["radiation_w"] > 0 and energy["relative_error"] < 1e-8
+    assert result["exterior_min_k"] >= data["ambient_k"]
+    statement = enclosure.applicability(data)["radiation"]
+    assert statement == enclosure.LINEARIZED_STATEMENT
+    assert f'"{statement}"' in (ROOT / "src/enclosure_thermal.rs").read_text()
+
+    # An exterior face below ambient voids the bound: refused before the gate.
+    def cold(air):
+        return {n: t - 60.0 for n, t in exact(air).items()}
+
+    with pytest.raises(ValueError, match="exterior surfaces >= ambient"):
+        enclosure.evaluate(rec, data, model, cold, solid)
+
+
+def test_orthotropic_deck_keywords_and_validation():
+    rec, data = series_case(radiation=False, solar=False)
+    data["materials"]["pcb"][enclosure.AXES] = [8.1, 8.1, 0.26]
+    enclosure.validate_thermal(data, ["housing", "pcb"])
+    text = enclosure.deck(rec, data, enclosure.boundary_model(rec, data, solid), 300.0)
+    assert (
+        "*MATERIAL,NAME=M_PCB\n*CONDUCTIVITY,TYPE=ORTHO\n8.1,8.1,0.26\n"
+        "*ORIENTATION,NAME=OR_PCB\n1.,0.,0.,0.,1.,0.\n"
+        "*SOLID SECTION,ELSET=E_PCB,MATERIAL=M_PCB,ORIENTATION=OR_PCB\n"
+    ) in text
+    assert "*MATERIAL,NAME=M_HOUSING\n*CONDUCTIVITY\n5.0\n" in text
+    for axes in ([8.1, 8.1], [8.1, 8.1, 0.0], "8.1"):
+        data["materials"]["pcb"][enclosure.AXES] = axes
+        with pytest.raises(ValueError, match="conductivit"):
+            enclosure.validate_thermal(data, ["housing", "pcb"])
+
+
+@pytest.mark.parametrize("axis", [0, 1, 2])
+def test_orthotropic_tetra_stiffness_matches_1d_conduction_along_each_axis(axis):
+    # Slab along `axis` with uniform heat and film on both end faces; the other
+    # axes (and the scalar, so ignoring the tensor fails) carry a 1000x
+    # different conductivity that a 1D field never sees.
+    length, width, n = 0.04, 0.01, 8
+    size, cells = [width] * 3, [2] * 3
+    size[axis], cells[axis] = length, n
+    nodes, elements, regions = gate.box_mesh([0, 0, 0], size, cells, lambda x: "slab")
+
+    def ends(points):
+        on_end = gate.on_plane(axis, 0)(points) or gate.on_plane(axis, length)(points)
+        return "ambient" if on_end else None
+
+    rec = gate.record(nodes, elements, regions, ends)
+    q, k, h = 1e5, 2.0, 50.0
+    material = gate.material(1000.0 * k)
+    material[enclosure.AXES] = [1000.0 * k] * 3
+    material[enclosure.AXES][axis] = k
+    data = gate.thermal({"slab": material}, "slab", q * length * width**2, ["slab"], h)
+    model = enclosure.boundary_model(rec, data, solid)
+    temperatures, _ = enclosure.evaluate(
+        rec, data, model, gate.reference_solver(rec, model, data), solid
+    )
+    rise = q * length / (2 * h) + q * length**2 / (8 * k)
+    for node, xyz in nodes.items():
+        x = xyz[axis]
+        exact = 300 + q * length / (2 * h) + q * x * (length - x) / (2 * k)
+        assert abs(temperatures[node] - exact) <= 1e-2 * rise

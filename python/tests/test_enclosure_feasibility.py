@@ -6,9 +6,11 @@ enclosure fixture (housing walls and bosses, lid, pc-uv window, PCB). Every
 environment, material, finish, cavity-film, component-limit and board
 conductivity value is the cited conservative end the Rust resolver uses; the
 window takes the explicit conservative transparent_solar bound. PCB power is
-swept: two radiation-free solves (power_sweep mode) at the swept ends give the
-maximum supported power by linear superposition, mirrored here from
-design_providers::supported_power. Nothing is synthetic. The analogue omits
+swept: two linear solves (power_sweep mode, radiation off or its linearized
+lower bound) at the swept ends give the maximum supported power by linear
+superposition, mirrored here from design_providers::supported_power. The
+board may be orthotropic (cited in-plane and through-plane low ends).
+Nothing is synthetic. The analogue omits
 the fins (less exterior area) and the gasket; it is a demonstration, not
 design evidence.
 """
@@ -93,6 +95,9 @@ def sourced():
         ),
         "board_k": end(
             by_id(electronics, "pcb-fr4-copper-through-plane")["value"], False
+        ),
+        "board_in_plane_k": end(
+            by_id(electronics, "pcb-fr4-copper-in-plane")["value"], False
         ),
         "metal": {
             "k": end(metal["thermal_conductivity"], False),
@@ -183,7 +188,9 @@ def analogue(window=True):
     return gate.record(nodes, elements, regions, label)
 
 
-def thermal(values, power, transparent=True, radiation=False, window=True):
+def thermal(
+    values, power, transparent=True, radiation=False, window=True, orthotropic=False
+):
     metal = values["metal"]
     coat = material(
         metal["k"],
@@ -206,6 +213,11 @@ def thermal(values, power, transparent=True, radiation=False, window=True):
             "electronics:pcb-fr4-copper-through-plane.low (cited conservative default)",
         ),
     }
+    if orthotropic:
+        # The analogue board is the axis-aligned 60x60x2 mm plate at k == 2:
+        # in-plane x/y and through-plane z, both cited low ends.
+        k_in, k_through = values["board_in_plane_k"], values["board_k"]
+        materials["pcb"][enclosure.AXES] = [k_in, k_in, k_through]
     exposed = ["housing", "lid"]
     if window:
         materials["window"] = material(
@@ -288,16 +300,17 @@ def test_superposition_is_affine_without_radiation_and_not_with_it():
     values = sourced()
     rec = analogue()
     powers, mid = [1.0, 15.0], 8.0
-    for radiation in (False, True):
+    for radiation in (False, enclosure.LINEARIZED, True):
         lo, hi, actual = (
             solve(rec, values, p, radiation=radiation)[0] for p in (*powers, mid)
         )
         # Chord minus solve at the midpoint, per criterion.
         gap = [c - a for c, a in zip(superposed(powers, lo, hi, mid), actual)]
-        if not radiation:
-            # Linear model: the single air node is exactly affine; a peak
-            # (maximum over nodes) is convex, so the chord bounds it from
-            # above, here well inside the 0.5 K affinity tolerance.
+        if radiation is not True:
+            # Linear model (the linearized radiation bound is a constant
+            # film): the single air node is exactly affine; a peak (maximum
+            # over nodes) is convex, so the chord bounds it from above, here
+            # well inside the 0.5 K affinity tolerance.
             assert abs(gap[1]) < 1e-6, gap
             assert all(-1e-6 <= g <= 0.1 for g in gap), gap
         else:
@@ -319,28 +332,47 @@ def test_aluminium_candidate_max_supported_power_on_the_reference_solver_path(
     # Without the explicit transparent_solar bound the window still refuses.
     with pytest.raises(ValueError, match="absorptance"):
         enclosure.validate_thermal(thermal(values, 1.0, transparent=False), names)
-    # With the window, the stacked conservative bounds (all incident window
-    # solar into the internal air, no radiation credit, 1.2 W/(m2*K) cavity
-    # film) already put the internal air above the 85 degC default limit at
-    # 1 W, so the candidate supports no swept power.
-    powers, lo, hi, limits, low = sweep(rec, values)
-    assert low["energy_balance"]["solar_cavity_w"] > 0
-    assert low["internal_air_k"] > values["component_k"], low["internal_air_k"]
-    assert supported_power(powers, lo, hi, limits) is None
-    # The same analogue with an opaque lid in place of the window: the
-    # maximum supported power, verified like the refine tier by a third
-    # solve at that power reaching the binding limit within 0.5 K.
-    opaque = analogue(window=False)
-    powers, lo, hi, limits, _ = sweep(opaque, values, window=False)
-    power = supported_power(powers, lo, hi, limits)
-    assert power is not None and 1.0 < power < 15.0, power
-    check, _ = solve(opaque, values, power, window=False)
-    expected = superposed(powers, lo, hi, power)
-    assert all(abs(c - e) <= AFFINITY_TOLERANCE_K for c, e in zip(check, expected))
-    binding = min(range(3), key=lambda i: limits[i] - check[i])
-    assert abs(check[binding] - limits[binding]) <= AFFINITY_TOLERANCE_K
-    assert binding == 0  # the component limit on the PCB peak binds
-    assert power == pytest.approx(2.0, abs=0.1), power
+    # Ablation of the two lower-bound credits (window cavity deposit and the
+    # 1.2 W/(m2*K) cavity film stay): no credit, linearized exterior radiation,
+    # orthotropic board (8.1 in-plane / 0.26 through-plane, cited low ends),
+    # both. Each supported power is verified like the refine tier by a third
+    # solve reaching the binding limit (the PCB peak) within 0.5 K.
+    expected_power = {
+        # window: the stacked bounds put the internal air at 373.6 K at 1 W.
+        (True, False, False): None,
+        (True, True, False): 10.11,
+        (True, False, True): None,
+        (True, True, True): 10.42,
+        (False, False, False): 2.04,
+        (False, True, False): 10.77,
+        (False, False, True): 2.08,
+        (False, True, True): 11.10,
+    }
+    meshes = {True: rec, False: analogue(window=False)}
+    for (window, radiating, orthotropic), want in expected_power.items():
+        options = {
+            "window": window,
+            "radiation": enclosure.LINEARIZED if radiating else False,
+            "orthotropic": orthotropic,
+        }
+        mesh = meshes[window]
+        powers, lo, hi, limits, low = sweep(mesh, values, **options)
+        # The linearized bound's precondition holds on every exterior face.
+        assert low["exterior_min_k"] >= values["ambient_k"]
+        if window:
+            assert low["energy_balance"]["solar_cavity_w"] > 0
+        power = supported_power(powers, lo, hi, limits)
+        if want is None:
+            assert low["internal_air_k"] > values["component_k"], options
+            assert power is None, options
+            continue
+        assert power == pytest.approx(want, abs=0.01), (options, power)
+        check, _ = solve(mesh, values, power, **options)
+        expected = superposed(powers, lo, hi, power)
+        assert all(abs(c - e) <= AFFINITY_TOLERANCE_K for c, e in zip(check, expected))
+        binding = min(range(3), key=lambda i: limits[i] - check[i])
+        assert abs(check[binding] - limits[binding]) <= AFFINITY_TOLERANCE_K
+        assert binding == 0, options  # the component limit on the PCB peak
     # PA12 stays infeasible: -40 degC service limit vs the -33 degC cold point.
     assert values["cold_k"] - values["pa12_min_k"] == pytest.approx(7.0)
     # Manufacturability and cost through the Rust screen on the analogue housing.

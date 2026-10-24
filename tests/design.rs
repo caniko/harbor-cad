@@ -1308,8 +1308,9 @@ fn enclosure_and_calibration_examples_validate() {
         enclosure.pareto_metric.as_deref(),
         Some("max_supported_pcb_power_w")
     );
-    // Every enclosure solve is a radiation-free power_sweep solve; superposition
-    // is refused on the nonlinear (radiating) model or outside sweep mode.
+    // Every enclosure solve is a linear power_sweep solve (the linearized
+    // radiation bound is allowed); superposition is refused on the nonlinear
+    // T^4 model or outside sweep mode.
     for (pointer, value) in [("radiation", json!(true)), ("power_sweep", json!(false))] {
         let mut bad = enclosure.clone();
         bad.templates.get_mut("screen").unwrap()[3]
@@ -1386,11 +1387,13 @@ fn enclosure_and_calibration_examples_validate() {
     assert!((screen["max_supported_pcb_power_w"].unwrap() - (1. + 18.15 / 5.)).abs() < 1e-9);
     let refine = compute_metrics(&enclosure, Level::Refine, &al, &solves, PROVIDERS);
     assert_eq!(refine["max_supported_pcb_power_w"], None);
-    // The glazing's conservative solar bound is carried into the export.
+    // The glazing's solar bound and the linearized radiation bound are carried
+    // into the export.
     let bounds = conservative_bounds(&enclosure);
-    assert_eq!(bounds.len(), 1);
+    assert_eq!(bounds.len(), 2);
+    assert!(bounds[0].starts_with("radiation=linearized_lower_bound: conservative_bound"));
     assert!(
-        bounds[0].starts_with("transparent_solar=deposit_incident_in_cavity: conservative_bound")
+        bounds[1].starts_with("transparent_solar=deposit_incident_in_cavity: conservative_bound")
     );
     assert!(conservative_bounds(&read("design-enclosure-demo.json")).is_empty());
     let calibrate = read("design-calibrate.json");

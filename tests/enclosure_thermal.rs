@@ -359,7 +359,7 @@ fn thermal_inputs_resolve_library_routes_conservatively_and_refuse_missing_data(
             .contains("emissivity")
     );
     declared["radiation"] = json!(false);
-    assert!(resolve(declared).is_ok());
+    assert!(resolve(declared.clone()).is_ok());
     // Power-sweep superposition is linear: radiation (T^4) is refused there.
     let mut sweep = inputs();
     sweep["power_sweep"] = json!(true);
@@ -367,10 +367,26 @@ fn thermal_inputs_resolve_library_routes_conservatively_and_refuse_missing_data(
         resolve(sweep.clone())
             .unwrap_err()
             .to_string()
-            .contains("requires radiation off")
+            .contains("requires radiation off or linearized_lower_bound")
     );
     sweep["radiation"] = json!(false);
-    assert!(!resolve(sweep).unwrap().radiation);
+    assert_eq!(
+        resolve(sweep.clone()).unwrap().radiation,
+        et::Radiation::OFF
+    );
+    // The linearized lower bound stays linear, so power_sweep accepts it, and
+    // an exposed region without a sourced emissivity gets no credit (not a
+    // default, not a refusal).
+    sweep["radiation"] = json!("linearized_lower_bound");
+    assert!(resolve(sweep.clone()).unwrap().radiation.linearized());
+    let mut uncredited = declared.clone();
+    uncredited["radiation"] = json!("linearized_lower_bound");
+    uncredited["power_sweep"] = json!(true);
+    let model = resolve(uncredited).unwrap();
+    assert_eq!(model.materials["housing"].emissivity, None);
+    assert_eq!(model.radiation.coefficient(None, model.ambient_k), 0.);
+    sweep["radiation"] = json!("linearized");
+    assert!(resolve(sweep).is_err());
     refused("/heat_source_region", json!("lid"));
     refused("/exposed_regions", json!(["pcb", "housing"]));
     refused("/energy_balance_tolerance", json!(1e-2));
@@ -599,11 +615,20 @@ fn retained_solids_and_thermal_planning_bind_a_succeeded_mesh_job() {
 }
 
 fn thermal_plan(store: &Store, cad: &str, mesh_sha256: &str) -> ExecutionPlan {
+    radiating_plan(store, cad, mesh_sha256, et::Radiation::OFF)
+}
+
+fn radiating_plan(
+    store: &Store,
+    cad: &str,
+    mesh_sha256: &str,
+    radiation: et::Radiation,
+) -> ExecutionPlan {
     let (_, source) = et::solids(store, cad, &request(cad).regions, &mesh_spec()).unwrap();
     let mut model =
         et::resolve(&serde_json::from_value(inputs()).unwrap(), &source.geometry).unwrap();
     model.solar = None;
-    model.radiation = false;
+    model.radiation = radiation;
     ExecutionPlan::cad_solids(
         CadSolidsRecipe {
             source,
@@ -740,6 +765,154 @@ fn thermal_receipt_recomputes_statistics_and_gates_the_energy_balance() {
     // The approved mesh digest is bound: a different mesh refuses before any field check.
     let other = thermal_plan(&store, &cad, &"d".repeat(64));
     assert!(et::verify_thermal_receipt(&other, &root, &receipt).is_err());
+}
+
+#[test]
+fn linearized_radiation_receipt_is_labelled_and_requires_exterior_at_or_above_ambient() {
+    let temp = tempfile::tempdir().unwrap();
+    let store = Store::open(&temp.path().join("state")).unwrap();
+    let cad = boxes(&store);
+    let root = temp.path().join("native");
+    std::fs::create_dir(&root).unwrap();
+    let mesh_value = box_mesh(2);
+    let mesh = commit_artifact(
+        &root,
+        "mesh.json",
+        &serde_json::to_vec(&mesh_value).unwrap(),
+        "json",
+        "fixture",
+    )
+    .unwrap();
+    let plan = radiating_plan(
+        &store,
+        &cad,
+        &mesh.sha256,
+        et::Radiation::Mode(et::RadiationMode::LinearizedLowerBound),
+    );
+    let model = &plan
+        .cad_solids
+        .as_ref()
+        .unwrap()
+        .thermal
+        .as_ref()
+        .unwrap()
+        .thermal;
+    // Exposed housing (0.0009 m2, emissivity low end 0.03): h + h_r balances 2 W.
+    let ta = model.ambient_k;
+    let h_r = 4. * 0.03 * 5.670374419e-8 * ta.powi(3);
+    assert_eq!(model.radiation.coefficient(Some(0.03), ta), h_r);
+    let uniform = ta + 2. / ((model.film_w_m2_k + h_r) * 0.0009);
+    let write_field = |value: f64| {
+        let mut text = String::from(" temperatures for set NALL and time  0.1000000E+01\n\n");
+        let nodes = mesh_value["nodes"].as_object().unwrap();
+        let mut ids: Vec<u64> = nodes.keys().map(|k| k.parse().unwrap()).collect();
+        ids.sort_unstable();
+        for n in ids {
+            text.push_str(&format!("{n:10} {value:.15E}\n"));
+        }
+        std::fs::write(root.join("reference.dat"), &text).unwrap();
+        use sha2::{Digest, Sha256};
+        format!("{:x}", Sha256::digest(text.as_bytes()))
+    };
+    let field = write_field(uniform);
+    let mut receipt = receipt_fixture(&plan, &mesh.sha256, &mesh_value, &field, uniform, 2.);
+    receipt["energy_balance"]["film_w"] = json!(model.film_w_m2_k * 0.0009 * (uniform - ta));
+    receipt["energy_balance"]["radiation_w"] = json!(h_r * 0.0009 * (uniform - ta));
+    receipt["applicability"]["radiation"] = json!(et::LINEARIZED_RADIATION_STATEMENT);
+    receipt["exterior_min_k"] = json!(uniform);
+    let evidence = et::verify_thermal_receipt(&plan, &root, &receipt).unwrap();
+    assert!(evidence.error < 1e-9, "{evidence:?}");
+    assert!(evidence.scope.contains(et::LINEARIZED_RADIATION_STATEMENT));
+    for (pointer, value) in [
+        ("/applicability/radiation", Value::Null),
+        ("/exterior_min_k", json!(uniform + 1.)),
+        ("/energy_balance/radiation_w", json!(0.)),
+    ] {
+        let mut changed = receipt.clone();
+        *changed.pointer_mut(pointer).unwrap() = value;
+        assert!(
+            et::verify_thermal_receipt(&plan, &root, &changed).is_err(),
+            "{pointer}"
+        );
+    }
+    // A field below ambient voids the bound claim before any balance check.
+    let cold = ta - 1.;
+    let mut below = receipt.clone();
+    below["native_field_sha256"] = json!(write_field(cold));
+    let region = json!({"max_k":cold,"min_k":cold,"mean_k":cold});
+    below["regions"] = json!({"housing":region,"pcb":region});
+    below["global_max"]["temperature_k"] = json!(cold);
+    below["exterior_min_k"] = json!(cold);
+    let message = et::verify_thermal_receipt(&plan, &root, &below)
+        .unwrap_err()
+        .to_string();
+    assert!(message.contains("at or above ambient"), "{message}");
+    // The label is refused on a plan without the linearized bound.
+    let plain = thermal_plan(&store, &cad, &mesh.sha256);
+    let mut labelled = receipt_fixture(&plain, &mesh.sha256, &mesh_value, &field, uniform, 2.);
+    labelled["applicability"]["radiation"] = json!(et::LINEARIZED_RADIATION_STATEMENT);
+    assert!(et::verify_thermal_receipt(&plain, &root, &labelled).is_err());
+}
+
+#[test]
+fn orthotropic_board_needs_an_axis_aligned_plate_and_keeps_lower_bound_axes() {
+    let temp = tempfile::tempdir().unwrap();
+    let flat = [0.02, 0.03, 0., 0.01, 0., 0.002];
+    // One store per archived CAD job (identical plans share a job id).
+    let store = |name: &str| Store::open(&temp.path().join(name)).unwrap();
+    let geometry = |pcb_volume: f64| {
+        let store = store(&format!("plate-{pcb_volume}"));
+        let id = archived(
+            &store,
+            &[("housing", HOUSING, 2e-6), ("pcb", flat, pcb_volume)],
+        );
+        et::solids(&store, &id, &request(&id).regions, &mesh_spec())
+            .unwrap()
+            .1
+            .geometry
+    };
+    let mut spec = inputs();
+    spec["materials"]["pcb"] = json!({"kind":"declared","conductivity":known(0.26, "W/(m*K)"),
+        "in_plane_conductivity":known(8.1, "W/(m*K)")});
+    let resolve = |geometry: &et::SolidsGeometry| {
+        et::resolve(
+            &serde_json::from_value::<EnclosureThermalInputs>(spec.clone()).unwrap(),
+            geometry,
+        )
+    };
+    let plate = geometry(2e-7);
+    let model = resolve(&plate).unwrap();
+    let pcb = &model.materials["pcb"];
+    // In-plane along the long x/y extents, through-plane along the thin z.
+    assert_eq!(pcb.conductivity_axes_w_m_k, Some([8.1, 8.1, 0.26]));
+    assert_eq!(pcb.conductivity_w_m_k, 0.26);
+    assert!(pcb.provenance.contains("in-plane conductivity"));
+    assert_eq!(model.materials["housing"].conductivity_axes_w_m_k, None);
+    // A forged tensor (unequal in-plane, or a through-plane differing from the
+    // scalar) refuses validation.
+    for axes in [[8.1, 8.0, 0.26], [8.1, 8.1, 0.3], [0.26, 8.1, 8.1]] {
+        let mut forged = model.clone();
+        forged
+            .materials
+            .get_mut("pcb")
+            .unwrap()
+            .conductivity_axes_w_m_k = Some(axes);
+        assert!(forged.validate(&plate).is_err(), "{axes:?}");
+    }
+    // A cube has no unique thinnest axis; a solid below its bounding box is
+    // rotated or not a box. Both refuse planning.
+    for geometry in [boxes_geometry(&store("cube")), geometry(1.5e-7)] {
+        let message = resolve(&geometry).unwrap_err().to_string();
+        assert!(message.contains("axis-aligned plate"), "{message}");
+    }
+}
+
+fn boxes_geometry(store: &Store) -> et::SolidsGeometry {
+    let id = boxes(store);
+    et::solids(store, &id, &request(&id).regions, &mesh_spec())
+        .unwrap()
+        .1
+        .geometry
 }
 
 #[test]
@@ -976,12 +1149,29 @@ fn enclosure_examples_chain_variant_general_mesh_and_enclosure_thermal() {
             .iter()
             .filter(|m| m["source"]["kind"] == "sourced")
             .count();
-        assert_eq!(sourced, if synthetic { 0 } else { 7 }, "{name}");
+        assert_eq!(sourced, if synthetic { 0 } else { 8 }, "{name}");
         // The pilot's glazing takes the explicit conservative solar bound.
         let spec = &raw["templates"]["screen"][2]["plan_request"]["request"]["spec"];
         assert_eq!(
             spec["power_sweep"],
             if synthetic { Value::Null } else { json!(true) }
+        );
+        // ... the linearized radiation lower bound and the orthotropic board.
+        assert_eq!(
+            spec["radiation"],
+            if synthetic {
+                json!(true)
+            } else {
+                json!("linearized_lower_bound")
+            }
+        );
+        assert_eq!(
+            spec["materials"]["pcb"]["in_plane_conductivity"]["value"]["$input"],
+            if synthetic {
+                Value::Null
+            } else {
+                json!("pcb_in_plane_conductivity")
+            }
         );
         assert_eq!(
             spec["solar"]["transparent_solar"],

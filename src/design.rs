@@ -29,7 +29,7 @@ pub const MAX_EVALUATIONS: u32 = 32;
 pub const MAX_REFINE: u32 = 3;
 const MAX_CHILDREN: usize = 5;
 const MAX_METRICS: usize = 8;
-const MAX_METRIC_SOURCES: usize = 32;
+const MAX_METRIC_SOURCES: usize = 48;
 /// Planning operations a chained template may request. Each is resolved by the
 /// worker's own dispatch, exactly as the CLI/MCP planning call would be.
 pub const CHAIN_OPERATIONS: [&str; 7] = [
@@ -772,14 +772,14 @@ pub fn child_plans(
                 let op =
                     request_operation(env, template, params, &mut used, &Bind::Check(&roles))?;
                 // Superposition is exact only for the linear model: a sweep
-                // provider needs every enclosure solve in radiation-free
-                // power_sweep mode (radiation is refused there).
+                // provider needs every enclosure solve in power_sweep mode,
+                // which refuses T^4 radiation (its linearized bound is linear).
                 if let Operation::PlanEnclosureThermal { request } = &op
                     && ((power_sweep_used(env) && !request.spec.power_sweep)
-                        || (request.spec.power_sweep && request.spec.radiation))
+                        || (request.spec.power_sweep && request.spec.radiation.nonlinear()))
                 {
                     return Err(invalid(format!(
-                        "template {}: {} requires every plan_enclosure_thermal in power_sweep mode, which refuses radiation",
+                        "template {}: {} requires every plan_enclosure_thermal in power_sweep mode, which refuses nonlinear (T^4) radiation",
                         template.role,
                         crate::design_providers::MAX_SUPPORTED_PCB_POWER
                     )));
@@ -994,7 +994,7 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
     }
     let mut metrics = BTreeSet::new();
     if env.metric_sources.is_empty() || env.metric_sources.len() > MAX_METRIC_SOURCES {
-        return Err(invalid("1..32 metric sources required"));
+        return Err(invalid("1..48 metric sources required"));
     }
     let set_has = |set: &str, role: &str| env.templates[set].iter().any(|t| t.role == role);
     let every_set_has = |role: &str| used_sets.iter().all(|set| set_has(set, role));
@@ -2538,7 +2538,8 @@ pub struct DesignReport {
     pub conservative_bounds: Vec<String>,
 }
 
-/// `transparent_solar` modes named anywhere in the envelope's child requests.
+/// `transparent_solar` and string `radiation` modes named anywhere in the
+/// envelope's child requests.
 pub fn conservative_bounds(env: &DesignEnvelope) -> Vec<String> {
     fn walk(value: &Value, found: &mut BTreeSet<String>) {
         match value {
@@ -2550,6 +2551,14 @@ pub fn conservative_bounds(env: &DesignEnvelope) -> Vec<String> {
                         found.insert(format!(
                             "transparent_solar={mode}: {}",
                             crate::enclosure_thermal::TRANSPARENT_SOLAR_STATEMENT
+                        ));
+                    }
+                    if key == "radiation"
+                        && let Some(mode) = value.as_str()
+                    {
+                        found.insert(format!(
+                            "radiation={mode}: {}",
+                            crate::enclosure_thermal::LINEARIZED_RADIATION_STATEMENT
                         ));
                     }
                     walk(value, found);

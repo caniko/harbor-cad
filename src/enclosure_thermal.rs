@@ -286,7 +286,14 @@ pub enum MaterialInput {
         finish: Option<String>,
     },
     Declared {
+        /// Isotropic conductivity, or with `in_plane_conductivity` the
+        /// through-plane value along the region's unique thinnest axis.
         conductivity: PhysicalInput<Quantity>,
+        /// Orthotropic plate (e.g. a PCB): conductivity along the two longer
+        /// axes. The region must be an axis-aligned box (CAD volume equals its
+        /// world bounding box within `PLATE_TOLERANCE`), else planning refuses.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        in_plane_conductivity: Option<Box<PhysicalInput<Quantity>>>,
         #[serde(default)]
         emissivity: Option<PhysicalInput<Quantity>>,
         #[serde(default)]
@@ -306,6 +313,51 @@ pub enum TransparentSolar {
     /// pane's own temperature is not bounded.
     DepositIncidentInCavity,
 }
+
+/// Exterior radiation: `false` (none), `true` (grey T^4 exchange with
+/// surroundings at ambient; nonlinear) or `"linearized_lower_bound"`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum Radiation {
+    Flag(bool),
+    Mode(RadiationMode),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum RadiationMode {
+    /// Conservative bound, linear: h_r = 4·ε·σ·Ta³ is added to the exterior
+    /// film of each exposed region with a sourced emissivity (no credit
+    /// without one). εσ(T⁴ − Ta⁴) ≥ h_r·(T − Ta) because the T⁴ tangent at Ta
+    /// lies below the convex T⁴; real surroundings colder than the ambient air
+    /// (sky) only add cooling.
+    LinearizedLowerBound,
+}
+
+impl Radiation {
+    pub const OFF: Self = Self::Flag(false);
+    pub fn nonlinear(self) -> bool {
+        self == Self::Flag(true)
+    }
+    pub fn linearized(self) -> bool {
+        matches!(self, Self::Mode(RadiationMode::LinearizedLowerBound))
+    }
+    /// Any radiative heat loss term in the energy balance.
+    pub fn any(self) -> bool {
+        self != Self::OFF
+    }
+    /// Linearized coefficient credited for `emissivity` at `ambient_k`.
+    pub fn coefficient(self, emissivity: Option<f64>, ambient_k: f64) -> f64 {
+        match emissivity {
+            Some(e) if self.linearized() => 4. * e * SIGMA * ambient_k.powi(3),
+            _ => 0.,
+        }
+    }
+}
+
+pub const LINEARIZED_RADIATION_STATEMENT: &str = "conservative_bound: exterior radiation credited as h_r = 4*eps*sigma*Ta^3 (low-end sourced emissivity, surroundings at the ambient air temperature) added to the film coefficient; eps*sigma*(T^4 - Ta^4) >= h_r*(T - Ta) for T >= Ta (and, by convexity, for any T), surroundings colder than ambient (sky) only add cooling, regions without a sourced emissivity get no credit; exterior surface temperatures verified >= ambient";
+/// Relative |CAD volume − bounding-box volume| of an orthotropic plate region.
+pub const PLATE_TOLERANCE: f64 = 1e-9;
 
 pub const TRANSPARENT_SOLAR_STATEMENT: &str = "conservative_bound: the full solar irradiance incident on sun-facing exterior faces of transparent glazing is deposited into the internal air node (no reflection, no absorption in the pane, no re-emission credit); an upper bound on interior solar gain, not on the pane temperature";
 
@@ -335,11 +387,12 @@ pub struct EnclosureThermalInputs {
     pub internal_film_coefficient: PhysicalInput<Quantity>,
     #[serde(default)]
     pub solar: Option<SolarInput>,
-    pub radiation: bool,
+    pub radiation: Radiation,
     pub energy_balance_tolerance: f64,
     /// Linear power-sweep mode: the design loop superposes solves at two
     /// heat-source powers, which is exact only for a linear model, so
-    /// radiation (T^4) is refused. Constant films and solar keep it affine.
+    /// nonlinear radiation (T^4) is refused; the linearized lower bound is
+    /// allowed. Constant films and solar keep it affine.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub power_sweep: bool,
 }
@@ -360,6 +413,10 @@ pub struct ResolvedMaterial {
     pub solar_absorptance: Option<f64>,
     pub provenance: String,
     pub synthetic: bool,
+    /// Diagonal orthotropic conductivity in world x, y, z (an axis-aligned
+    /// plate); `conductivity_w_m_k` is then its through-plane (minimum) value.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub conductivity_axes_w_m_k: Option<[f64; 3]>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -387,9 +444,21 @@ pub struct ThermalModel {
     pub exposed_regions: Vec<String>,
     pub internal_film_w_m2_k: f64,
     pub solar: Option<ResolvedSolar>,
-    pub radiation: bool,
+    pub radiation: Radiation,
     pub energy_balance_tolerance: f64,
     pub provenance: BTreeMap<String, String>,
+}
+
+/// World axis normal to an axis-aligned plate region: its CAD volume fills
+/// the bounding box within `PLATE_TOLERANCE` and its thinnest extent is at
+/// most half of each other one. `None` for a rotated, non-box or non-plate solid.
+pub fn plate_normal(region: &SolidRegion) -> Option<usize> {
+    let sizes = [0, 2, 4].map(|i| region.bounds_m[i + 1] - region.bounds_m[i]);
+    let boxed = sizes.iter().product::<f64>();
+    let normal = (0..3).min_by(|a, b| sizes[*a].total_cmp(&sizes[*b]))?;
+    ((region.volume_m3 - boxed).abs() <= PLATE_TOLERANCE * boxed
+        && sizes.iter().filter(|s| **s < 2. * sizes[normal]).count() == 1)
+        .then_some(normal)
 }
 
 impl ThermalModel {
@@ -419,6 +488,20 @@ impl ThermalModel {
                         .any(|v| !positive(v, 1.))
             })
             || (!self.synthetic && self.materials.values().any(|m| m.synthetic))
+            || self.materials.iter().any(|(name, m)| {
+                m.conductivity_axes_w_m_k.is_some_and(|axes| {
+                    let normal = geometry
+                        .regions
+                        .iter()
+                        .find(|r| &r.name == name)
+                        .and_then(plate_normal);
+                    let Some(n) = normal else { return true };
+                    let plane: Vec<f64> = (0..3).filter(|i| *i != n).map(|i| axes[i]).collect();
+                    axes[n] != m.conductivity_w_m_k
+                        || plane[0] != plane[1]
+                        || !positive(plane[0], 1e4)
+                })
+            })
         {
             return Err(invalid(
                 "resolved enclosure thermal model differs from approved regions, ranges or provenance",
@@ -429,7 +512,7 @@ impl ThermalModel {
                 .iter()
                 .find(|n| pick(&self.materials[n.as_str()]).is_none())
         };
-        if self.radiation
+        if self.radiation.nonlinear()
             && let Some(name) = lacks(|m| m.emissivity)
         {
             return Err(invalid(format!(
@@ -615,7 +698,12 @@ fn range(input: &PhysicalInput<QuantityRange>, high: bool) -> Result<Option<(f64
     })
 }
 
-fn material(region: &str, input: &MaterialInput, library: &Library) -> Result<ResolvedMaterial> {
+fn material(
+    region: &SolidRegion,
+    input: &MaterialInput,
+    library: &Library,
+) -> Result<ResolvedMaterial> {
+    let (plate, region) = (region, region.name.as_str());
     match input {
         MaterialInput::Library { id, finish } => {
             // A bare id, a design route `MATERIAL__PROCESS`, or a finished
@@ -672,10 +760,12 @@ fn material(region: &str, input: &MaterialInput, library: &Library) -> Result<Re
                 solar_absorptance: absorptance.map(|v| v.0),
                 provenance,
                 synthetic: false,
+                conductivity_axes_w_m_k: None,
             })
         }
         MaterialInput::Declared {
             conductivity,
+            in_plane_conductivity,
             emissivity,
             solar_absorptance,
         } => {
@@ -684,6 +774,26 @@ fn material(region: &str, input: &MaterialInput, library: &Library) -> Result<Re
                 &format!("{region} conductivity"),
                 "thermal_conductivity",
             )?;
+            let axes = match in_plane_conductivity {
+                None => None,
+                Some(input) => {
+                    let (in_plane, source, flag) = known(
+                        input,
+                        &format!("{region} in-plane conductivity"),
+                        "thermal_conductivity",
+                    )?;
+                    let normal = plate_normal(plate).ok_or_else(|| {
+                        invalid(format!(
+                            "orthotropic region {region} must be an axis-aligned plate (CAD volume equals its bounding box within {PLATE_TOLERANCE}, thickness at most half of each other extent)"
+                        ))
+                    })?;
+                    provenance.push_str(&format!("; in-plane conductivity: {source}"));
+                    synthetic |= flag;
+                    let mut axes = [in_plane; 3];
+                    axes[normal] = k;
+                    Some(axes)
+                }
+            };
             let (eps, eps_source, eps_synthetic) =
                 optional(emissivity.as_ref(), &format!("{region} emissivity"))?;
             let (alpha, alpha_source, alpha_synthetic) = optional(
@@ -707,6 +817,7 @@ fn material(region: &str, input: &MaterialInput, library: &Library) -> Result<Re
                 solar_absorptance: alpha,
                 provenance,
                 synthetic,
+                conductivity_axes_w_m_k: axes,
             })
         }
     }
@@ -719,9 +830,9 @@ pub fn resolve(inputs: &EnclosureThermalInputs, geometry: &SolidsGeometry) -> Re
             "enclosure thermal inputs schema_version 1 required",
         ));
     }
-    if inputs.power_sweep && inputs.radiation {
+    if inputs.power_sweep && inputs.radiation.nonlinear() {
         return Err(invalid(
-            "power_sweep superposes solves linearly in power and requires radiation off (radiation is nonlinear)",
+            "power_sweep superposes solves linearly in power and requires radiation off or linearized_lower_bound (T^4 radiation is nonlinear)",
         ));
     }
     let names: BTreeSet<&str> = geometry.names().into_iter().collect();
@@ -739,7 +850,14 @@ pub fn resolve(inputs: &EnclosureThermalInputs, geometry: &SolidsGeometry) -> Re
     let materials = inputs
         .materials
         .iter()
-        .map(|(region, input)| Ok((region.clone(), material(region, input, &library)?)))
+        .map(|(region, input)| {
+            let solid = geometry
+                .regions
+                .iter()
+                .find(|r| &r.name == region)
+                .ok_or_else(|| invalid(format!("region {region} is not meshed")))?;
+            Ok((region.clone(), material(solid, input, &library)?))
+        })
         .collect::<Result<BTreeMap<_, _>>>()?;
     let mut provenance = BTreeMap::new();
     let mut synthetic = materials.values().any(|m| m.synthetic);
@@ -1609,6 +1727,8 @@ pub struct ThermalFacts {
     pub radiation_w: f64,
     pub internal_air_residual_w: f64,
     pub relative_error: f64,
+    /// Coldest node on exposed exterior (film) faces.
+    pub exterior_min_k: f64,
     pub regions: BTreeMap<String, [f64; 3]>,
     pub max_k: f64,
 }
@@ -1634,6 +1754,7 @@ fn thermal_facts(
     let exposed: BTreeSet<&str> = model.exposed_regions.iter().map(String::as_str).collect();
     let ta = model.ambient_k;
     let (mut film, mut radiation, mut solar, mut air, mut cavity_solar) = (0., 0., 0., 0., 0.);
+    let mut exterior_min = f64::INFINITY;
     for (eid, face, label) in &mesh.boundary_faces {
         let element = &mesh.elements[eid];
         let index = usize::from(*face) - 1;
@@ -1646,7 +1767,17 @@ fn thermal_facts(
         } else if exposed.contains(region) {
             let material = &model.materials[region];
             film += model.film_w_m2_k * area / 3. * values.iter().map(|t| t - ta).sum::<f64>();
-            if model.radiation {
+            let nodes = FACES[index].iter().chain(if element.len() == 10 {
+                &FACE_MIDS[index][..]
+            } else {
+                &[]
+            });
+            for node in nodes {
+                exterior_min = exterior_min.min(temperatures[&element[*node]]);
+            }
+            radiation += model.radiation.coefficient(material.emissivity, ta) * area / 3.
+                * values.iter().map(|t| t - ta).sum::<f64>();
+            if model.radiation.nonlinear() {
                 radiation += material.emissivity.unwrap_or(f64::NAN) * SIGMA * area / 3.
                     * values.iter().map(|t| t.powi(4) - ta.powi(4)).sum::<f64>();
             }
@@ -1690,6 +1821,7 @@ fn thermal_facts(
         // Net heat into the air node: cavity faces plus the deposited solar.
         internal_air_residual_w: air + cavity_solar,
         relative_error: (heat_in - film - radiation).abs() / heat_in,
+        exterior_min_k: exterior_min,
         max_k: temperatures
             .values()
             .copied()
@@ -1754,6 +1886,19 @@ pub fn verify_thermal_receipt(
             "transparent glazing solar must be the declared conservative cavity deposit, labelled in the receipt applicability",
         ));
     }
+    // The linearized bound is claimed only on a field whose exposed exterior
+    // surfaces are at or above ambient, reported and labelled in the receipt.
+    let linearized = model.radiation.linearized();
+    if (receipt["applicability"]["radiation"] == LINEARIZED_RADIATION_STATEMENT) != linearized
+        || (linearized
+            && (thermal.exterior_min_k.is_nan()
+                || thermal.exterior_min_k < model.ambient_k
+                || !close(&receipt["exterior_min_k"], thermal.exterior_min_k, 1e-12)))
+    {
+        return Err(invalid(
+            "linearized radiation lower bound requires exterior surfaces at or above ambient, reported and labelled in the receipt applicability",
+        ));
+    }
     if !common_receipt(
         receipt,
         "CalculiX",
@@ -1785,7 +1930,7 @@ pub fn verify_thermal_receipt(
         )
         || !close(&energy["heat_in_w"], heat_in, 1e-9)
         || !close(&energy["film_w"], thermal.film_w, 1e-6)
-        || (model.radiation && !close(&energy["radiation_w"], thermal.radiation_w, 1e-6))
+        || (model.radiation.any() && !close(&energy["radiation_w"], thermal.radiation_w, 1e-6))
         || energy["tolerance"] != tolerance
         || thermal.relative_error.is_nan()
         || thermal.relative_error > tolerance
@@ -1802,9 +1947,14 @@ pub fn verify_thermal_receipt(
     Ok(NumericalEvidence {
         reference: "steady global energy balance: heat source + absorbed solar (+ transparent-glazing solar deposited in the internal air) against film + radiation, recomputed from the native field".into(),
         scope: format!(
-            "steady solid conduction with declared boundary inputs and one effective internal air node; no internal convection, condensation or physical validation{}",
+            "steady solid conduction with declared boundary inputs and one effective internal air node; no internal convection, condensation or physical validation{}{}",
             if transparent {
                 format!("; {TRANSPARENT_SOLAR_STATEMENT}")
+            } else {
+                String::new()
+            },
+            if linearized {
+                format!("; {LINEARIZED_RADIATION_STATEMENT}")
             } else {
                 String::new()
             }

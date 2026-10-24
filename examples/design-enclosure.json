@@ -207,7 +207,15 @@
                     "value": {
                       "$input": "pcb_conductivity"
                     },
-                    "provenance": "sourced metric pcb_conductivity = electronics:pcb-fr4-copper-through-plane.low (0.26 W/(m*K) used isotropically: below every cited in-plane and through-plane value; conservative DEFAULT, anisotropy not modelled; data/conditions.json)",
+                    "provenance": "sourced metric pcb_conductivity = electronics:pcb-fr4-copper-through-plane.low (0.26 W/(m*K) through-plane, along the board's thin axis; lower bound of the cited through-plane range; data/conditions.json)",
+                    "synthetic": false
+                  },
+                  "in_plane_conductivity": {
+                    "availability": "known",
+                    "value": {
+                      "$input": "pcb_in_plane_conductivity"
+                    },
+                    "provenance": "sourced metric pcb_in_plane_conductivity = electronics:pcb-fr4-copper-in-plane.low (8.1 W/(m*K) along the board plane; lower bound of the cited in-plane range for boards with continuous copper planes, a board requirement; data/conditions.json)",
                     "synthetic": false
                   }
                 },
@@ -270,7 +278,7 @@
                 ],
                 "transparent_solar": "deposit_incident_in_cavity"
               },
-              "radiation": false,
+              "radiation": "linearized_lower_bound",
               "energy_balance_tolerance": 0.001,
               "power_sweep": true
             }
@@ -313,7 +321,15 @@
                     "value": {
                       "$input": "pcb_conductivity"
                     },
-                    "provenance": "sourced metric pcb_conductivity = electronics:pcb-fr4-copper-through-plane.low (0.26 W/(m*K) used isotropically: below every cited in-plane and through-plane value; conservative DEFAULT, anisotropy not modelled; data/conditions.json)",
+                    "provenance": "sourced metric pcb_conductivity = electronics:pcb-fr4-copper-through-plane.low (0.26 W/(m*K) through-plane, along the board's thin axis; lower bound of the cited through-plane range; data/conditions.json)",
+                    "synthetic": false
+                  },
+                  "in_plane_conductivity": {
+                    "availability": "known",
+                    "value": {
+                      "$input": "pcb_in_plane_conductivity"
+                    },
+                    "provenance": "sourced metric pcb_in_plane_conductivity = electronics:pcb-fr4-copper-in-plane.low (8.1 W/(m*K) along the board plane; lower bound of the cited in-plane range for boards with continuous copper planes, a board requirement; data/conditions.json)",
                     "synthetic": false
                   }
                 },
@@ -376,7 +392,7 @@
                 ],
                 "transparent_solar": "deposit_incident_in_cavity"
               },
-              "radiation": false,
+              "radiation": "linearized_lower_bound",
               "energy_balance_tolerance": 0.001,
               "power_sweep": true
             }
@@ -495,7 +511,15 @@
                     "value": {
                       "$input": "pcb_conductivity"
                     },
-                    "provenance": "sourced metric pcb_conductivity = electronics:pcb-fr4-copper-through-plane.low (0.26 W/(m*K) used isotropically: below every cited in-plane and through-plane value; conservative DEFAULT, anisotropy not modelled; data/conditions.json)",
+                    "provenance": "sourced metric pcb_conductivity = electronics:pcb-fr4-copper-through-plane.low (0.26 W/(m*K) through-plane, along the board's thin axis; lower bound of the cited through-plane range; data/conditions.json)",
+                    "synthetic": false
+                  },
+                  "in_plane_conductivity": {
+                    "availability": "known",
+                    "value": {
+                      "$input": "pcb_in_plane_conductivity"
+                    },
+                    "provenance": "sourced metric pcb_in_plane_conductivity = electronics:pcb-fr4-copper-in-plane.low (8.1 W/(m*K) along the board plane; lower bound of the cited in-plane range for boards with continuous copper planes, a board requirement; data/conditions.json)",
                     "synthetic": false
                   }
                 },
@@ -558,7 +582,7 @@
                 ],
                 "transparent_solar": "deposit_incident_in_cavity"
               },
-              "radiation": false,
+              "radiation": "linearized_lower_bound",
               "energy_balance_tolerance": 0.001,
               "power_sweep": true
             }
@@ -601,7 +625,15 @@
                     "value": {
                       "$input": "pcb_conductivity"
                     },
-                    "provenance": "sourced metric pcb_conductivity = electronics:pcb-fr4-copper-through-plane.low (0.26 W/(m*K) used isotropically: below every cited in-plane and through-plane value; conservative DEFAULT, anisotropy not modelled; data/conditions.json)",
+                    "provenance": "sourced metric pcb_conductivity = electronics:pcb-fr4-copper-through-plane.low (0.26 W/(m*K) through-plane, along the board's thin axis; lower bound of the cited through-plane range; data/conditions.json)",
+                    "synthetic": false
+                  },
+                  "in_plane_conductivity": {
+                    "availability": "known",
+                    "value": {
+                      "$input": "pcb_in_plane_conductivity"
+                    },
+                    "provenance": "sourced metric pcb_in_plane_conductivity = electronics:pcb-fr4-copper-in-plane.low (8.1 W/(m*K) along the board plane; lower bound of the cited in-plane range for boards with continuous copper planes, a board requirement; data/conditions.json)",
                     "synthetic": false
                   }
                 },
@@ -664,7 +696,7 @@
                 ],
                 "transparent_solar": "deposit_incident_in_cavity"
               },
-              "radiation": false,
+              "radiation": "linearized_lower_bound",
               "energy_balance_tolerance": 0.001,
               "power_sweep": true
             }
@@ -707,7 +739,15 @@
                     "value": {
                       "$input": "pcb_conductivity"
                     },
-                    "provenance": "sourced metric pcb_conductivity = electronics:pcb-fr4-copper-through-plane.low (0.26 W/(m*K) used isotropically: below every cited in-plane and through-plane value; conservative DEFAULT, anisotropy not modelled; data/conditions.json)",
+                    "provenance": "sourced metric pcb_conductivity = electronics:pcb-fr4-copper-through-plane.low (0.26 W/(m*K) through-plane, along the board's thin axis; lower bound of the cited through-plane range; data/conditions.json)",
+                    "synthetic": false
+                  },
+                  "in_plane_conductivity": {
+                    "availability": "known",
+                    "value": {
+                      "$input": "pcb_in_plane_conductivity"
+                    },
+                    "provenance": "sourced metric pcb_in_plane_conductivity = electronics:pcb-fr4-copper-in-plane.low (8.1 W/(m*K) along the board plane; lower bound of the cited in-plane range for boards with continuous copper planes, a board requirement; data/conditions.json)",
                     "synthetic": false
                   }
                 },
@@ -770,7 +810,7 @@
                 ],
                 "transparent_solar": "deposit_incident_in_cavity"
               },
-              "radiation": false,
+              "radiation": "linearized_lower_bound",
               "energy_balance_tolerance": 0.001,
               "power_sweep": true
             }
@@ -839,6 +879,14 @@
       "source": {
         "kind": "sourced",
         "key": "electronics:pcb-fr4-copper-through-plane.low"
+      }
+    },
+    {
+      "metric": "pcb_in_plane_conductivity",
+      "unit": "W/(m*K)",
+      "source": {
+        "kind": "sourced",
+        "key": "electronics:pcb-fr4-copper-in-plane.low"
       }
     },
     {

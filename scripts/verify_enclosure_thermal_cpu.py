@@ -128,8 +128,10 @@ def gradients(points):
 def reference_solver(rec, model_, data):
     """Independent linear-tet Galerkin solve with the recipe's face quadrature.
 
-    Face terms use the same three edge-midpoint points (weight A/3) as the
-    energy balance; radiation is linearized by Picard iteration.
+    Element stiffness uses the diagonal conductivity tensor (isotropic or
+    orthotropic). Face terms use the same three edge-midpoint points (weight
+    A/3) as the energy balance; the linearized radiation bound adds h_r to the
+    film, and T^4 radiation is linearized by Picard iteration.
     """
     nodes, elements = rec["nodes"], rec["elements"]
     order = sorted(nodes)
@@ -137,7 +139,7 @@ def reference_solver(rec, model_, data):
     base = [{} for _ in order]
     load = [0.0] * len(order)
     for name, ids in rec["regions"].items():
-        k = data["materials"][name]["conductivity_w_m_k"]
+        k = enclosure.conductivity(data["materials"][name])
         q = model_["power_density_w_m3"] if name == data["heat_source_region"] else 0
         for e in ids:
             grads, volume = gradients([nodes[n] for n in elements[e]])
@@ -145,8 +147,8 @@ def reference_solver(rec, model_, data):
                 load[index[na]] += q * volume / 4
                 row = base[index[na]]
                 for b, nb in enumerate(elements[e]):
-                    row[index[nb]] = row.get(index[nb], 0.0) + k * volume * solid.dot(
-                        grads[a], grads[b]
+                    row[index[nb]] = row.get(index[nb], 0.0) + volume * sum(
+                        k[i] * grads[a][i] * grads[b][i] for i in range(3)
                     )
     for e, face, area, flux in model_["sun"]:
         for i in solid.FACES[face - 1]:
@@ -169,7 +171,9 @@ def reference_solver(rec, model_, data):
                 for p, q in ((0, 1), (1, 2), (2, 0)):
                     pair = (corners[p], corners[q])
                     coefficient = h
-                    if region is not None and data["radiation"]:
+                    if region is not None:
+                        coefficient += enclosure.radiation_coefficient(data, region)
+                    if region is not None and enclosure.nonlinear(data):
                         t = (temperature[pair[0]] + temperature[pair[1]]) / 2
                         emissivity = data["materials"][region]["emissivity"]
                         coefficient += (
@@ -183,7 +187,7 @@ def reference_solver(rec, model_, data):
             updated = conjugate_gradient(rows, rhs, temperature)
             change = max(abs(a - b) for a, b in zip(updated, temperature, strict=True))
             temperature = updated
-            if not data["radiation"] or change < 1e-10 * data["ambient_k"]:
+            if not enclosure.nonlinear(data) or change < 1e-10 * data["ambient_k"]:
                 return {n: temperature[index[n]] for n in order}
         raise ValueError("reference Picard iteration did not converge")
 

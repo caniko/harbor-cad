@@ -21,7 +21,7 @@ CALCULIX_SOURCE_SHA256 = (
 MAX_AIR_RUNS = 8
 APPLICABILITY = {
     "regime": "steady state",
-    "heat_transfer": "solid conduction with declared isotropic constant conductivities",
+    "heat_transfer": "solid conduction with declared constant conductivities, isotropic or diagonal orthotropic in world axes (axis-aligned plates)",
     "internal_air": "one well-mixed internal air node coupled to every cavity face by the declared effective surface coefficient (modelling assumption; no internal convection or CFD)",
     "exterior": "uniform declared film coefficient and ambient temperature on ambient faces of exposed regions; other ambient faces adiabatic",
     "solar": "absorbed flux alpha*G*max(0, n.s) on ambient faces of exposed regions; no self-shadowing, no transmission",
@@ -30,6 +30,16 @@ APPLICABILITY = {
     "excluded": "transients, condensation, moisture, phase change, mounting conduction",
 }
 TRANSPARENT_SOLAR = "deposit_incident_in_cavity"
+LINEARIZED = "linearized_lower_bound"
+# Same text as enclosure_thermal::LINEARIZED_RADIATION_STATEMENT; Rust gates it.
+LINEARIZED_STATEMENT = (
+    "conservative_bound: exterior radiation credited as h_r = 4*eps*sigma*Ta^3"
+    " (low-end sourced emissivity, surroundings at the ambient air temperature)"
+    " added to the film coefficient; eps*sigma*(T^4 - Ta^4) >= h_r*(T - Ta) for"
+    " T >= Ta (and, by convexity, for any T), surroundings colder than ambient"
+    " (sky) only add cooling, regions without a sourced emissivity get no credit;"
+    " exterior surface temperatures verified >= ambient"
+)
 # Same text as enclosure_thermal::TRANSPARENT_SOLAR_STATEMENT; Rust gates it.
 TRANSPARENT_SOLAR_STATEMENT = (
     "conservative_bound: the full solar irradiance incident on sun-facing exterior"
@@ -59,6 +69,7 @@ MATERIAL_KEYS = {
     "provenance",
     "synthetic",
 }
+AXES = "conductivity_axes_w_m_k"  # optional diagonal orthotropic tensor (x, y, z)
 
 
 def load_bridge(name, path):
@@ -79,6 +90,23 @@ def bounded(value, low, high, text):
     return float(value)
 
 
+def nonlinear(thermal):
+    return thermal["radiation"] is True
+
+
+def radiation_coefficient(thermal, region):
+    """Linearized lower-bound coefficient h_r = 4*eps*sigma*Ta^3 (0 without eps)."""
+    emissivity = thermal["materials"][region]["emissivity"]
+    if thermal["radiation"] != LINEARIZED or emissivity is None:
+        return 0.0
+    return 4 * emissivity * SIGMA * thermal["ambient_k"] ** 3
+
+
+def conductivity(material):
+    """Diagonal conductivity tensor (x, y, z) in W/(m*K)."""
+    return material.get(AXES) or [material["conductivity_w_m_k"]] * 3
+
+
 def text(value):
     return isinstance(value, str) and value.strip() and len(value.encode()) <= 4096
 
@@ -92,13 +120,19 @@ def validate_thermal(thermal, names):
     for material in materials.values():
         if (
             not isinstance(material, dict)
-            or set(material) != MATERIAL_KEYS
+            or set(material) - {AXES} != MATERIAL_KEYS
             or not text(material["source"])
             or not text(material["provenance"])
             or type(material["synthetic"]) is not bool
         ):
             raise ValueError("explicit material source and provenance required")
         bounded(material["conductivity_w_m_k"], 0, 1e4, "positive conductivity")
+        if AXES in material:
+            axes = material[AXES]
+            if not isinstance(axes, list) or len(axes) != 3:
+                raise ValueError("three orthotropic conductivities required")
+            for value in axes:
+                bounded(value, 0, 1e4, "positive conductivity")
         for key in ("emissivity", "solar_absorptance"):
             if material[key] is not None:
                 bounded(material[key], 0, 1, f"{key} in (0, 1] required")
@@ -117,9 +151,13 @@ def validate_thermal(thermal, names):
         or not set(exposed) <= set(names)
     ):
         raise ValueError("sorted unique exposed approved regions required")
-    if type(thermal["radiation"]) is not bool or type(thermal["synthetic"]) is not bool:
-        raise ValueError("explicit radiation and synthetic flags required")
-    if thermal["radiation"] and any(
+    radiation = thermal["radiation"]
+    if (
+        not (type(radiation) is bool or radiation == LINEARIZED)
+        or type(thermal["synthetic"]) is not bool
+    ):
+        raise ValueError("explicit radiation mode and synthetic flag required")
+    if nonlinear(thermal) and any(
         materials[name]["emissivity"] is None for name in exposed
     ):
         raise ValueError("radiation requires a sourced emissivity per exposed region")
@@ -257,7 +295,12 @@ def ccx_number(value):
 
 
 def deck(record, thermal, model, internal_air_k):
-    """CalculiX input; *FILM/*RADIATE/*DFLUX S use derived exterior faces."""
+    """CalculiX input; *FILM/*RADIATE/*DFLUX S use derived exterior faces.
+
+    An orthotropic region gets `*CONDUCTIVITY,TYPE=ORTHO` (k11,k22,k33) with an
+    explicit identity `*ORIENTATION` so its axes are the world axes. The
+    linearized radiation bound is folded into each exposed region's `*FILM`.
+    """
     lines = [
         "*HEADING",
         "Harbor enclosure steady conduction; SI m W K",
@@ -271,18 +314,28 @@ def deck(record, thermal, model, internal_air_k):
         lines.append(f"*ELEMENT,TYPE={record['element_type']},ELSET=E_{name.upper()}")
         lines += [f"{e}," + ",".join(map(str, record["elements"][e])) for e in ids]
     for name, ids in sorted(record["regions"].items()):
-        material = thermal["materials"][name]
-        lines += [
-            f"*MATERIAL,NAME=M_{name.upper()}",
-            "*CONDUCTIVITY",
-            ccx_number(material["conductivity_w_m_k"]),
-            f"*SOLID SECTION,ELSET=E_{name.upper()},MATERIAL=M_{name.upper()}",
-        ]
-    if thermal["radiation"]:
+        material, tag = thermal["materials"][name], name.upper()
+        section = f"*SOLID SECTION,ELSET=E_{tag},MATERIAL=M_{tag}"
+        lines.append(f"*MATERIAL,NAME=M_{tag}")
+        if material.get(AXES):
+            lines += [
+                "*CONDUCTIVITY,TYPE=ORTHO",
+                ",".join(ccx_number(k) for k in material[AXES]),
+                f"*ORIENTATION,NAME=OR_{tag}",
+                "1.,0.,0.,0.,1.,0.",
+                f"{section},ORIENTATION=OR_{tag}",
+            ]
+        else:
+            lines += [
+                "*CONDUCTIVITY",
+                ccx_number(material["conductivity_w_m_k"]),
+                section,
+            ]
+    if nonlinear(thermal):
         lines.append(f"*PHYSICAL CONSTANTS,ABSOLUTE ZERO=0.,STEFAN BOLTZMANN={SIGMA!r}")
     ambient = ccx_number(thermal["ambient_k"])
     lines += ["*INITIAL CONDITIONS,TYPE=TEMPERATURE", f"NALL,{ambient}", "*STEP"]
-    if thermal["radiation"]:
+    if nonlinear(thermal):
         lines += ["*HEAT TRANSFER,STEADY STATE,SOLVER=SPOOLES", "1.,1."]
     else:
         lines += ["*HEAT TRANSFER,STEADY STATE,SOLVER=SPOOLES,DIRECT", "1.,1."]
@@ -295,18 +348,21 @@ def deck(record, thermal, model, internal_air_k):
         lines.append("*DFLUX")
         lines += [f"{e},S{f},{ccx_number(q)}" for e, f, _, q in model["sun"]]
     lines.append("*FILM")
-    film = ccx_number(thermal["film_w_m2_k"])
-    lines += [f"{e},F{f},{ambient},{film}" for e, f, _, _ in model["film"]]
+    lines += [
+        f"{e},F{f},{ambient},"
+        + ccx_number(thermal["film_w_m2_k"] + radiation_coefficient(thermal, region))
+        for e, f, _, region in model["film"]
+    ]
     if model["cavity"]:
         air = ccx_number(internal_air_k)
         inner = ccx_number(thermal["internal_film_w_m2_k"])
         lines += [f"{e},F{f},{air},{inner}" for e, f, _ in model["cavity"]]
-    if thermal["radiation"]:
+    if nonlinear(thermal):
         lines.append("*RADIATE")
         for e, f, _, region in model["film"]:
             emissivity = ccx_number(thermal["materials"][region]["emissivity"])
             lines.append(f"{e},R{f},{ambient},{emissivity}")
-    frequency = 1 if thermal["radiation"] else 999999
+    frequency = 1 if nonlinear(thermal) else 999999
     lines += [
         f"*NODE PRINT,NSET=NALL,FREQUENCY={frequency},GLOBAL=YES",
         "NT",
@@ -330,7 +386,13 @@ def balance(record, thermal, model, temperatures, internal_air_k, solid):
     for eid, face, area, region in model["film"]:
         values = face_temperatures(record, temperatures, eid, face, solid)
         film += thermal["film_w_m2_k"] * area / 3 * sum(t - ambient for t in values)
-        if thermal["radiation"]:
+        radiation += (
+            radiation_coefficient(thermal, region)
+            * area
+            / 3
+            * sum(t - ambient for t in values)
+        )
+        if nonlinear(thermal):
             emissivity = thermal["materials"][region]["emissivity"]
             radiation += (
                 emissivity * SIGMA * area / 3 * sum(t**4 - ambient**4 for t in values)
@@ -485,6 +547,17 @@ def ccx_runner(record, thermal, model, fem, calculix, version, log):
 def evaluate(record, thermal, model, runner, solid):
     """Solve, then gate and summarize; shared by the stage and verification."""
     temperatures, internal_air_k, history = solve(record, thermal, model, runner, solid)
+    # The linearized radiation bound is claimed only for exterior faces at or
+    # above ambient (checked first: a violation voids the model, not the solve).
+    exterior = exterior_min(record, model, temperatures)
+    if (
+        thermal["radiation"] == LINEARIZED
+        and exterior is not None
+        and not exterior >= thermal["ambient_k"]
+    ):
+        raise ValueError(
+            "linearized radiation lower bound needs exterior surfaces >= ambient"
+        )
     energy = balance(
         record,
         thermal,
@@ -512,13 +585,38 @@ def evaluate(record, thermal, model, runner, solid):
             "adiabatic_ambient": model["adiabatic_ambient_area_m2"],
         },
         "heat_source_volume_m3": model["source_volume_m3"],
+        "exterior_min_k": exterior,
     }
 
 
+def exterior_min(record, model, temperatures):
+    """Coldest node (corners and C3D10 midsides) on exposed exterior faces."""
+    faces = {
+        "C3D4": [[0, 1, 2], [0, 3, 1], [1, 3, 2], [2, 3, 0]],
+        "C3D10": [
+            [0, 1, 2, 4, 5, 6],
+            [0, 3, 1, 7, 8, 4],
+            [1, 3, 2, 8, 9, 5],
+            [2, 3, 0, 9, 7, 6],
+        ],
+    }[record["element_type"]]
+    return min(
+        (
+            temperatures[record["elements"][e][i]]
+            for e, f, _, _ in model["film"]
+            for i in faces[f - 1]
+        ),
+        default=None,
+    )
+
+
 def applicability(thermal):
-    if (thermal["solar"] or {}).get("transparent_solar") is None:
-        return APPLICABILITY
-    return {**APPLICABILITY, "transparent_solar": TRANSPARENT_SOLAR_STATEMENT}
+    result = dict(APPLICABILITY)
+    if (thermal["solar"] or {}).get("transparent_solar") is not None:
+        result["transparent_solar"] = TRANSPARENT_SOLAR_STATEMENT
+    if thermal["radiation"] == LINEARIZED:
+        result["radiation"] = LINEARIZED_STATEMENT
+    return result
 
 
 def main(raw, spec, fem, request_path):

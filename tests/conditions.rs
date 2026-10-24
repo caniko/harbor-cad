@@ -96,11 +96,19 @@ fn electronics_defaults_are_cited_conservative_ends() {
     let k = |key: &str| c.lookup(key).unwrap();
     let design = k("electronics:pcb-fr4-copper-through-plane.low");
     assert_eq!((design.value, design.unit), (0.26, "W/(m*K)"));
-    // The isotropic design value is below every cited in-plane and
-    // through-plane value, and the limitation is stated.
-    assert!(design.value <= k("electronics:pcb-fr4-copper-in-plane.low").value);
+    // The through-plane design value is below every cited in-plane and
+    // through-plane value; the in-plane low end is stated as a lower bound only
+    // for boards with continuous copper planes.
+    let in_plane = k("electronics:pcb-fr4-copper-in-plane.low");
+    assert!(design.value <= in_plane.value);
     assert!(k("electronics:pcb-fr4-copper-through-plane.high").value < 8.1);
-    assert!(design.provenance.contains("Anisotropy is not modelled"));
+    assert!(design.provenance.contains("in every direction"));
+    assert_eq!(in_plane.value, 8.1);
+    assert!(
+        in_plane
+            .provenance
+            .contains("only for boards with continuous copper planes")
+    );
     for key in [
         "electronics:component-limit-industrial.mid",
         "electronics:nope.low",
