@@ -138,7 +138,8 @@ and the tighter of that and the minimum-temperature margin when
 `min_temperature_k` is known) and `stress_margin` (from `max_von_mises_pa` and
 a declared `stress_safety_factor`). Material and process come from a
 categorical `route` choice `MATERIAL__PROCESS`, or from separate `material`
-and `process` choices. Geometry comes from the metrics `volume_m3`,
+and `process` choices. A triple `MATERIAL__PROCESS__FINISH` is parsed once; its
+finish only affects the thermal template. Geometry comes from the metrics `volume_m3`,
 `xmin_m`…`zmax_m` (the variant receipt's `after.<region>.bounds_m`) and
 optionally `min_wall_m`. Quantity comes from a `quantity` metric (a parameter
 or a declared input). Any missing input, missing sourced data or incompatible
@@ -187,12 +188,12 @@ measurement path and test provenance.
 
 `examples/design-enclosure.json` covers the outdoor enclosure pilot. Its
 continuous parameters are wall, fin count, fin height, length and height on
-manufacturing grids, and its `route` choices are the W1-compatible pairs
-`al-6061-t6__cnc-3axis-al`, `pa12-mjf__mjf-pa12` and
-`al-5052-h32__sheet-metal-laser-brake`. Its `finish` choices are
-`powder-coat-light-grey` (aluminium) and `pigment-black-polymer` (PA12). Route
-and finish pairs that are not compatible are refused when the thermal plan is
-derived. The chain is `variant`
+manufacturing grids. Its single categorical `route` lists only compatible
+`MATERIAL__PROCESS__FINISH` triples (process and finish `compatible_materials`
+in `data/processes.json` and `data/finishes.json`; `tests/design.rs` checks
+each): white and RAL 7035 powder coat on CNC 6061-T6 and on laser/brake
+5052-H32, and black-pigment MJF PA12. No evaluation is spent on a refused
+route × finish pair. The chain is `variant`
 (`plan_cad_variant` of the enclosure fixture's `Params` sheet, with all five
 thermal regions) → `mesh` (`plan_cad_solid_mesh`, a conformal tetrahedral mesh of
 `gasket`, `housing`, `lid`, `pcb` and `window`) → `thermal`
@@ -213,21 +214,30 @@ come from the ETSI EN 300 019-1-4 class 4.1 hot design point (see
 [design conditions](design-conditions.md)). A metric with
 `{"kind": "sourced", "key": "condition:<class>.<hot|cold>.<field>"}` or
 `"finish:<id>.<field>"` carries a cited value in its SI unit. Templates read it
-through `$input`, like a declared input. PCB power, board conductivity, the
-internal cavity film and the component limit are product-specific and are
-declared `missing` ("product-specific: supplied by operator"). `design validate`
-accepts the envelope, but it cannot produce a feasible design yet:
+through `$input`, like a declared input. The internal cavity film is the
+sourced `film:enclosed-cavity-natural.low` (1.2 W/(m²·K), see
+[design conditions](design-conditions.md)). The pc-uv window has no sourced
+absorptance, so its solar load uses the explicit conservative bound
+`transparent_solar: "deposit_incident_in_cavity"` (all incident irradiance
+enters the internal air node); `design export` lists it under
+`conservative_bounds` and prefixes the statement with `CONSERVATIVE BOUND`.
+PCB power, board conductivity and the component limit are product-specific and
+are declared `missing` ("product-specific: supplied by operator").
+
+Nothing structural blocks feasibility once those three inputs are supplied:
+`python/tests/test_enclosure_feasibility.py` solves the
+`al-6061-t6__cnc-3axis-al__powder-coat-white` candidate on a structured analogue
+of the fixture with the pure-Python reference solver (not CalculiX), with
+synthetic stand-ins for only the operator inputs, and finds both thermal
+margins and the Rust manufacturability screen satisfied. What remains:
 
 - Native FreeCAD/Gmsh/CalculiX runtime qualification waits on the security
   hold.
-- The missing operator inputs refuse the thermal plan, so the child is
-  `blocked` and the thermal constraints stay `unknown`.
-- The pc-uv window is transparent glazing. Its solar load is transmittance,
-  which the model does not represent, so the solar-loaded solve refuses even
-  after the operator inputs are supplied. The window must be shaded or opaque,
-  or the model must gain a transmittance term.
-- PA12's -40 °C minimum service temperature leaves 7 K at the class 4.1 cold
-  point, below the 10 K margin.
+- Until the operator supplies the three inputs, the thermal plan refuses, the
+  child is `blocked` and the thermal constraints stay `unknown`.
+- PA12 stays a candidate but can never pass. Its sourced minimum service
+  temperature is -40 °C, and the class 4.1 cold point is -33 °C, so the cold
+  margin is 7 K, below the 10 K requirement, whatever the thermal result.
 
 `examples/design-enclosure-demo.json` runs the same chain with explicitly
 `synthetic: true` inputs and a declared window. `design status` and

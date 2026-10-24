@@ -29,6 +29,14 @@ APPLICABILITY = {
     "interfaces": "conformal perfect contact between touching regions; no contact resistance",
     "excluded": "transients, condensation, moisture, phase change, mounting conduction",
 }
+TRANSPARENT_SOLAR = "deposit_incident_in_cavity"
+# Same text as enclosure_thermal::TRANSPARENT_SOLAR_STATEMENT; Rust gates it.
+TRANSPARENT_SOLAR_STATEMENT = (
+    "conservative_bound: the full solar irradiance incident on sun-facing exterior"
+    " faces of transparent glazing is deposited into the internal air node (no"
+    " reflection, no absorption in the pane, no re-emission credit); an upper bound"
+    " on interior solar gain, not on the pane temperature"
+)
 THERMAL_KEYS = {
     "synthetic",
     "materials",
@@ -116,12 +124,28 @@ def validate_thermal(thermal, names):
     ):
         raise ValueError("radiation requires a sourced emissivity per exposed region")
     solar = thermal["solar"]
+    transparent = []
     if solar is not None:
-        if not isinstance(solar, dict) or set(solar) != {
-            "irradiance_w_m2",
-            "direction",
-        }:
+        if not isinstance(solar, dict) or set(solar) - {
+            "transparent_solar",
+            "transparent_regions",
+        } != {"irradiance_w_m2", "direction"}:
             raise ValueError("exact solar load required")
+        if "transparent_solar" in solar or "transparent_regions" in solar:
+            transparent = solar.get("transparent_regions")
+            if (
+                solar.get("transparent_solar") != TRANSPARENT_SOLAR
+                or not isinstance(transparent, list)
+                or not transparent
+                or transparent != sorted(set(transparent))
+                or not set(transparent) <= set(exposed)
+                or any(
+                    materials[n]["solar_absorptance"] is not None for n in transparent
+                )
+            ):
+                raise ValueError(
+                    "transparent_solar needs sorted exposed glazing regions without an absorptance"
+                )
         bounded(solar["irradiance_w_m2"], 0, 2000, "solar irradiance in (0, 2000]")
         direction = solar["direction"]
         if (
@@ -136,7 +160,11 @@ def validate_thermal(thermal, names):
             or abs(math.sqrt(sum(v * v for v in direction)) - 1) > 1e-9
         ):
             raise ValueError("unit solar direction required")
-        if any(materials[name]["solar_absorptance"] is None for name in exposed):
+        if any(
+            materials[name]["solar_absorptance"] is None
+            for name in exposed
+            if name not in transparent
+        ):
             raise ValueError(
                 "solar load requires a sourced absorptance per exposed region"
             )
@@ -165,12 +193,18 @@ def validate(spec, solid):
 
 
 def boundary_model(record, thermal, solid):
-    """Film/radiation/solar faces, cavity faces and the heat-source density."""
+    """Film/radiation/solar faces, cavity faces and the heat-source density.
+
+    Sun-facing faces of `transparent_regions` deposit their full incident
+    irradiance into the internal air node (conservative bound) instead of a
+    surface flux.
+    """
     nodes, elements = record["nodes"], record["elements"]
     region_of = {e: n for n, ids in record["regions"].items() for e in ids}
     exposed = set(thermal["exposed_regions"])
     solar = thermal["solar"]
-    film, cavity, sun, adiabatic = [], [], [], 0.0
+    transparent = set((solar or {}).get("transparent_regions", []))
+    film, cavity, sun, deposit, adiabatic = [], [], [], [], 0.0
     for eid, face, label in record["boundary_faces"]:
         area, normal = solid.face_area_normal(nodes, elements[eid], face - 1)
         region = region_of[eid]
@@ -182,8 +216,10 @@ def boundary_model(record, thermal, solid):
             film.append((eid, face, area, region))
             if solar is not None:
                 cosine = solid.dot(normal, solar["direction"])
-                absorptance = thermal["materials"][region]["solar_absorptance"]
-                if cosine > 0:
+                if cosine > 0 and region in transparent:
+                    deposit.append((eid, face, area, solar["irradiance_w_m2"] * cosine))
+                elif cosine > 0:
+                    absorptance = thermal["materials"][region]["solar_absorptance"]
                     sun.append(
                         (
                             eid,
@@ -192,6 +228,8 @@ def boundary_model(record, thermal, solid):
                             absorptance * solar["irradiance_w_m2"] * cosine,
                         )
                     )
+    if deposit and not cavity:
+        raise ValueError("transparent solar deposit needs an internal cavity air node")
     source = thermal["heat_source_region"]
     volume = sum(
         solid.tet_volume(*(nodes[n] for n in elements[e][:4]))
@@ -202,6 +240,7 @@ def boundary_model(record, thermal, solid):
         "film": film,
         "cavity": cavity,
         "sun": sun,
+        "cavity_solar": deposit,
         "adiabatic_ambient_area_m2": adiabatic,
         "source_volume_m3": volume,
         "power_density_w_m3": thermal["heat_source_power_w"] / volume,
@@ -306,11 +345,15 @@ def balance(record, thermal, model, temperatures, internal_air_k, solid):
             * sum(t - internal_air_k for t in values)
         )
     solar = sum(q * area for _, _, area, q in model["sun"])
+    deposit = sum(q * area for _, _, area, q in model["cavity_solar"])
+    # Net heat into the air node: cavity faces plus the deposited solar.
+    air += deposit
     source = model["power_density_w_m3"] * model["source_volume_m3"]
-    heat_in, heat_out = source + solar, film + radiation
+    heat_in, heat_out = source + solar + deposit, film + radiation
     return {
         "heat_source_w": source,
         "solar_absorbed_w": solar,
+        "solar_cavity_w": deposit,
         "film_w": film,
         "radiation_w": radiation,
         "heat_in_w": heat_in,
@@ -464,11 +507,18 @@ def evaluate(record, thermal, model, runner, solid):
         "boundary_area_m2": {
             "film": sum(a for _, _, a, _ in model["film"]),
             "solar": sum(a for _, _, a, _ in model["sun"]),
+            "solar_cavity": sum(a for _, _, a, _ in model["cavity_solar"]),
             "cavity": sum(a for _, _, a in model["cavity"]),
             "adiabatic_ambient": model["adiabatic_ambient_area_m2"],
         },
         "heat_source_volume_m3": model["source_volume_m3"],
     }
+
+
+def applicability(thermal):
+    if (thermal["solar"] or {}).get("transparent_solar") is None:
+        return APPLICABILITY
+    return {**APPLICABILITY, "transparent_solar": TRANSPARENT_SOLAR_STATEMENT}
 
 
 def main(raw, spec, fem, request_path):
@@ -520,7 +570,7 @@ def main(raw, spec, fem, request_path):
             "elements": facts["elements"],
             **result,
             "temperature_unit": "K",
-            "applicability": APPLICABILITY,
+            "applicability": applicability(thermal),
             "gap_healing": False,
             "physical_validation": "unqualified",
             **({"sandbox": sandbox} if sandbox is not None else {}),

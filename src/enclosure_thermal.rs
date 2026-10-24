@@ -276,9 +276,10 @@ pub struct SolidMeshRequest {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum MaterialInput {
-    /// W1 `Library::builtin()` id, or a design `route` `MATERIAL__PROCESS`,
-    /// with an optional `data/finishes.json` finish whose sourced optics
-    /// override (or, where missing, fall back to) the material's.
+    /// W1 `Library::builtin()` id, a design `route` `MATERIAL__PROCESS`, or a
+    /// triple `MATERIAL__PROCESS__FINISH`; the finish (from the triple or the
+    /// separate field, not both) is a `data/finishes.json` id whose sourced
+    /// optics override (or, where missing, fall back to) the material's.
     Library {
         id: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -293,12 +294,31 @@ pub enum MaterialInput {
     },
 }
 
+/// Explicit solar model for exposed transparent glazing (`pc`, `pc-uv`,
+/// `pmma`), whose sourced data carry no absorbed-solar value.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum TransparentSolar {
+    /// Conservative bound (modelling assumption): the full irradiance incident
+    /// on the glazing's sun-facing exterior faces, G·max(0, n·s)·A, enters the
+    /// internal air node. Nothing is reflected, absorbed in the pane or
+    /// re-emitted outward, so the interior solar gain is an upper bound; the
+    /// pane's own temperature is not bounded.
+    DepositIncidentInCavity,
+}
+
+pub const TRANSPARENT_SOLAR_STATEMENT: &str = "conservative_bound: the full solar irradiance incident on sun-facing exterior faces of transparent glazing is deposited into the internal air node (no reflection, no absorption in the pane, no re-emission credit); an upper bound on interior solar gain, not on the pane temperature";
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct SolarInput {
     pub irradiance: PhysicalInput<Quantity>,
     /// Unit vector toward the sun, world frame.
     pub direction: [f64; 3],
+    /// Required for a solar-loaded exposed transparent region; without it
+    /// such a region refuses (no absorptance is defaulted).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub transparent_solar: Option<TransparentSolar>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -342,6 +362,11 @@ pub struct ResolvedMaterial {
 pub struct ResolvedSolar {
     pub irradiance_w_m2: f64,
     pub direction: [f64; 3],
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub transparent_solar: Option<TransparentSolar>,
+    /// Sorted exposed regions of transparent library glazing under `transparent_solar`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transparent_regions: Vec<String>,
 }
 
 /// Resolved SI model handed to the adapter; every value carries provenance.
@@ -414,9 +439,33 @@ impl ThermalModel {
                     "bounded solar irradiance and unit direction required",
                 ));
             }
-            if let Some(name) = lacks(|m| m.solar_absorptance) {
+            let transparent = &solar.transparent_regions;
+            if solar.transparent_solar.is_some() == transparent.is_empty()
+                || transparent.windows(2).any(|w| w[0] >= w[1])
+                || transparent.iter().any(|n| {
+                    !exposed.contains(n) || self.materials[n.as_str()].solar_absorptance.is_some()
+                })
+            {
+                return Err(invalid(
+                    "transparent_solar requires sorted exposed transparent glazing regions without an absorptance",
+                ));
+            }
+            if !transparent.is_empty() {
+                let glazing = crate::conditions::Conditions::builtin()?.transparent_materials;
+                if let Some(name) = transparent.iter().find(|n| {
+                    let source = &self.materials[n.as_str()].source;
+                    !glazing.iter().any(|g| source == &format!("library:{g}"))
+                }) {
+                    return Err(invalid(format!(
+                        "region {name} is not transparent library glazing"
+                    )));
+                }
+            }
+            if let Some(name) = exposed.iter().find(|n| {
+                !transparent.contains(n) && self.materials[n.as_str()].solar_absorptance.is_none()
+            }) {
                 return Err(invalid(format!(
-                    "solar load requires a sourced solar absorptance for exposed region {name}; not defaulted"
+                    "solar load requires a sourced solar absorptance for exposed region {name} (or transparent_solar for transparent glazing); not defaulted"
                 )));
             }
         }
@@ -564,7 +613,18 @@ fn range(input: &PhysicalInput<QuantityRange>, high: bool) -> Result<Option<(f64
 fn material(region: &str, input: &MaterialInput, library: &Library) -> Result<ResolvedMaterial> {
     match input {
         MaterialInput::Library { id, finish } => {
-            let id = id.split_once("__").map_or(id.as_str(), |(m, _)| m);
+            // A bare id, a design route `MATERIAL__PROCESS`, or a finished
+            // triple `MATERIAL__PROCESS__FINISH` (then no separate finish).
+            let (id, finish) = match crate::design_providers::split_route(id) {
+                None if !id.contains("__") => (id.as_str(), finish.as_deref()),
+                Some((material, _, None)) => (material, finish.as_deref()),
+                Some((material, _, Some(triple))) if finish.is_none() => (material, Some(triple)),
+                _ => {
+                    return Err(invalid(format!(
+                        "region {region}: library id must be MATERIAL, MATERIAL__PROCESS or MATERIAL__PROCESS__FINISH, with the finish named once"
+                    )));
+                }
+            };
             let entry = library.material(id)?;
             let conductivity = match &entry.thermal_conductivity {
                 PhysicalInput::Known {
@@ -584,7 +644,7 @@ fn material(region: &str, input: &MaterialInput, library: &Library) -> Result<Re
             };
             let emissivity = range(&emissivity, false)?;
             let absorptance = range(&absorptance, true)?;
-            let source = finish.as_ref().map_or(format!("library:{id}"), |f| {
+            let source = finish.map_or(format!("library:{id}"), |f| {
                 format!("library:{id}+finish:{f}")
             });
             let mut provenance = format!(
@@ -696,10 +756,30 @@ pub fn resolve(inputs: &EnclosureThermalInputs, geometry: &SolidsGeometry) -> Re
         "heat_transfer_coefficient",
     )?;
     let solar = match &inputs.solar {
-        Some(solar) => Some(ResolvedSolar {
-            irradiance_w_m2: scalar("solar_irradiance", &solar.irradiance, "irradiance")?,
-            direction: solar.direction,
-        }),
+        Some(solar) => {
+            let glazing = crate::conditions::Conditions::builtin()?.transparent_materials;
+            let transparent_regions = match solar.transparent_solar {
+                None => vec![],
+                Some(_) => inputs
+                    .exposed_regions
+                    .iter()
+                    .filter(|r| {
+                        materials.get(r.as_str()).is_some_and(|m| {
+                            m.source
+                                .strip_prefix("library:")
+                                .is_some_and(|m| glazing.iter().any(|g| g == m))
+                        })
+                    })
+                    .cloned()
+                    .collect(),
+            };
+            Some(ResolvedSolar {
+                irradiance_w_m2: scalar("solar_irradiance", &solar.irradiance, "irradiance")?,
+                direction: solar.direction,
+                transparent_solar: solar.transparent_solar,
+                transparent_regions,
+            })
+        }
         None => None,
     };
     let model = ThermalModel {
@@ -1513,6 +1593,8 @@ pub fn read_temperatures(text: &str) -> Result<BTreeMap<u64, f64>> {
 pub struct ThermalFacts {
     pub heat_source_w: f64,
     pub solar_absorbed_w: f64,
+    /// Transparent-glazing incident solar deposited in the internal air node.
+    pub solar_cavity_w: f64,
     pub film_w: f64,
     pub radiation_w: f64,
     pub internal_air_residual_w: f64,
@@ -1541,7 +1623,7 @@ fn thermal_facts(
         .collect();
     let exposed: BTreeSet<&str> = model.exposed_regions.iter().map(String::as_str).collect();
     let ta = model.ambient_k;
-    let (mut film, mut radiation, mut solar, mut air) = (0., 0., 0., 0.);
+    let (mut film, mut radiation, mut solar, mut air, mut cavity_solar) = (0., 0., 0., 0., 0.);
     for (eid, face, label) in &mesh.boundary_faces {
         let element = &mesh.elements[eid];
         let index = usize::from(*face) - 1;
@@ -1561,10 +1643,12 @@ fn thermal_facts(
             if let Some(sun) = &model.solar {
                 let cosine = dot(normal, sun.direction);
                 if cosine > 0. {
-                    solar += material.solar_absorptance.unwrap_or(f64::NAN)
-                        * sun.irradiance_w_m2
-                        * cosine
-                        * area;
+                    let incident = sun.irradiance_w_m2 * cosine * area;
+                    if sun.transparent_regions.iter().any(|r| r == region) {
+                        cavity_solar += incident;
+                    } else {
+                        solar += material.solar_absorptance.unwrap_or(f64::NAN) * incident;
+                    }
                 }
             }
         }
@@ -1586,13 +1670,15 @@ fn thermal_facts(
         regions.insert(name.clone(), [high, low, weighted / volume]);
     }
     let heat_source_w = model.heat_source_power_w;
-    let heat_in = heat_source_w + solar;
+    let heat_in = heat_source_w + solar + cavity_solar;
     Ok(ThermalFacts {
         heat_source_w,
         solar_absorbed_w: solar,
+        solar_cavity_w: cavity_solar,
         film_w: film,
         radiation_w: radiation,
-        internal_air_residual_w: air,
+        // Net heat into the air node: cavity faces plus the deposited solar.
+        internal_air_residual_w: air + cavity_solar,
         relative_error: (heat_in - film - radiation).abs() / heat_in,
         max_k: temperatures
             .values()
@@ -1644,7 +1730,20 @@ pub fn verify_thermal_receipt(
     let thermal = thermal_facts(&mesh, model, &temperatures, internal_air_k)?;
     let energy = &receipt["energy_balance"];
     let tolerance = model.energy_balance_tolerance;
-    let heat_in = thermal.heat_source_w + thermal.solar_absorbed_w;
+    let heat_in = thermal.heat_source_w + thermal.solar_absorbed_w + thermal.solar_cavity_w;
+    let transparent = model
+        .solar
+        .as_ref()
+        .is_some_and(|s| s.transparent_solar.is_some());
+    if (transparent && !has_cavity && thermal.solar_cavity_w > 0.)
+        || !close(&energy["solar_cavity_w"], thermal.solar_cavity_w, 1e-9)
+        || (receipt["applicability"]["transparent_solar"] == TRANSPARENT_SOLAR_STATEMENT)
+            != transparent
+    {
+        return Err(invalid(
+            "transparent glazing solar must be the declared conservative cavity deposit, labelled in the receipt applicability",
+        ));
+    }
     if !common_receipt(
         receipt,
         "CalculiX",
@@ -1691,8 +1790,15 @@ pub fn verify_thermal_receipt(
         ));
     }
     Ok(NumericalEvidence {
-        reference: "steady global energy balance: heat source + absorbed solar against film + radiation, recomputed from the native field".into(),
-        scope: "steady solid conduction with declared boundary inputs and one effective internal air node; no internal convection, condensation or physical validation".into(),
+        reference: "steady global energy balance: heat source + absorbed solar (+ transparent-glazing solar deposited in the internal air) against film + radiation, recomputed from the native field".into(),
+        scope: format!(
+            "steady solid conduction with declared boundary inputs and one effective internal air node; no internal convection, condensation or physical validation{}",
+            if transparent {
+                format!("; {TRANSPARENT_SOLAR_STATEMENT}")
+            } else {
+                String::new()
+            }
+        ),
         error_kind: "relative_energy_balance_error".into(),
         error: thermal.relative_error,
         tolerance,

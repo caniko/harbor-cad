@@ -55,6 +55,7 @@ struct ConditionsFile {
     schema_version: u32,
     classes: Vec<ClimateClass>,
     films: Vec<Film>,
+    internal_films: Vec<Film>,
 }
 
 #[derive(Deserialize)]
@@ -92,6 +93,8 @@ pub struct DesignPoint {
 pub struct Conditions {
     pub classes: Vec<ClimateClass>,
     pub films: Vec<Film>,
+    /// Natural convection on cavity surfaces inside closed enclosures.
+    pub internal_films: Vec<Film>,
     pub finishes: Vec<Finish>,
     /// Glazing that transmits solar: no finish, no absorbed-solar fallback.
     pub transparent_materials: Vec<String>,
@@ -188,6 +191,7 @@ impl Conditions {
         let loaded = Self {
             classes: conditions.classes,
             films: conditions.films,
+            internal_films: conditions.internal_films,
             finishes: finishes.finishes,
             transparent_materials: finishes.transparent_materials,
             library,
@@ -203,6 +207,7 @@ impl Conditions {
             .iter()
             .map(|c| (&c.id, &c.name))
             .chain(self.films.iter().map(|f| (&f.id, &f.name)))
+            .chain(self.internal_films.iter().map(|f| (&f.id, &f.name)))
             .chain(self.finishes.iter().map(|f| (&f.id, &f.name)));
         for (id, name) in named {
             if !token(id) || !ids.insert(id.as_str()) || name.trim().is_empty() {
@@ -214,7 +219,12 @@ impl Conditions {
                 "exactly one still-air (null wind_speed) film required",
             ));
         }
-        for f in &self.films {
+        if self.internal_films.iter().any(|f| f.wind_speed.is_some()) {
+            return Err(invalid(
+                "internal (closed-cavity) films are natural convection: null wind_speed",
+            ));
+        }
+        for f in self.films.iter().chain(&self.internal_films) {
             let id = f.id.as_str();
             context(
                 id,
@@ -301,6 +311,7 @@ impl Conditions {
     pub fn film(&self, id: &str) -> Result<&Film> {
         self.films
             .iter()
+            .chain(&self.internal_films)
             .find(|f| f.id == id)
             .ok_or_else(|| invalid(format!("unknown film {id}")))
     }
@@ -402,13 +413,14 @@ impl Conditions {
         ))
     }
 
-    /// `condition:<class>.<hot|cold>.<ambient_temperature|solar_irradiance|film_coefficient>`
-    /// or `finish:<id>.<solar_absorptance|emissivity>` (conservative ends:
-    /// absorptance high, emissivity low).
+    /// `condition:<class>.<hot|cold>.<ambient_temperature|solar_irradiance|film_coefficient>`,
+    /// `finish:<id>.<solar_absorptance|emissivity>` (conservative ends:
+    /// absorptance high, emissivity low) or `film:<id>.<low|high>` (the
+    /// caller names the end that is conservative for its use).
     pub fn lookup(&self, key: &str) -> Result<Sourced> {
         let bad = || {
             invalid(format!(
-                "sourced key {key} must be condition:<class>.<hot|cold>.<ambient_temperature|solar_irradiance|film_coefficient> or finish:<id>.<solar_absorptance|emissivity>"
+                "sourced key {key} must be condition:<class>.<hot|cold>.<ambient_temperature|solar_irradiance|film_coefficient> , finish:<id>.<solar_absorptance|emissivity> or film:<id>.<low|high>"
             ))
         };
         if let Some(rest) = key.strip_prefix("condition:") {
@@ -428,6 +440,20 @@ impl Conditions {
                 "film_coefficient" => Ok(p.film_coefficient),
                 _ => Err(bad()),
             };
+        }
+        if let Some((id, end_name)) = key.strip_prefix("film:").and_then(|r| r.split_once('.')) {
+            let high = match end_name {
+                "low" => false,
+                "high" => true,
+                _ => return Err(bad()),
+            };
+            let what = format!("film {id}");
+            return end(
+                &self.film(id)?.coefficient,
+                "heat_transfer_coefficient",
+                high,
+                &what,
+            );
         }
         let (id, field) = key
             .strip_prefix("finish:")

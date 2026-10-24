@@ -1106,7 +1106,40 @@ fn enclosure_and_calibration_examples_validate() {
     };
     let enclosure = read("design-enclosure.json");
     let prepared = prepare(&enclosure, Some("research")).unwrap();
-    assert_eq!(prepared.combinations, 6);
+    assert_eq!(prepared.combinations, 5);
+    // The single categorical lists only compatible MATERIAL__PROCESS__FINISH
+    // triples, so no evaluation is spent on a refused route x finish pair.
+    let library = harbor_cad::manufacturing::Library::builtin().unwrap();
+    let conditions = harbor_cad::conditions::Conditions::builtin().unwrap();
+    assert_eq!(enclosure.space.categorical.len(), 1);
+    for choice in &enclosure.space.categorical[0].choices {
+        let (material, process, finish) =
+            harbor_cad::design_providers::split_route(choice).unwrap();
+        let finish = finish.unwrap();
+        let process = library.process(process).unwrap();
+        assert!(
+            process.compatible_materials.iter().any(|m| m == material),
+            "{choice}"
+        );
+        assert!(
+            conditions
+                .finish(finish)
+                .unwrap()
+                .compatible_materials
+                .iter()
+                .any(|m| m == material),
+            "{choice}"
+        );
+        // ... and every finish gives the housing a sourced solar absorptance.
+        let (absorptance, _) = conditions.surface_optics(material, finish).unwrap();
+        assert!(
+            matches!(
+                absorptance,
+                harbor_cad::materials::PhysicalInput::Known { .. }
+            ),
+            "{choice}"
+        );
+    }
     let roles: Vec<_> = enclosure.templates["screen"]
         .iter()
         .map(|t| (t.role.as_str(), t.after.as_deref()))
@@ -1121,32 +1154,41 @@ fn enclosure_and_calibration_examples_validate() {
     );
     // Product-specific inputs are declared but missing: the derived FEM refuses
     // rather than run on invented values, so the thermal constraints stay unknown.
-    // The environment comes from the cited ETSI EN 300 019-1-4 class 4.1 points.
-    let params = Params::from([
-        (
-            "route".into(),
-            ParamValue::Choice("pa12-mjf__mjf-pa12".into()),
-        ),
-        (
-            "finish".into(),
-            ParamValue::Choice("pigment-black-polymer".into()),
-        ),
-    ]);
+    // The environment and the internal cavity film are cited values.
+    let params = Params::from([(
+        "route".into(),
+        ParamValue::Choice("pa12-mjf__mjf-pa12__pigment-black-polymer".into()),
+    )]);
     let metrics = compute_metrics(&enclosure, &params, &BTreeMap::new(), PROVIDERS);
     assert_eq!(metrics["quantity"], Some(50.));
     assert_eq!(metrics["ambient_hot_k"], Some(313.15));
     assert_eq!(metrics["solar_hot_w_m2"], Some(1120.));
     assert_eq!(metrics["film_hot_w_m2_k"], Some(2.2));
+    assert_eq!(metrics["internal_film_coefficient"], Some(1.2));
     assert_eq!(metrics["min_temperature_k"], Some(273.15 - 33.));
     assert_eq!(metrics["pcb_power_w"], None);
     assert_eq!(metrics["temperature_margin_k"], None);
     assert_eq!(metrics["component_temperature_margin_k"], None);
     assert_eq!(metrics["unit_cost_high_usd"], None);
     // With a simulated housing peak, PA12's -40 degC minimum leaves 7 K at the
-    // class 4.1 cold point, below the 10 K requirement.
+    // class 4.1 cold point, below the 10 K requirement; aluminium keeps 67 K
+    // cold-side, so its margin is the hot side.
     let simulated = BTreeMap::from([("max_temperature_k".to_string(), Some(330.))]);
     let metrics = compute_metrics(&enclosure, &params, &simulated, PROVIDERS);
     assert!((metrics["temperature_margin_k"].unwrap() - 7.).abs() < 1e-9);
+    let al = Params::from([(
+        "route".into(),
+        ParamValue::Choice("al-6061-t6__cnc-3axis-al__powder-coat-white".into()),
+    )]);
+    let metrics = compute_metrics(&enclosure, &al, &simulated, PROVIDERS);
+    assert!((metrics["temperature_margin_k"].unwrap() - (373.15 - 330.)).abs() < 1e-9);
+    // The glazing's conservative solar bound is carried into the export.
+    let bounds = conservative_bounds(&enclosure);
+    assert_eq!(bounds.len(), 1);
+    assert!(
+        bounds[0].starts_with("transparent_solar=deposit_incident_in_cavity: conservative_bound")
+    );
+    assert!(conservative_bounds(&read("design-enclosure-demo.json")).is_empty());
     let calibrate = read("design-calibrate.json");
     prepare(&calibrate, Some("research")).unwrap();
 }

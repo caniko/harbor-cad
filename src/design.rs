@@ -2375,6 +2375,41 @@ pub struct DesignReport {
     pub statement: String,
     pub physical_validation: String,
     pub synthetic_inputs: Vec<String>,
+    /// Conservative modelling assumptions approved in the envelope's child
+    /// requests (label `conservative_bound`); simulated results hold only
+    /// under them.
+    pub conservative_bounds: Vec<String>,
+}
+
+/// `transparent_solar` modes named anywhere in the envelope's child requests.
+pub fn conservative_bounds(env: &DesignEnvelope) -> Vec<String> {
+    fn walk(value: &Value, found: &mut BTreeSet<String>) {
+        match value {
+            Value::Object(map) => {
+                for (key, value) in map {
+                    if key == "transparent_solar"
+                        && let Some(mode) = value.as_str()
+                    {
+                        found.insert(format!(
+                            "transparent_solar={mode}: {}",
+                            crate::enclosure_thermal::TRANSPARENT_SOLAR_STATEMENT
+                        ));
+                    }
+                    walk(value, found);
+                }
+            }
+            Value::Array(items) => items.iter().for_each(|v| walk(v, found)),
+            _ => {}
+        }
+    }
+    let mut found = BTreeSet::new();
+    for template in env.templates.values().flatten() {
+        walk(&template.plan, &mut found);
+        if let Some(request) = &template.plan_request {
+            walk(request, &mut found);
+        }
+    }
+    found.into_iter().collect()
 }
 
 pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
@@ -2382,6 +2417,7 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
     let (intent, ..) = load(store, id)?;
     let env = &intent.envelope;
     let history = candidates(store, id)?;
+    let bounds = conservative_bounds(env);
     let winner = match status.incumbent {
         None => None,
         Some(index) => {
@@ -2457,7 +2493,7 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
         evaluations: status.budget.evaluations,
         feasible: status.feasible.len() as u32,
         statement: format!(
-            "{}Design state {}: winner is the best feasible evaluated candidate under the approved envelope. Process success is not physical validation; simulated constraints carry only their child jobs' numerical scope, and unknown constraints never pass.",
+            "{}{}Design state {}: winner is the best feasible evaluated candidate under the approved envelope. Process success is not physical validation; simulated constraints carry only their child jobs' numerical scope, and unknown constraints never pass.",
             if status.synthetic_inputs.is_empty() {
                 String::new()
             } else {
@@ -2466,11 +2502,20 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
                     status.synthetic_inputs.join(", ")
                 )
             },
+            if bounds.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    "CONSERVATIVE BOUND: simulated results assume {}. ",
+                    bounds.join("; ")
+                )
+            },
             status.state
         ),
         state: status.state,
         winner,
         physical_validation: "unqualified".into(),
         synthetic_inputs: status.synthetic_inputs,
+        conservative_bounds: bounds,
     })
 }

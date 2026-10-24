@@ -1,7 +1,8 @@
 //! Design-loop metric providers backed by the W1 manufacturing screens.
 //!
 //! Inputs come only from the envelope: the material/process from the
-//! categorical `route` (`MATERIAL__PROCESS`) or `material` + `process`
+//! categorical `route` (`MATERIAL__PROCESS` or `MATERIAL__PROCESS__FINISH`;
+//! the finish only affects the thermal template) or `material` + `process`
 //! parameters, and everything else from already-extracted metrics with these
 //! conventional names (SI):
 //!
@@ -75,10 +76,20 @@ fn choice<'a>(params: &'a Params, name: &str) -> Option<&'a str> {
     }
 }
 
-/// (material, process) from `route` or separate `material`/`process` choices.
+/// `MATERIAL__PROCESS` or `MATERIAL__PROCESS__FINISH` as (material, process, finish).
+pub fn split_route(route: &str) -> Option<(&str, &str, Option<&str>)> {
+    let mut parts = route.split("__");
+    let (material, process, finish) = (parts.next()?, parts.next()?, parts.next());
+    (parts.next().is_none() && ![Some(material), Some(process), finish].contains(&Some("")))
+        .then_some((material, process, finish))
+}
+
+/// (material, process) from `route` (a pair or a finished triple) or separate
+/// `material`/`process` choices.
 pub fn route(params: &Params) -> Option<(&str, &str)> {
     choice(params, "route")
-        .and_then(|r| r.split_once("__"))
+        .and_then(split_route)
+        .map(|(m, p, _)| (m, p))
         .or_else(|| Some((choice(params, "material")?, choice(params, "process")?)))
 }
 

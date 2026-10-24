@@ -51,15 +51,29 @@ shaded surface takes one label; the receipt's areas make this auditable.
 ## Model (`adapters/enclosure_thermal.py`)
 
 - Conductivity per region, constant and isotropic. A `library` material takes a
-  W1 `Library::builtin()` id or a design `route` `MATERIAL__PROCESS` and uses the
-  conservative range ends: conductivity low, emissivity low, solar absorptance
-  high. `declared` materials are `PhysicalInput`s.
+  W1 `Library::builtin()` id, a design `route` `MATERIAL__PROCESS` or a triple
+  `MATERIAL__PROCESS__FINISH` (the finish named once, here or in `finish`), and
+  uses the conservative range ends: conductivity low, emissivity low, solar
+  absorptance high. `declared` materials are `PhysicalInput`s.
 - Heat source: `heat_source_power` (W) in `heat_source_region` as `*DFLUX BF`,
   power divided by the meshed corner-node volume.
 - Exterior: `*FILM` at `film_coefficient` and `ambient_temperature` on ambient
   faces of `exposed_regions`. Other ambient faces are adiabatic.
 - Solar (optional): `*DFLUX S` = absorptance × irradiance × max(0, n·s) on the
   same faces. A missing absorptance for any exposed region refuses planning.
+- Transparent glazing (`pc`, `pc-uv`, `pmma`) has transmittance semantics and no
+  sourced absorptance. Under solar it refuses unless the spec sets
+  `solar.transparent_solar: "deposit_incident_in_cavity"`, a conservative
+  bound (modelling assumption): the full irradiance incident on the pane's
+  sun-facing exterior faces, G × max(0, n·s) × A, is added to the internal air
+  node. Nothing is reflected, absorbed in the pane or re-emitted outward, so
+  interior solar gain is an upper bound; the pane's own temperature is not
+  bounded. It requires a cavity. The receipt's `applicability.transparent_solar`
+  and the design export's `conservative_bounds` carry the
+  `conservative_bound` label. No sourced solar direct transmittance/absorptance
+  split (EN 410) was found for the library glazing; datasheets give light
+  transmission, shading coefficient or total g only, so no physically split
+  option exists.
 - Radiation (optional): `*RADIATE` to ambient with each exposed region's
   emissivity; missing emissivity refuses.
 - Internal air (modelling assumption): every cavity face exchanges heat with
@@ -77,8 +91,8 @@ per-input provenance and a synthetic flag, is part of the approved plan.
 `fem-imported-receipt.json` (with `mesh.json`, `reference.inp`, `reference.dat`)
 reports per-region `max_k`, `min_k` and volume-weighted `mean_k`, the global
 maximum node, position and regions, the internal air temperature and secant
-history, and the energy balance: heat source + absorbed solar against film +
-radiation, all integrated with three edge-midpoint points per face. The
+history, and the energy balance: heat source + absorbed solar + glazing
+solar deposited in the cavity (`solar_cavity_w`) against film + radiation, all integrated with three edge-midpoint points per face. The
 relative error must be ≤ `energy_balance_tolerance` (≤ 1e-3), as must the
 air-node residual. Rust recomputes the statistics and every energy term from
 the native field and mesh before publication. The receipt includes an
@@ -106,16 +120,17 @@ at O(h), because the transverse resolution is fixed. Gates are 1e-2 (slab),
 compares it with the route material's conservative service limit.
 Ambient, irradiance and exterior film come from the cited ETSI EN 300 019-1-4
 class 4.1 hot design point, and the minimum service check uses its cold point
-(see [design conditions](design-conditions.md)). A library material may name a
-`finish` from `data/finishes.json`; its sourced absorptance and emissivity
-override the material's, and missing finish values fall back to it. The
-categorical `finish` gives PA12 a sourced absorptance (black pigment) and the
-aluminium routes RAL 7035 powder coat. PCB power, board conductivity, the
-internal cavity film and the component limit are product-specific operator
-inputs declared `missing`, so the thermal child is blocked and those constraints
-stay unknown. The pc-uv window is transparent glazing. Its solar load is
-transmittance, which this model does not represent, so its solar-loaded solve
-refuses.
+(see [design conditions](design-conditions.md)). The internal film is the
+cited conservative low end of `enclosed-cavity-natural` (1.2 W/(m²·K)). The
+single categorical `route` lists only compatible `MATERIAL__PROCESS__FINISH`
+triples; the finish's sourced optics override the material's. The pc-uv window
+uses the `transparent_solar` conservative bound. PCB power, board conductivity
+and the component limit are product-specific operator inputs declared
+`missing`, so the thermal child is blocked until they are supplied.
+`python/tests/test_enclosure_feasibility.py` shows that with synthetic stand-ins
+for only those three inputs, an aluminium/white-powder-coat candidate on a
+structured analogue of the fixture is feasible on the pure-Python reference
+solver.
 `examples/design-enclosure-demo.json` uses `synthetic: true` values and a
 declared window. `design status`/`export` then list `synthetic_inputs`, and
 the export statement starts with `SYNTHETIC`.

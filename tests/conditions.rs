@@ -74,6 +74,14 @@ fn design_points_are_ordered_and_follow_the_standard() {
             .value,
         0.47
     );
+    // The closed-cavity film: the caller names the conservative (low) end.
+    let cavity = c.lookup("film:enclosed-cavity-natural.low").unwrap();
+    assert_eq!((cavity.value, cavity.unit), (1.2, "W/(m2*K)"));
+    assert!(cavity.provenance.contains("Churchill"));
+    assert_eq!(
+        c.lookup("film:enclosed-cavity-natural.high").unwrap().value,
+        8.2
+    );
 }
 
 #[test]
@@ -114,6 +122,8 @@ fn finish_fills_missing_absorptance_but_glazing_stays_refused() {
         "condition:etsi-4-1.hot",
         "finish:pigment-white-polymer.solar_absorptance",
         "finish:bare.color",
+        "film:enclosed-cavity-natural.mid",
+        "film:nope.low",
         "other:x",
     ] {
         assert!(c.lookup(key).is_err(), "{key}");
@@ -126,7 +136,15 @@ fn strict_validation_refuses_uncited_and_inconsistent_data() {
     let finishes = include_str!("../data/finishes.json");
     let load = |c: &str, f: &str| Conditions::load(c, f, Library::builtin().unwrap());
     load(conditions, finishes).unwrap();
+    // A closed-cavity (internal) film is natural convection: no wind speed.
+    let internal = conditions.rfind("\"wind_speed\": null").unwrap();
+    let windy = format!(
+        "{}\"wind_speed\": {{\"value\": 1, \"unit\": \"m/s\"}}{}",
+        &conditions[..internal],
+        &conditions[internal + "\"wind_speed\": null".len()..]
+    );
     let edits = [
+        (windy, true),
         (conditions.replacen("accessed 2026-10-24", "seen", 1), true),
         (
             conditions.replacen("\"synthetic\": false", "\"synthetic\": true", 1),

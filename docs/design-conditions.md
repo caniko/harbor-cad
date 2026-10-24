@@ -48,6 +48,17 @@ These are convective coefficients only. Radiation is modelled separately.
   movement of 50 m/s, L = 0.1–0.5 m and film temperature -100…+20 °C, giving
   Re = 3.3e5–4.3e6. The computed range is 86.4–187.8 W/(m²·K).
 
+- `enclosed-cavity-natural` (section `internal_films`), 1.2–8.2 W/(m²·K).
+  Natural convection on the cavity surfaces of a small closed electronics
+  enclosure. Laminar Churchill–Chu vertical plate (all Ra) and McAdams
+  heated-face-down plate Nu = 0.27 Ra^¼ (only where 1e5 ≤ Ra ≤ 1e10; Simons,
+  Electronics Cooling 2001), with Çengel Table A-9 air. Inputs: L = 0.02–0.15 m,
+  surface-to-air ΔT = 2–20 K, film temperature 40–100 °C, giving
+  Ra = 5.6e2–5.3e6. Vertical gives 2.48–8.17 and face-down 1.23–3.03
+  W/(m²·K), rounded outward. The low end is the design value: cavity radiation
+  and gap conduction are not credited, so it is conservative for interior air
+  and board temperatures. Read it as `film:enclosed-cavity-natural.low`.
+
 ## Design points
 
 `design_point(class, Point::Hot | Point::Cold)` returns SI values with their
@@ -78,8 +89,10 @@ known finish value overrides the material's value, and a missing one falls back
 to it. `bare` applies no finish, so the material's own values are returned.
 Transparent glazing (`pc`, `pc-uv`, `pmma`) is refused with every finish. Its
 solar load is transmittance, not surface absorption, so no absorbed-solar
-fallback exists for it. Design keys `finish:<id>.solar_absorptance` (high end)
-and `finish:<id>.emissivity` (low end) return the conservative ends.
+fallback exists for it; the thermal model's explicit `transparent_solar`
+conservative bound is the only route (see [enclosure thermal](enclosure-thermal.md)). Design keys `finish:<id>.solar_absorptance` (high end)
+and `finish:<id>.emissivity` (low end) return the conservative ends;
+`film:<id>.<low|high>` returns the named end of any film.
 
 | Finish | α_s | ε | Source | Compatible |
 |---|---|---|---|---|

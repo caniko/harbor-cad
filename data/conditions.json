@@ -430,5 +430,27 @@
         "synthetic": false
       }
     }
+  ],
+  "internal_films": [
+    {
+      "id": "enclosed-cavity-natural",
+      "name": "Internal natural convection on cavity surfaces of a small closed electronics enclosure (laminar, 0.02-0.15 m surfaces)",
+      "wind_speed": null,
+      "coefficient": {
+        "availability": "known",
+        "value": {
+          "low": {
+            "value": 1.2,
+            "unit": "W/(m2*K)"
+          },
+          "high": {
+            "value": 8.2,
+            "unit": "W/(m2*K)"
+          }
+        },
+        "provenance": "https://www.electronics-cooling.com/2001/08/simplified-formula-for-estimating-natural-convection-heat-transfer-coefficient-on-a-flat-plate/ | R. E. Simons, Simplified formula for estimating natural convection heat transfer coefficient on a flat plate, Electronics Cooling (2001-08-01), after McAdams (1954) | accessed 2026-10-24 | laminar Nu = C Ra^(1/4): vertical C 0.59, horizontal heated up 0.54, heated down (or cooled up) 0.27; no nearby surfaces, laminar only ;; https://thermal.mayahtt.com/tmwiz/convect/natural/vp-isot/about.htm | Maya HTT TMWiz: natural convection, isothermal vertical plate (Churchill & Chu 1975; Incropera & DeWitt eq. 9.26/9.27) | accessed 2026-10-24 | laminar Churchill-Chu Nu = 0.68 + 0.670 Ra^(1/4)/[1+(0.492/Pr)^(9/16)]^(4/9), valid down to Ra -> 0 ;; https://www.me.psu.edu/cimbala/me420/Links/Table_A_9_CC_Properties_of_Air.pdf | Cengel & Cimbala Table A-9 Properties of air at 1 atm pressure (Penn State ME420 link) | accessed 2026-10-24 | k, alpha, nu, Pr at film temperatures 40-100 degC ;; derivation: inside surfaces L 0.02-0.15 m, surface-to-cavity-air dT 2-20 K, film 40-100 degC (hot design point 40 degC upward), beta = 1/T_film, g 9.81 m/s2 -> Ra 5.6e2-5.3e6; vertical Churchill-Chu 2.48-8.17 W/(m2*K); heated-down McAdams (only where 1e5 <= Ra <= 1e10) 1.23-3.03 W/(m2*K); range rounded outward 1.2-8.2. Convective part only: cavity radiation, conduction across thin gaps and forced flow are not credited, so the low end is conservative (low) for interior air and board temperatures. A sealed cavity with nearby walls departs from isolated-plate boundary layers; this is an engineering bound, not a measured enclosure value.",
+        "synthetic": false
+      }
+    }
   ]
 }

@@ -291,3 +291,28 @@ def test_analytical_cpu_references_pass_at_two_refinements(capsys):
         assert case["levels"][-1]["normalized_max_abs_error"] <= case["gate"]
     air = report["cases"]["lumped_internal_air_chain"]["levels"][-1]
     assert air["internal_air_k"] > 300.0
+
+
+def test_transparent_solar_is_explicit_and_needs_a_cavity_air_node():
+    rec, data = series_case(radiation=False, solar=True)
+    data["materials"]["housing"]["solar_absorptance"] = None
+    with pytest.raises(ValueError, match="absorptance"):
+        enclosure.validate_thermal(data, ["housing", "pcb"])
+    for regions in (["pcb"], [], ["housing", "housing"]):
+        changed = copy.deepcopy(data)
+        changed["solar"] |= {"transparent_solar": "deposit_incident_in_cavity"}
+        changed["solar"]["transparent_regions"] = regions
+        with pytest.raises(ValueError, match="transparent_solar"):
+            enclosure.validate_thermal(changed, ["housing", "pcb"])
+    data["solar"] |= {
+        "transparent_solar": "deposit_incident_in_cavity",
+        "transparent_regions": ["housing"],
+    }
+    enclosure.validate_thermal(data, ["housing", "pcb"])
+    # The series case has no cavity: the deposit has nowhere to go.
+    with pytest.raises(ValueError, match="cavity"):
+        enclosure.boundary_model(rec, data, solid)
+    statement = enclosure.applicability(data)["transparent_solar"]
+    assert statement.startswith("conservative_bound")
+    # Rust gates the receipt on the same label text.
+    assert f'"{statement}"' in (ROOT / "src/enclosure_thermal.rs").read_text()

@@ -609,6 +609,45 @@ fn thermal_plan(store: &Store, cad: &str, mesh_sha256: &str) -> ExecutionPlan {
     .unwrap()
 }
 
+/// A CalculiX thermal receipt for a uniform field balancing `heat_in` W.
+fn receipt_fixture(
+    plan: &ExecutionPlan,
+    mesh_sha256: &str,
+    mesh_value: &Value,
+    field: &str,
+    uniform: f64,
+    heat_in: f64,
+) -> Value {
+    let region = json!({"max_k":uniform,"min_k":uniform,"mean_k":uniform});
+    let checks: serde_json::Map<String, Value> = [
+        "operation_closure_only",
+        "no_gpu_nodes",
+        "no_sysfs",
+        "no_host_home",
+        "no_session_bus",
+        "no_worker_socket",
+        "network_namespace_isolated",
+        "descriptor_readonly",
+        "source_brep_readonly",
+        "named_source_only",
+    ]
+    .into_iter()
+    .map(|k| (k.to_string(), json!(true)))
+    .collect();
+    json!({"schema_version":1,"adapter":"CalculiX","backend":"cpu","factorization":"SPOOLES","executed":true,
+        "software_fallback":false,"synthetic":true,"precision":"float64","formulation":et::THERMAL_FORMULATION,
+        "calculix_version":"2.23","gmsh_version":"4.15.2",
+        "calculix_source_sha256":"9c88385c10fb04f5dc6c4e98027a51bebdd8aee3920e05190d6c1dd08357d6e7",
+        "gmsh_source_sha256":"be3f66f225d27ba9fa014f07e83169285da8a051b0e8ab7103d88066b39bdd3e",
+        "request_sha256":digest(&et::thermal_descriptor(plan).unwrap()).unwrap(),"mesh_sha256":mesh_sha256,
+        "native_field_sha256":field,"element_type":"C3D4","nodes":mesh_value["nodes"].as_object().unwrap().len(),
+        "elements":144,"regions":{"housing":region,"pcb":region},"global_max":{"temperature_k":uniform},
+        "internal_air_k":null,"energy_balance":{"heat_source_w":2.,"solar_absorbed_w":0.,"solar_cavity_w":0.,"film_w":heat_in,"radiation_w":0.,
+        "heat_in_w":heat_in,"heat_out_w":heat_in,"relative_error":0.,"tolerance":1e-3,"internal_air_residual_w":0.,"internal_air_relative_error":0.},
+        "temperature_unit":"K","applicability":{"regime":"steady state"},"gap_healing":false,"physical_validation":"unqualified",
+        "sandbox":{"policy":"harbor-cad-fem-imported-cpu-v1","checks":checks}})
+}
+
 #[test]
 fn thermal_receipt_recomputes_statistics_and_gates_the_energy_balance() {
     let temp = tempfile::tempdir().unwrap();
@@ -654,34 +693,7 @@ fn thermal_receipt_recomputes_statistics_and_gates_the_energy_balance() {
         )
     };
     let field = write_field(&|_| uniform);
-    let region = json!({"max_k":uniform,"min_k":uniform,"mean_k":uniform});
-    let checks: serde_json::Map<String, Value> = [
-        "operation_closure_only",
-        "no_gpu_nodes",
-        "no_sysfs",
-        "no_host_home",
-        "no_session_bus",
-        "no_worker_socket",
-        "network_namespace_isolated",
-        "descriptor_readonly",
-        "source_brep_readonly",
-        "named_source_only",
-    ]
-    .into_iter()
-    .map(|k| (k.to_string(), json!(true)))
-    .collect();
-    let receipt = json!({"schema_version":1,"adapter":"CalculiX","backend":"cpu","factorization":"SPOOLES","executed":true,
-        "software_fallback":false,"synthetic":true,"precision":"float64","formulation":et::THERMAL_FORMULATION,
-        "calculix_version":"2.23","gmsh_version":"4.15.2",
-        "calculix_source_sha256":"9c88385c10fb04f5dc6c4e98027a51bebdd8aee3920e05190d6c1dd08357d6e7",
-        "gmsh_source_sha256":"be3f66f225d27ba9fa014f07e83169285da8a051b0e8ab7103d88066b39bdd3e",
-        "request_sha256":digest(&et::thermal_descriptor(&plan).unwrap()).unwrap(),"mesh_sha256":mesh.sha256,
-        "native_field_sha256":field,"element_type":"C3D4","nodes":mesh_value["nodes"].as_object().unwrap().len(),
-        "elements":144,"regions":{"housing":region,"pcb":region},"global_max":{"temperature_k":uniform},
-        "internal_air_k":null,"energy_balance":{"heat_source_w":2.,"solar_absorbed_w":0.,"film_w":2.,"radiation_w":0.,
-        "heat_in_w":2.,"heat_out_w":2.,"relative_error":0.,"tolerance":1e-3,"internal_air_residual_w":0.,"internal_air_relative_error":0.},
-        "temperature_unit":"K","applicability":{"regime":"steady state"},"gap_healing":false,"physical_validation":"unqualified",
-        "sandbox":{"policy":"harbor-cad-fem-imported-cpu-v1","checks":checks}});
+    let receipt = receipt_fixture(&plan, &mesh.sha256, &mesh_value, &field, uniform, 2.);
     let evidence = et::verify_thermal_receipt(&plan, &root, &receipt).unwrap();
     assert!(evidence.error < 1e-12 && evidence.tolerance == 1e-3);
     for (pointer, value) in [
@@ -739,6 +751,163 @@ fn final_temperature_block_is_the_steady_result() {
 }
 
 #[test]
+fn finished_route_triples_and_transparent_glazing_resolve_explicitly() {
+    let temp = tempfile::tempdir().unwrap();
+    let store = Store::open(&temp.path().join("state")).unwrap();
+    let id = boxes(&store);
+    let (_, source) = et::solids(&store, &id, &request(&id).regions, &mesh_spec()).unwrap();
+    let resolve = |value: Value| {
+        et::resolve(
+            &serde_json::from_value::<EnclosureThermalInputs>(value)?,
+            &source.geometry,
+        )
+    };
+    // A MATERIAL__PROCESS__FINISH triple carries the finish once.
+    let mut triple = inputs();
+    triple["materials"]["housing"] =
+        json!({"kind":"library","id":"al-6061-t6__cnc-3axis-al__powder-coat-white"});
+    let housing = resolve(triple.clone()).unwrap().materials["housing"].clone();
+    assert_eq!(
+        housing.source,
+        "library:al-6061-t6+finish:powder-coat-white"
+    );
+    assert_eq!(housing.solar_absorptance, Some(0.22));
+    assert_eq!(housing.emissivity, Some(0.82));
+    for id in [
+        json!({"kind":"library","id":"al-6061-t6__cnc-3axis-al__powder-coat-white","finish":"powder-coat-white"}),
+        json!({"kind":"library","id":"al-6061-t6__cnc-3axis-al__x__y"}),
+        json!({"kind":"library","id":"al-6061-t6____powder-coat-white"}),
+        json!({"kind":"library","id":"al-6061-t6__cnc-3axis-al__pigment-black-polymer"}),
+    ] {
+        let mut changed = inputs();
+        changed["materials"]["housing"] = id.clone();
+        assert!(resolve(changed).is_err(), "{id}");
+    }
+    // Exposed transparent glazing under solar refuses unless the conservative
+    // cavity deposit is declared; it is never given an absorptance.
+    let mut glazing = inputs();
+    glazing["materials"]["pcb"] = json!({"kind":"library","id":"pc-uv"});
+    glazing["exposed_regions"] = json!(["housing", "pcb"]);
+    let message = resolve(glazing.clone()).unwrap_err().to_string();
+    assert!(message.contains("transparent_solar"), "{message}");
+    glazing["solar"]["transparent_solar"] = json!("deposit_incident_in_cavity");
+    let model = resolve(glazing.clone()).unwrap();
+    let solar = model.solar.as_ref().unwrap();
+    assert_eq!(solar.transparent_regions, ["pcb"]);
+    assert_eq!(model.materials["pcb"].solar_absorptance, None);
+    // An opaque region cannot be declared transparent to skip its absorptance.
+    let mut forged = model.clone();
+    forged.solar.as_mut().unwrap().transparent_regions = vec!["housing".into(), "pcb".into()];
+    assert!(forged.validate(&source.geometry).is_err());
+    let mut forged = model.clone();
+    forged.solar.as_mut().unwrap().transparent_solar = None;
+    assert!(forged.validate(&source.geometry).is_err());
+    glazing["solar"]["transparent_solar"] = json!("absorb_half");
+    assert!(resolve(glazing).is_err());
+}
+
+#[test]
+fn transparent_cavity_deposit_enters_the_air_node_and_the_receipt_label() {
+    let temp = tempfile::tempdir().unwrap();
+    let store = Store::open(&temp.path().join("state")).unwrap();
+    let cad = boxes(&store);
+    let root = temp.path().join("native");
+    std::fs::create_dir(&root).unwrap();
+    // The pcb end face (x = 0.03, 1e-4 m2) bounds an internal cavity.
+    let mut mesh_value = box_mesh(2);
+    let nodes = mesh_value["nodes"].clone();
+    let elements = mesh_value["elements"].clone();
+    for face in mesh_value["boundary_faces"].as_array_mut().unwrap() {
+        let element = &elements[face[0].as_u64().unwrap().to_string()];
+        let corners =
+            [[0, 1, 2], [0, 3, 1], [1, 3, 2], [2, 3, 0]][face[1].as_u64().unwrap() as usize - 1];
+        if corners.iter().all(|c| {
+            nodes[element[*c].as_u64().unwrap().to_string()][0]
+                .as_f64()
+                .unwrap()
+                > 0.03 - 1e-12
+        }) {
+            face[2] = json!("cavity");
+        }
+    }
+    let mesh = commit_artifact(
+        &root,
+        "mesh.json",
+        &serde_json::to_vec(&mesh_value).unwrap(),
+        "json",
+        "fixture",
+    )
+    .unwrap();
+    let (_, source) = et::solids(&store, &cad, &request(&cad).regions, &mesh_spec()).unwrap();
+    let mut spec = inputs();
+    spec["materials"]["pcb"] = json!({"kind":"library","id":"pc-uv"});
+    spec["exposed_regions"] = json!(["housing", "pcb"]);
+    spec["radiation"] = json!(false);
+    spec["solar"]["transparent_solar"] = json!("deposit_incident_in_cavity");
+    let model = et::resolve(&serde_json::from_value(spec).unwrap(), &source.geometry).unwrap();
+    let (ambient, film, internal) = (
+        model.ambient_k,
+        model.film_w_m2_k,
+        model.internal_film_w_m2_k,
+    );
+    let plan = ExecutionPlan::cad_solids(
+        CadSolidsRecipe {
+            source,
+            thermal: Some(EnclosureThermalSpec {
+                schema_version: 1,
+                mesh_job: uuid::Uuid::new_v4().to_string(),
+                mesh_plan_digest: "c".repeat(64),
+                mesh_sha256: mesh.sha256.clone(),
+                thermal: model,
+            }),
+        },
+        "research".into(),
+    )
+    .unwrap();
+    // Sun from +z: housing top 2e-4 m2 absorbs 0.3*800; the pc-uv top 1e-4 m2
+    // deposits all 800 W/m2 in the air node. Film on 1.3e-3 m2 of ambient faces.
+    let deposit = 800. * 1e-4;
+    let heat_in = 2. + 0.3 * 800. * 2e-4 + deposit;
+    let uniform = ambient + heat_in / (film * 1.3e-3);
+    let air = uniform + deposit / (internal * 1e-4);
+    let mut text = String::from(" temperatures for set NALL and time  0.1000000E+01\n\n");
+    let mut ids: Vec<u64> = nodes
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(|k| k.parse().unwrap())
+        .collect();
+    ids.sort_unstable();
+    for n in ids {
+        text.push_str(&format!("{n:10} {uniform:.15E}\n"));
+    }
+    std::fs::write(root.join("reference.dat"), &text).unwrap();
+    use sha2::{Digest, Sha256};
+    let field = format!("{:x}", Sha256::digest(text.as_bytes()));
+    let mut receipt = receipt_fixture(&plan, &mesh.sha256, &mesh_value, &field, uniform, heat_in);
+    receipt["internal_air_k"] = json!(air);
+    receipt["energy_balance"]["solar_cavity_w"] = json!(deposit);
+    receipt["applicability"]["transparent_solar"] = json!(et::TRANSPARENT_SOLAR_STATEMENT);
+    let evidence = et::verify_thermal_receipt(&plan, &root, &receipt).unwrap();
+    assert!(evidence.error < 1e-9, "{evidence:?}");
+    assert!(evidence.scope.contains("conservative_bound"));
+    for (pointer, value) in [
+        ("/applicability/transparent_solar", Value::Null),
+        ("/energy_balance/solar_cavity_w", json!(0.)),
+        ("/energy_balance/heat_in_w", json!(heat_in - deposit)),
+        // Without the deposit the air node would sit at the surface temperature.
+        ("/internal_air_k", json!(uniform)),
+    ] {
+        let mut changed = receipt.clone();
+        *changed.pointer_mut(pointer).unwrap() = value;
+        assert!(
+            et::verify_thermal_receipt(&plan, &root, &changed).is_err(),
+            "{pointer}"
+        );
+    }
+}
+
+#[test]
 fn enclosure_examples_chain_variant_general_mesh_and_enclosure_thermal() {
     use harbor_cad::design::{DesignEnvelope, prepare};
     let read = |name: &str| -> (Value, DesignEnvelope) {
@@ -783,7 +952,7 @@ fn enclosure_examples_chain_variant_general_mesh_and_enclosure_thermal() {
             .collect();
         // The pilot takes its environment from cited conditions and leaves only
         // product-specific inputs missing; the demo labels every input synthetic.
-        assert_eq!(declared.len(), if synthetic { 6 } else { 4 }, "{name}");
+        assert_eq!(declared.len(), if synthetic { 6 } else { 3 }, "{name}");
         assert!(declared.iter().all(|input| if synthetic {
             input["synthetic"] == true
         } else {
@@ -797,7 +966,17 @@ fn enclosure_examples_chain_variant_general_mesh_and_enclosure_thermal() {
             .iter()
             .filter(|m| m["source"]["kind"] == "sourced")
             .count();
-        assert_eq!(sourced, if synthetic { 0 } else { 4 }, "{name}");
+        assert_eq!(sourced, if synthetic { 0 } else { 5 }, "{name}");
+        // The pilot's glazing takes the explicit conservative solar bound.
+        let spec = &raw["templates"]["screen"][2]["plan_request"]["request"]["spec"];
+        assert_eq!(
+            spec["solar"]["transparent_solar"],
+            if synthetic {
+                Value::Null
+            } else {
+                json!("deposit_incident_in_cavity")
+            }
+        );
         let housing = sources
             .iter()
             .find(|m| m["metric"] == "max_temperature_k")
