@@ -155,8 +155,9 @@ or a declared input). Any missing input, missing sourced data or incompatible
 route gives an unknown value.
 
 `max_supported_pcb_power_w` (W, `estimated`) is the swept PCB dissipation a
-candidate supports at the hot point. With radiation off and constant films and
-solar, the steady model is linear, so nodal temperatures are affine in power.
+candidate supports at the hot point. With radiation off or linearized (its
+lower bound is a constant film) and constant films and solar, the steady
+model is linear, so nodal temperatures are affine in power.
 Two solves at `pcb_power_low_w` and `pcb_power_high_w` give per-criterion
 chords. The criteria are the PCB peak and the internal air against
 `component_max_temperature_k` (components sit between them), and the housing
@@ -227,8 +228,9 @@ route × finish pair. The screen chain is `variant` (`plan_cad_variant` of the
 enclosure fixture's `Params` sheet, with all five thermal regions) → `mesh`
 (`plan_cad_solid_mesh`, a conformal tetrahedral mesh of `gasket`, `housing`,
 `lid`, `pcb` and `window`, 6 mm) → `thermal_lo` and `thermal_hi`
-(`plan_enclosure_thermal` at 1 W and 15 W in radiation-free `power_sweep`
-mode; see [enclosure thermal](enclosure-thermal.md)). The refine tier
+(`plan_enclosure_thermal` at 1 W and 15 W in linear `power_sweep` mode with
+`radiation: "linearized_lower_bound"`; see
+[enclosure thermal](enclosure-thermal.md)). The refine tier
 (`refine_top_k` 1) remeshes at 4 mm, chains `thermal_lo` → `thermal_hi` →
 `thermal_check`, and runs the check at the superposed supported power. The
 objective minimizes `unit_cost_high_usd` at a declared quantity of 50. The
@@ -237,9 +239,10 @@ constraints are `temperature_margin_k ≥ 10 K` (housing at 1 W and the class
 `max_supported_pcb_power_w ≥ 1 W`. `pareto_metric` reports cost vs supported
 power. PCB power is no longer an operator input. The swept range (1–15 W) and
 the 10 K housing margin are declared requirements. The component limit
-(`electronics:component-limit-industrial.low`, 85 °C) and the isotropic board
-conductivity (`electronics:pcb-fr4-copper-through-plane.low`, 0.26 W/(m·K))
-are cited conservative defaults, not product data (see
+(`electronics:component-limit-industrial.low`, 85 °C) and the orthotropic
+board conductivity (`electronics:pcb-fr4-copper-in-plane.low`, 8.1 W/(m·K),
+and `electronics:pcb-fr4-copper-through-plane.low`, 0.26 W/(m·K)) are cited
+conservative defaults, not product data (see
 [design conditions](design-conditions.md)). The minimum wall is checked
 against the conservative end of the process's minimum-wall range.
 
@@ -253,24 +256,25 @@ Templates read it through `$input`, like a declared input. The internal cavity
 film is the sourced `film:enclosed-cavity-natural.low` (1.2 W/(m²·K)). The
 pc-uv window has no sourced absorptance, so its solar load uses the explicit
 conservative bound `transparent_solar: "deposit_incident_in_cavity"` (all
-incident irradiance enters the internal air node); `design export` lists it
-under `conservative_bounds` and prefixes the statement with
-`CONSERVATIVE BOUND`.
+incident irradiance enters the internal air node); `design export` lists it, and the
+linearized radiation bound, under `conservative_bounds` and prefixes the
+statement with `CONSERVATIVE BOUND`.
 
 `python/tests/test_enclosure_feasibility.py` solves the
 `al-6061-t6__cnc-3axis-al__powder-coat-white` candidate on a structured
 analogue of the fixture with the pure-Python reference solver (not CalculiX),
-using only cited values. Without radiation, the midpoint solve matches the
-chords within 0.06 K, and the air node matches exactly. With radiation the air
-deviates by 0.16 K, which is why `power_sweep` refuses radiation. Findings:
+using only cited values. With radiation off or linearized, the midpoint
+solve matches the chords within 0.1 K, and the air node matches exactly. With
+T⁴ radiation the air deviates by 0.16 K, which is why `power_sweep` refuses
+it. Findings:
 
-- With the window, the candidate supports no swept power. At 1 W the
-  stacked conservative bounds (window solar deposited in the air, no
-  radiation credit, the 1.2 W/(m²·K) cavity film) give 373.6 K internal air
-  and a 358.8 K PCB peak, both above the 358.15 K default limit.
-- The same analogue with an opaque lid supports 2.04 W, bound by the PCB
-  peak. The verification solve reaches the limit to within 1e-12 K, and the
-  housing chord is 0.14 K conservative.
+- With the window and both lower-bound credits (pilot), the candidate supports
+  10.42 W (opaque lid 11.10 W), bound by the PCB peak; the verification solve
+  matches the chords within 0.04 K. The ablation is in
+  [enclosure thermal](enclosure-thermal.md).
+- Without the credits (no radiation, isotropic 0.26 W/(m·K) board), the
+  window case supports no swept power: 373.6 K internal air and a 358.8 K PCB
+  peak at 1 W, above the 358.15 K limit; the opaque lid supports 2.04 W.
 - Native FreeCAD/Gmsh/CalculiX runtime qualification waits on the security
   hold.
 - PA12 stays a candidate but can never pass. Its sourced minimum service

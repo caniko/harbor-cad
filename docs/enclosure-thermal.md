@@ -50,11 +50,25 @@ shaded surface takes one label; the receipt's areas make this auditable.
 
 ## Model (`adapters/enclosure_thermal.py`)
 
-- Conductivity per region, constant and isotropic. A `library` material takes a
+- Conductivity per region, constant and isotropic, or orthotropic for a
+  declared plate (below). A `library` material takes a
   W1 `Library::builtin()` id, a design `route` `MATERIAL__PROCESS` or a triple
   `MATERIAL__PROCESS__FINISH` (the finish named once, here or in `finish`), and
   uses the conservative range ends: conductivity low, emissivity low, solar
   absorptance high. `declared` materials are `PhysicalInput`s.
+- Orthotropic plate (optional, e.g. the PCB): a `declared` material with
+  `in_plane_conductivity` uses `conductivity` along the region's thinnest world
+  axis and the in-plane value along the other two. Planning refuses unless the
+  CAD volume fills the world bounding box within 1e-9 (axis-aligned box) and
+  the thickness is at most half of each other extent. The deck writes
+  `*CONDUCTIVITY,TYPE=ORTHO` (data line `k11,k22,k33`) and an explicit identity
+  `*ORIENTATION,NAME=OR_<REGION>` (`1.,0.,0.,0.,1.,0.`: point a on local x,
+  point b in local xy) referenced by `*SOLID SECTION,...,ORIENTATION=` (CalculiX
+  manual, `*CONDUCTIVITY`, `*ORIENTATION`, `*SOLID SECTION`). The reference
+  solver uses the same diagonal tensor in its tetra stiffness. The pilot uses
+  the cited low ends, 8.1 in-plane and 0.26 W/(m·K) through-plane. Both are
+  lower bounds, the in-plane one only for boards with continuous copper planes
+  (a board requirement; see [design conditions](design-conditions.md)).
 - Heat source: `heat_source_power` (W) in `heat_source_region` as `*DFLUX BF`,
   power divided by the meshed corner-node volume.
 - Exterior: `*FILM` at `film_coefficient` and `ambient_temperature` on ambient
@@ -74,14 +88,24 @@ shaded surface takes one label; the receipt's areas make this auditable.
   split (EN 410) was found for the library glazing; datasheets give light
   transmission, shading coefficient or total g only, so no physically split
   option exists.
-- Radiation (optional): `*RADIATE` to ambient with each exposed region's
-  emissivity; missing emissivity refuses.
+- Radiation (optional): `true` writes `*RADIATE` to ambient with each exposed
+  region's emissivity; missing emissivity refuses.
+- Linearized radiation (`radiation: "linearized_lower_bound"`, conservative
+  bound): each exposed region's `*FILM` coefficient becomes h + h_r with
+  h_r = 4εσTa³ (low-end ε; a region without a sourced ε gets no credit, never
+  a default). For T ≥ Ta, T⁴ − Ta⁴ = (T − Ta)(T³ + T²Ta + TTa² + Ta³) ≥
+  4Ta³(T − Ta), and by convexity of T⁴ it holds for any T. Surroundings colder
+  than the ambient air (sky) only add cooling, so the ambient sink understates
+  cooling too. The model stays linear. The receipt reports `exterior_min_k`
+  (coldest node on exposed exterior faces); the adapter and Rust refuse the
+  claim if it is below ambient. `applicability.radiation` and the design
+  export's `conservative_bounds` carry the `conservative_bound` label.
 - Power sweep (optional `power_sweep: true`): the design loop superposes solves
   at two heat-source powers. That is exact only for a linear model, so
-  planning refuses `power_sweep` together with `radiation`. Constant films,
-  constant solar and the air-node coupling are linear, so every nodal
-  temperature is affine in power. Dropping radiation is conservative at the hot
-  point, because surfaces there are above ambient and radiation only cools.
+  planning refuses `power_sweep` together with `radiation: true`; the
+  linearized bound is allowed. Constant films, constant solar and the air-node
+  coupling are linear, so every nodal temperature is affine in power. Dropping
+  radiation, or crediting only its linearized lower bound, is conservative.
 - Internal air (modelling assumption): every cavity face exchanges heat with
   one well-mixed air node through `internal_film_coefficient`. The adapter
   runs a secant search on the node temperature until its net heat flow is
@@ -122,7 +146,8 @@ at O(h), because the transverse resolution is fixed. Gates are 1e-2 (slab),
 
 `examples/design-enclosure.json` chains variant → `plan_cad_solid_mesh` →
 two `plan_enclosure_thermal` solves at 1 W and 15 W PCB power in
-`power_sweep` mode (radiation off). Their receipts (`/regions/pcb/max_k`,
+`power_sweep` mode with the linearized radiation bound and the orthotropic
+board. Their receipts (`/regions/pcb/max_k`,
 `/internal_air_k`, `/regions/housing/max_k`) feed `max_supported_pcb_power_w`
 by linear superposition (see [design loop](design-loop.md)). On the refine
 tier, a third solve at that power must match the superposed temperatures
@@ -132,17 +157,27 @@ Ambient, irradiance and exterior film come from the cited ETSI EN 300 019-1-4
 class 4.1 hot design point, and the minimum service check uses its cold point
 (see [design conditions](design-conditions.md)). The internal film is the
 cited conservative low end of `enclosed-cavity-natural` (1.2 W/(m²·K)). The
-component limit (85 °C) and the board conductivity (0.26 W/(m·K), isotropic;
-anisotropy not modelled) are cited conservative defaults, not product data.
+component limit (85 °C) and the board conductivities (8.1 in-plane,
+0.26 W/(m·K) through-plane) are cited conservative defaults, not product data.
 The single categorical `route` lists only compatible `MATERIAL__PROCESS__FINISH`
 triples; the finish's sourced optics override the material's. The pc-uv window
 uses the `transparent_solar` conservative bound.
 `python/tests/test_enclosure_feasibility.py` checks the superposition against
 the pure-Python reference solver on a structured analogue of the fixture.
-Without radiation the chords hold within 0.06 K, and with radiation they do
-not. The aluminium/white-powder-coat candidate with the window supports no
-swept power: the stacked conservative bounds put the internal air at 373.6 K
-at 1 W. With an opaque lid it supports 2.04 W.
+With the radiation off or linearized, the chords hold within 0.1 K, and with
+T⁴ radiation they do not. Supported power of the aluminium/white-powder-coat
+candidate (verified by a third solve within 0.5 K; the PCB peak binds):
+
+| Credit | With window | Opaque lid |
+|---|---|---|
+| none (isotropic 0.26, no radiation) | none (air 373.6 K at 1 W) | 2.04 W |
+| linearized radiation | 10.11 W | 10.77 W |
+| orthotropic board | none | 2.08 W |
+| both (pilot) | 10.42 W | 11.10 W |
+
+The window cavity deposit and the 1.2 W/(m²·K) cavity film stay. The
+analogue's uniform board source and coarse board mesh leave little for
+in-plane spreading to do, so the orthotropic gain there is small.
 `examples/design-enclosure-demo.json` uses `synthetic: true` values and a
 declared window. `design status`/`export` then list `synthetic_inputs`, and
 the export statement starts with `SYNTHETIC`.
@@ -151,7 +186,8 @@ the export statement starts with `SYNTHETIC`.
 
 This recipe is not qualified. The native Gmsh/CalculiX worker gate waits on the
 security hold, and no CalculiX run has been observed. It does not cover
-transients, internal convection, view-factor radiation, sky temperature,
+transients, internal convection, view-factor radiation, sky temperature
+(the linearized bound only ignores sky cooling, which is conservative),
 condensation, temperature-dependent properties, contact resistance or
 mounting conduction. Process success is not physical validation.
 
