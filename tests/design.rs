@@ -414,6 +414,100 @@ fn example_loop_reaches_the_known_constrained_optimum() {
     );
 }
 
+#[test]
+fn constrained_example_seed_sweep_beats_the_single_start_baseline() {
+    // Single-start compass proposer at trunk c8a66b5 over seeds 0..40:
+    // worst gap 27.66 %, median 5.32 %, 6 seeds exactly on the optimum.
+    const BEFORE_WORST: f64 = 0.2766;
+    const BEFORE_MEDIAN: f64 = 0.0532;
+    const BEFORE_EXACT: usize = 6;
+    let (optimum, ..) = example_optimum();
+    let mut gaps: Vec<f64> = (0..40)
+        .map(|seed| {
+            let mut env = example().unwrap();
+            env.seed = seed;
+            let history = simulate(&env, channel);
+            let best = &history[incumbent(&env, &history).unwrap() as usize];
+            (assess(&env, &best.metrics).objective.unwrap() - optimum) / optimum
+        })
+        .collect();
+    gaps.sort_by(f64::total_cmp);
+    let (worst, median) = (gaps[39], (gaps[19] + gaps[20]) / 2.);
+    let exact = gaps.iter().filter(|g| **g < 1e-12).count();
+    let stats = format!("worst {worst:.4} median {median:.4} exact {exact}/40");
+    assert!(worst < BEFORE_WORST, "{stats}");
+    assert!(median <= BEFORE_MEDIAN, "{stats}");
+    assert!(exact >= BEFORE_EXACT, "{stats}");
+}
+
+#[test]
+fn proposals_regenerate_from_persisted_history_after_restart() {
+    // Resume re-reads the candidate rows and calls `propose` again, so every
+    // proposal must be a pure function of the stored history, including an
+    // interrupted (unknown) evaluation and an external candidate mid-run.
+    let env = example().unwrap();
+    let mut history: Vec<Candidate> = vec![];
+    let mut proposals = vec![];
+    while let Some(p) = propose(&env, &history).unwrap() {
+        let index = history.len() as u32;
+        let (origin, params) = if index == 12 {
+            let mut params = p.params.clone();
+            params.insert("height".into(), ParamValue::Number(19.));
+            params.insert("acceleration".into(), ParamValue::Number(0.49));
+            ("external", params)
+        } else {
+            proposals.push((index, p.clone()));
+            ("proposer", p.params.clone())
+        };
+        let mut metrics = compute_metrics(
+            &env,
+            p.fidelity,
+            &params,
+            &channel(&params, p.fidelity),
+            &[],
+        );
+        if index == 9 {
+            metrics.insert("mean_velocity".into(), None);
+        }
+        history.push(Candidate {
+            index,
+            origin: origin.into(),
+            provenance: (origin == "external").then(|| "agent".into()),
+            fidelity: if origin == "external" {
+                Level::Screen
+            } else {
+                p.fidelity
+            },
+            parent: if origin == "external" { None } else { p.parent },
+            params,
+            children: vec![],
+            state: "evaluated".into(),
+            metrics,
+        });
+    }
+    assert_eq!(history.len(), env.budget.max_evaluations as usize);
+    let screened: std::collections::BTreeSet<_> = history
+        .iter()
+        .filter(|c| c.fidelity == Level::Screen)
+        .map(|c| serde_json::to_string(&c.params).unwrap())
+        .collect();
+    assert_eq!(
+        screened.len(),
+        history.len() - 1,
+        "no screen point is proposed twice"
+    );
+    for (index, expected) in proposals {
+        let stored: Vec<Candidate> =
+            serde_json::from_str(&serde_json::to_string(&history[..index as usize]).unwrap())
+                .unwrap();
+        assert_eq!(
+            propose(&env, &stored).unwrap().as_ref(),
+            Some(&expected),
+            "{index}"
+        );
+    }
+}
+
 struct Constant;
 impl MetricProvider for Constant {
     fn name(&self) -> &'static str {
@@ -602,7 +696,11 @@ fn worker_runs_approved_design_to_known_optimum_and_resumes_without_duplicates()
     drop(worker);
     worker = start(&root);
     let status = wait_until(&root, &id, |s| s["state"] != "running");
-    assert_eq!(status["state"], "completed", "{status}");
+    // Multi-start spends the whole budget unless every walk converges first.
+    assert!(
+        ["completed", "budget_exhausted"].contains(&status["state"].as_str().unwrap()),
+        "{status}"
+    );
     let iterations = status["iterations"].as_array().unwrap();
     assert!(iterations.len() <= 32);
     let children: usize = iterations

@@ -1430,37 +1430,29 @@ pub fn propose(env: &DesignEnvelope, history: &[Candidate]) -> Result<Option<Pro
         })
     };
     if screens.len() < max - k {
-        if let Some(p) = screen_points(env).iter().find(|p| !evaluated.contains(p)) {
+        let lhs = screen_points(env);
+        if let Some(p) = lhs.iter().find(|p| !evaluated.contains(p)) {
             return Ok(screen(p));
         }
-        let mut ranked: Vec<(u32, Assessment)> =
-            screens.iter().map(|(_, i, a)| (*i, a.clone())).collect();
+        // Multi-start: walks from the best screening points (feasibility-first)
+        // share the remaining screen budget in cumulative equal quotas. Only as
+        // many starts as can each afford a convergence check are split; a walk
+        // that converges early hands its rest to the next ranked point.
+        let mut ranked: Vec<(u32, Assessment)> = screens
+            .iter()
+            .filter(|(p, _, a)| a.standing != Standing::Unknown && lhs.contains(p))
+            .map(|(_, i, a)| (*i, a.clone()))
+            .collect();
         rank(&mut ranked);
-        let mut combos_done = BTreeSet::new();
-        for (index, assessment) in &ranked {
-            let center = &screens.iter().find(|(_, i, _)| i == index).unwrap().0;
-            if assessment.standing == Standing::Unknown || !combos_done.insert(&center.combo) {
-                continue;
-            }
-            // Keep the step that reached the incumbent; halve only after a failed poll.
-            let finest = (0..64)
-                .find(|level| level_steps(env, *level).iter().all(|s| *s == 1))
-                .unwrap_or(0);
-            let start = (0..=finest)
-                .find(|level| {
-                    let steps = level_steps(env, *level);
-                    evaluated
-                        .iter()
-                        .any(|y| polls(env, y, &steps, false).contains(center))
-                })
-                .unwrap_or(0);
-            for level in start..=finest {
-                if let Some(p) = polls(env, center, &level_steps(env, level), level == finest)
-                    .into_iter()
-                    .find(|p| !evaluated.contains(p))
-                {
-                    return Ok(screen(&p));
-                }
+        let known: BTreeMap<&Point, &Assessment> = screens.iter().map(|(p, _, a)| (p, a)).collect();
+        let mut charged: BTreeSet<Point> = lhs.iter().cloned().collect();
+        let remaining = (max - k).saturating_sub(lhs.len());
+        let starts = (remaining / convergence_cost(env)).clamp(1, START_COUNT);
+        for (s, (index, _)) in ranked.iter().enumerate() {
+            let quota = remaining * (s + 1).min(starts) / starts;
+            let start = &screens.iter().find(|(_, i, _)| i == index).unwrap().0;
+            if let Some(p) = walk(env, start, &known, &mut charged, lhs.len() + quota) {
+                return Ok(screen(&p));
             }
         }
     }
@@ -1482,6 +1474,140 @@ pub fn propose(env: &DesignEnvelope, history: &[Candidate]) -> Result<Option<Pro
         }
     }
     Ok(None)
+}
+
+/// At most this many pattern searches split the budget after the screen.
+const START_COUNT: usize = 3;
+/// First search level: an eighth of the range, about half a screening cell.
+const START_LEVEL: u32 = 1;
+
+/// Level at which every axis steps one grid point.
+fn finest_level(env: &DesignEnvelope) -> u32 {
+    (0..64)
+        .find(|level| level_steps(env, *level).iter().all(|s| *s == 1))
+        .unwrap_or(0)
+}
+
+/// Polls a walk spends proving a start is already optimal: one compass poll
+/// per level down to the step floor, plus the floor's pairwise diagonals.
+fn convergence_cost(env: &DesignEnvelope) -> usize {
+    let d = env.space.continuous.len().max(1);
+    let levels = (finest_level(env).saturating_sub(START_LEVEL) + 1) as usize;
+    2 * d * (levels + d - 1)
+}
+
+/// Opportunistic compass search from `start`, replayed over the evaluated
+/// points so it is a pure function of the history: the first improving poll
+/// moves the centre at the same step, a failed poll halves it. Returns the
+/// first unevaluated poll while fewer than `cap` points are `charged` (each
+/// evaluated point is charged to the first walk that visits it).
+fn walk(
+    env: &DesignEnvelope,
+    start: &Point,
+    known: &BTreeMap<&Point, &Assessment>,
+    charged: &mut BTreeSet<Point>,
+    cap: usize,
+) -> Option<Point> {
+    let finest = finest_level(env);
+    let mut center = start.clone();
+    let mut level = START_LEVEL.min(finest);
+    'search: loop {
+        let steps = level_steps(env, level);
+        let mut candidates = polls(env, &center, &steps, false);
+        if level == finest {
+            candidates.extend(edge_polls(env, &center, known));
+            for p in polls(env, &center, &steps, true) {
+                if !candidates.contains(&p) {
+                    candidates.push(p);
+                }
+            }
+        }
+        for p in candidates {
+            let Some(a) = known.get(&p) else {
+                return (charged.len() < cap).then_some(p);
+            };
+            charged.insert(p.clone());
+            let (ka, kc) = (rank_key(a), rank_key(known[&center]));
+            if ka.0.cmp(&kc.0).then(ka.1.total_cmp(&kc.1)).is_lt() {
+                center = p;
+                continue 'search;
+            }
+        }
+        if level == finest {
+            return None;
+        }
+        level += 1;
+    }
+}
+
+/// Edge-following at the step floor. For each infeasible unit poll
+/// `c ± e_i`, take another axis `j` whose unit poll raised the minimum margin
+/// and walk the line `c ± e_i + t·e_j` by a secant (regula falsi once a
+/// feasible point brackets it) on the known margins. Every known point on the
+/// path is returned, followed by at most one unevaluated grid point predicted
+/// to be the first feasible one.
+fn edge_polls(
+    env: &DesignEnvelope,
+    center: &Point,
+    known: &BTreeMap<&Point, &Assessment>,
+) -> Vec<Point> {
+    let margin = |p: &Point| known.get(p).and_then(|a| a.min_margin);
+    let shifted = |p: &Point, axis: usize, delta: i64| {
+        let mut q = p.clone();
+        q.grid[axis] += delta;
+        (0..=env.space.continuous[axis].steps())
+            .contains(&q.grid[axis])
+            .then_some(q)
+    };
+    let Some(mc) = margin(center) else {
+        return vec![];
+    };
+    let d = center.grid.len();
+    let mut out = vec![];
+    for (i, si) in (0..d).flat_map(|i| [(i, 1), (i, -1)]) {
+        let Some(base) = shifted(center, i, si) else {
+            continue;
+        };
+        let Some(m0) = margin(&base).filter(|m| *m < 0.) else {
+            continue;
+        };
+        for (j, sj) in (0..d).filter(|j| *j != i).flat_map(|j| [(j, 1), (j, -1)]) {
+            let Some(mut slope) = shifted(center, j, sj)
+                .and_then(|p| margin(&p))
+                .map(|m| m - mc)
+                .filter(|g| *g > 0.)
+            else {
+                continue;
+            };
+            let n = env.space.continuous[j].steps();
+            let (mut lo, mut hi) = ((0, m0), None::<(i64, f64)>);
+            loop {
+                if let Some(h) = hi {
+                    slope = (h.1 - lo.1) / (h.0 - lo.0) as f64;
+                }
+                let t = lo.0 + ((-lo.1 / slope).ceil() as i64).clamp(1, n);
+                let Some(p) = hi
+                    .is_none_or(|h| t < h.0)
+                    .then(|| shifted(&base, j, sj * t))
+                    .flatten()
+                else {
+                    break;
+                };
+                out.push(p.clone());
+                match margin(&p) {
+                    Some(m) if m >= 0. => hi = Some((t, m)),
+                    Some(m) if m > lo.1 || hi.is_some() => {
+                        if hi.is_none() {
+                            slope = (m - lo.1) / (t - lo.0) as f64;
+                        }
+                        lo = (t, m);
+                    }
+                    _ => break,
+                }
+            }
+        }
+    }
+    out
 }
 
 /// Grid steps per axis at a refinement level: a quarter range, halved per level, floored at one step.
