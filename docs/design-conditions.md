@@ -71,6 +71,7 @@ once those are known. Read them as `electronics:<id>.<low|high>`.
 | `component-limit-industrial` | 85 °C | `.low` = 358.15 K | Microchip AN3539 ("standard industrial range of -40 °C to +85 °C"); Microchip dsPIC33A AEC-Q100 Grade 3 (-40 to +85 °C) |
 | `pcb-fr4-copper-in-plane` | 8.1–17.4 W/(m·K) | `.low` = 8.1 W/(m·K) (orthotropic board) | Graebner, Electronics Cooling 1995 (measured 8.1–15.9); Electronics Cooling 1998 (4-layer example 17.4) |
 | `pcb-fr4-copper-through-plane` | 0.26–0.81 W/(m·K) | `.low` = 0.26 W/(m·K) | Electronics Cooling 1998 (series rule 0.26); Graebner 1995 (measured 0.64–0.81) |
+| `pcb-surface-emissivity` | 0.15–0.9 | `.low` = 0.15 (cavity radiation) | FLIR support note on PCB thermography (plastic 0.9, metal about 0.15, coating-dependent) |
 
 The 85 °C grade is an ambient operating range, and grade codes are
 manufacturer-specific. Applying the limit to the hotter of the board peak and
@@ -80,6 +81,11 @@ plane, both low ends. 0.26 lies below every cited value, so it is a bound in
 any direction. 8.1 bounds in-plane conduction only for boards with continuous
 copper planes (Graebner measured 0.81 without them), which is a board
 requirement; a board without planes must use the isotropic 0.26.
+The board emissivity is a thermography setting, not a measured board value.
+Its low end, 0.15, assumes no board face is worse than FLIR's metal value.
+Polished bare metal (unplated shield cans, bare copper pours) can be lower,
+so the value is also a board requirement. It only feeds the optional
+`cavity_radiation` bound (see [enclosure thermal](enclosure-thermal.md)).
 
 ## Design points
 

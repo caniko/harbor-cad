@@ -106,10 +106,65 @@ shaded surface takes one label; the receipt's areas make this auditable.
   linearized bound is allowed. Constant films, constant solar and the air-node
   coupling are linear, so every nodal temperature is affine in power. Dropping
   radiation, or crediting only its linearized lower bound, is conservative.
+  The cavity radiation bound (below) is linear too, so it is allowed.
+- Cavity radiation (optional `cavity_radiation: "linearized_lower_bound"`,
+  conservative bound): credits board-to-wall radiation inside the cavity as a
+  provable lower bound, or credits nothing.
+  - Geometry: the board is `heat_source_region`. Planning refuses unless it is
+    a convex axis-aligned box (CAD volume fills its bounding box within 1e-9),
+    and the adapter refuses unless every board boundary face is a cavity face.
+    The walls are all other cavity faces, which assumes one cavity, as the air
+    node does. Because the board is convex and fully enclosed, the view factor
+    board → walls is 1.
+  - Coefficient: the two-surface grey diffuse enclosure gives
+    ε_eff = 1/(1/ε_b + (A_b/A_w)(1/ε_w − 1)). It uses low-end *interior*
+    emissivities. ε_w is the minimum over the wall regions, and a finished
+    library material takes the lower of finish and bare material, because
+    interiors may be uncoated (aluminium + white powder coat: 0.03). Without a
+    sourced ε for the board or any wall region there is no credit, never a
+    default. The credited coefficient is h_cr = 4·ε_eff·σ·Ta³.
+  - Proof: in the two-surface model the exchange is spread over face pairs in
+    proportion to area, so the net board → wall heat is
+    Σ_ij ε_eff·σ·a_i·b_j/A_w·(T_i⁴ − T_j⁴). For T_i ≥ T_j, the tangent of the
+    convex T⁴ at T_j gives T_i⁴ − T_j⁴ ≥ 4T_j³(T_i − T_j). If also T_j ≥ Ta,
+    this is ≥ 4Ta³(T_i − T_j). Summing over pairs, the exchange is at least
+    h_cr·A_b·(T̄_b − T̄_w), with area-mean temperatures. The adapter realises
+    exactly this term through one radiation node: board faces couple to it at
+    2·h_cr and wall faces at 2·h_cr·A_b/A_w. Equal total conductances put the
+    node at (T̄_b + T̄_w)/2, so it carries h_cr·A_b·(T̄_b − T̄_w). The term is
+    linear, so superposition stays exact.
+  - Postcondition: the pair inequality needs T_i ≥ T_j ≥ Ta for *every* pair.
+    FE surfaces are not isothermal, so the receipt checks the extremes: the
+    minimum board-surface node must be ≥ the maximum wall node, and the
+    minimum wall node ≥ Ta. Nodes are corners plus C3D10 midsides, the
+    quadrature points. This is sufficient for every pair; comparing area means
+    would only bound the idealised isothermal-surface model, not the FE field.
+    If the check fails, the credit is invalid. The adapter and Rust both
+    refuse, so no receipt is published and the design metric stays unknown,
+    never optimistic. In a power sweep, nodal temperatures are affine in
+    power, so (min board − max wall) and (min wall − Ta) are concave. A check
+    that passes at both ends therefore holds across the whole interval.
+  - CalculiX: a later `*FILM` on the same face replaces the earlier one (ccx
+    2.23 manual, §7.59 `*FILM`). Each credited cavity face therefore gets one
+    combined film: h_a + h_r to the sink (h_a·T_air + h_r·T_rad)/(h_a + h_r),
+    which is exactly h_a(T − T_air) + h_r(T − T_rad). As with the air node,
+    the radiation node is solved outside CalculiX, by a Broyden search over
+    (T_air, T_rad); the start Jacobian is diagonal, and in 1D this is the
+    secant search. Forced-convection fluid nodes (`FxFC`) were not used: they
+    need network elements, and no native run can verify them yet.
+  - In this geometry the credit rarely qualifies, for two reasons. First, a
+    board mounted on wall regions (the bosses) shares contact nodes with them,
+    and the gradient across the contact puts the board's coldest surface node
+    below the boss's hottest one. Second, at low power the sun-heated lid and
+    walls exceed the board's coldest node. Even when it qualifies, the credit
+    is small: with ε_b 0.15 and an interior ε_w 0.03, ε_eff ≈ 0.11, so
+    h_cr ≈ 0.77 W/(m²·K) at the hot point. That is below the 1.2 W/(m²·K)
+    cavity film, about 5.8 mW/K on the analogue's 7.5e-3 m² board.
 - Internal air (modelling assumption): every cavity face exchanges heat with
   one well-mixed air node through `internal_film_coefficient`. The adapter
-  runs a secant search on the node temperature until its net heat flow is
-  below a tenth of the energy gate. With the fixture's bosses, the PCB also
+  runs a secant search on the node temperature (a Broyden search together
+  with the radiation node when cavity radiation is credited) until each net
+  heat flow is below a tenth of the energy gate. With the fixture's bosses, the PCB also
   conducts through conformal contact. There is no CFD and no contact resistance.
 
 Every physical value must be `known` with provenance; a `missing` one refuses
@@ -124,11 +179,16 @@ maximum node, position and regions, the internal air temperature and secant
 history, and the energy balance: heat source + absorbed solar + glazing
 solar deposited in the cavity (`solar_cavity_w`) against film + radiation, all integrated with three edge-midpoint points per face. The
 relative error must be ≤ `energy_balance_tolerance` (≤ 1e-3), as must the
-air-node residual. Rust recomputes the statistics and every energy term from
+air-node residual and, when cavity radiation is credited, the radiation-node
+residual. Rust recomputes the statistics and every energy term from
 the native field and mesh before publication. The receipt includes an
 `applicability` statement: steady state, no internal convection, effective
 internal coefficient, perfect interfaces, no condensation, moisture or mounting
-conduction.
+conduction. With `cavity_radiation`, the receipt also carries a block with
+board and wall areas, emissivities, ε_eff, h_cr, the radiation node and the
+postcondition extremes; Rust recomputes all of them from the mesh and field.
+`applicability.cavity_radiation` and the design export's `conservative_bounds`
+carry the `conservative_bound` label.
 
 ## Verification
 
@@ -178,6 +238,22 @@ candidate (verified by a third solve within 0.5 K; the PCB peak binds):
 The window cavity deposit and the 1.2 W/(m²·K) cavity film stay. The
 analogue's uniform board source and coarse board mesh leave little for
 in-plane spreading to do, so the orthotropic gain there is small.
+
+The pilot leaves `cavity_radiation` off. On the analogue with both credits
+on, the strict postcondition fails (minimum board-surface node against
+maximum wall node, reference solver):
+
+| Case | Board surface min | Wall max |
+|---|---|---|
+| window, 1 W | 325.28 K | 325.81 K |
+| window, 15 W | 345.97 K | 351.34 K |
+| opaque lid, 1 W | 323.27 K | 323.96 K |
+
+Every credited solve is refused, so enabling it would turn 10.42 W / 11.10 W
+into unknown. At 15 W the wall maximum is a boss node in contact with the
+board; at 1 W the walls warmed by solar gain are hotter than the board's
+coldest node. `test_cavity_radiation_postcondition_fails_on_the_analogue`
+pins these values.
 `examples/design-enclosure-demo.json` uses `synthetic: true` values and a
 declared window. `design status`/`export` then list `synthetic_inputs`, and
 the export statement starts with `SYNTHETIC`.
@@ -186,7 +262,8 @@ the export statement starts with `SYNTHETIC`.
 
 This recipe is not qualified. The native Gmsh/CalculiX worker gate waits on the
 security hold, and no CalculiX run has been observed. It does not cover
-transients, internal convection, view-factor radiation, sky temperature
+transients, internal convection, view-factor radiation (the cavity bound uses
+the two-surface enclosure model), sky temperature
 (the linearized bound only ignores sky cooling, which is conservative),
 condensation, temperature-dependent properties, contact resistance or
 mounting conduction. Process success is not physical validation.
