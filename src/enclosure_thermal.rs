@@ -275,7 +275,9 @@ pub struct SolidMeshRequest {
     pub mesh: SolidMesh,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+crate::json::tagged_enum! {
+"kind";
+#[derive(Clone, Debug, Serialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum MaterialInput {
     /// W1 `Library::builtin()` id, a design `route` `MATERIAL__PROCESS`, or a
@@ -301,6 +303,7 @@ pub enum MaterialInput {
         #[serde(default)]
         solar_absorptance: Option<PhysicalInput<Quantity>>,
     },
+}
 }
 
 /// Explicit solar model for exposed transparent glazing (`pc`, `pc-uv`,

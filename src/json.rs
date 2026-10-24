@@ -54,6 +54,7 @@ macro_rules! tagged_enum {
         $(#[$attribute:meta])*
         pub enum $name:ident {
             $(
+                $(#[$variant_attribute:meta])*
                 $variant:ident {
                     $( $(#[$field_attribute:meta])* $field:ident: $field_type:ty ),* $(,)?
                 }
@@ -62,7 +63,7 @@ macro_rules! tagged_enum {
     ) => {
         $(#[$attribute])*
         pub enum $name {
-            $( $variant { $( $(#[$field_attribute])* $field: $field_type ),* } ),*
+            $( $(#[$variant_attribute])* $variant { $( $(#[$field_attribute])* $field: $field_type ),* } ),*
         }
 
         impl<'de> serde::Deserialize<'de> for $name {
