@@ -18,6 +18,7 @@ pub mod cad_transport_fields;
 pub mod cad_transport_results;
 pub mod cad_triangles;
 pub mod cad_variant;
+pub mod conditions;
 pub mod contact;
 mod contact_fields;
 pub mod contracts;

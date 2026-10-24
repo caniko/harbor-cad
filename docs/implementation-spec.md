@@ -204,6 +204,15 @@ manufacturability and service margins are estimate-only screens with stated
 assumptions and price years, not quotes or qualified properties. Any missing
 input yields a null total and an `unknown` check, never a pass.
 
+**Design conditions and finishes** ([design-conditions.md](design-conditions.md)).
+The ETSI EN 300 019-1-4 outdoor climatic classes, cited external film
+coefficients and surface-finish optics are strict, cited data. Each class
+yields a hot design point (high ambient, peak solar, low film) and a cold
+design point (low ambient, no solar, high film). A finish overrides an opaque
+material's optics, while transparent glazing stays refused. Design metrics
+reference these values as `sourced` keys. They are classification severities,
+not site weather.
+
 **Measured-data correlation and calibration** ([correlation.md](correlation.md)).
 Score a bounded measured CSV under the profile's input root against one
 succeeded, numerically verified thermal history: SI conversion, explicit probe

@@ -39,7 +39,8 @@ impl Quantity {
             | ("spectral_irradiance", "W/(m2*m)")
             | ("spectral_radiance", "W/(m2*sr*m)")
             | ("dimensionless", "1")
-            | ("volume_rate", "m3/s") => (1., 0.),
+            | ("volume_rate", "m3/s")
+            | ("velocity", "m/s") => (1., 0.),
             ("length", "mm") => (0.001, 0.),
             ("length", "nm") => (1e-9, 0.),
             ("area", "mm2") => (1e-6, 0.),
