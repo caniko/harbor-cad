@@ -100,15 +100,9 @@
         || pkgs.lib.hasSuffix "/flake.lock" path
         || pkgs.lib.hasSuffix "/uv.lock" path
         || pkgs.lib.hasInfix "/profiles/" path
-        || pkgs.lib.hasSuffix "/examples/thermal-contact.json" path
-        || pkgs.lib.hasSuffix "/examples/freezing-reference.json" path
-        || pkgs.lib.hasSuffix "/examples/snow-reference.json" path
-        || pkgs.lib.hasSuffix "/examples/spectral-reference.json" path
-        || pkgs.lib.hasSuffix "/examples/atmosphere-reference.json" path
-        || pkgs.lib.hasSuffix "/examples/atmosphere-transfer.json" path
-        || pkgs.lib.hasSuffix "/examples/cad-spectral-scene.json" path
-        || pkgs.lib.hasSuffix "/examples/cad-spectral-transport.json" path
-        || pkgs.lib.hasSuffix "/examples/retained-cooling.json" path
+        # Compiled in (include_str!) and read by tests at runtime.
+        || pkgs.lib.hasPrefix (toString ./data) path
+        || pkgs.lib.hasPrefix (toString ./examples) path
         || pkgs.lib.hasSuffix "/adapters/openlb_retained_cooling.cpp" path
         || pkgs.lib.hasSuffix "/nix/patches/calculix-temperature-precision.patch" path;
     };
