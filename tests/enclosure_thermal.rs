@@ -308,6 +308,24 @@ fn thermal_inputs_resolve_library_routes_conservatively_and_refuse_missing_data(
         json!({"kind":"library","id":"pa12-mjf__mjf-pa12"}),
     );
     assert!(message.contains("solar absorptance"), "{message}");
+    // A sourced finish fills PA12's optics (conservative ends) ...
+    let mut finished = inputs();
+    finished["materials"]["housing"] =
+        json!({"kind":"library","id":"pa12-mjf__mjf-pa12","finish":"pigment-black-polymer"});
+    let pa12 = resolve(finished).unwrap().materials["housing"].clone();
+    assert_eq!(pa12.source, "library:pa12-mjf+finish:pigment-black-polymer");
+    assert_eq!(pa12.solar_absorptance, Some(0.96));
+    assert_eq!(pa12.emissivity, Some(0.85));
+    // ... but an incompatible finish and transparent glazing stay refused.
+    for (id, finish) in [("al-6061-t6", "pigment-black-polymer"), ("pc-uv", "bare")] {
+        let message = refused(
+            "/materials/housing",
+            json!({"kind":"library","id":id,"finish":finish}),
+        );
+        assert!(message.contains("region housing"), "{message}");
+    }
+    let message = refused("/materials/housing", json!({"kind":"library","id":"pc-uv"}));
+    assert!(message.contains("solar absorptance"), "{message}");
     assert!(
         refused(
             "/materials/housing",
@@ -762,13 +780,23 @@ fn enclosure_examples_chain_variant_general_mesh_and_enclosure_thermal() {
             .filter(|m| m["source"]["kind"] == "declared" && m["metric"] != "quantity")
             .map(|m| &m["source"]["input"])
             .collect();
-        assert_eq!(declared.len(), 6, "{name}");
-        // The pilot leaves every physical boundary value missing; the demo labels all synthetic.
+        // The pilot takes its environment from cited conditions and leaves only
+        // product-specific inputs missing; the demo labels every input synthetic.
+        assert_eq!(declared.len(), if synthetic { 6 } else { 4 }, "{name}");
         assert!(declared.iter().all(|input| if synthetic {
             input["synthetic"] == true
         } else {
             input["availability"] == "missing"
+                && input["reason"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with("product-specific: supplied by operator")
         }));
+        let sourced = sources
+            .iter()
+            .filter(|m| m["source"]["kind"] == "sourced")
+            .count();
+        assert_eq!(sourced, if synthetic { 0 } else { 4 }, "{name}");
         let housing = sources
             .iter()
             .find(|m| m["metric"] == "max_temperature_k")

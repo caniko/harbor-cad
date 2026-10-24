@@ -104,10 +104,18 @@ at O(h), because the transverse resolution is fixed. Gates are 1e-2 (slab),
 `plan_enclosure_thermal`. `max_temperature_k` reads
 `/regions/housing/max_k` from the thermal receipt, and `temperature_margin_k`
 compares it with the route material's conservative service limit.
-`pcb_max_temperature_k` is reported. Power, ambient, film and internal
-coefficients, irradiance and board conductivity are declared `missing`, so the
-thermal child is blocked and the constraint stays unknown. The pc-uv window and
-PA12 routes have no sourced absorptance, so their solar-loaded solves refuse.
+Ambient, irradiance and exterior film come from the cited ETSI EN 300 019-1-4
+class 4.1 hot design point, and the minimum service check uses its cold point
+(see [design conditions](design-conditions.md)). A library material may name a
+`finish` from `data/finishes.json`; its sourced absorptance and emissivity
+override the material's, and missing finish values fall back to it. The
+categorical `finish` gives PA12 a sourced absorptance (black pigment) and the
+aluminium routes RAL 7035 powder coat. PCB power, board conductivity, the
+internal cavity film and the component limit are product-specific operator
+inputs declared `missing`, so the thermal child is blocked and those constraints
+stay unknown. The pc-uv window is transparent glazing. Its solar load is
+transmittance, which this model does not represent, so its solar-loaded solve
+refuses.
 `examples/design-enclosure-demo.json` uses `synthetic: true` values and a
 declared window. `design status`/`export` then list `synthetic_inputs`, and
 the export statement starts with `SYNTHETIC`.

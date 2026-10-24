@@ -276,8 +276,14 @@ pub struct SolidMeshRequest {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum MaterialInput {
-    /// W1 `Library::builtin()` id, or a design `route` `MATERIAL__PROCESS`.
-    Library { id: String },
+    /// W1 `Library::builtin()` id, or a design `route` `MATERIAL__PROCESS`,
+    /// with an optional `data/finishes.json` finish whose sourced optics
+    /// override (or, where missing, fall back to) the material's.
+    Library {
+        id: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        finish: Option<String>,
+    },
     Declared {
         conductivity: PhysicalInput<Quantity>,
         #[serde(default)]
@@ -557,7 +563,7 @@ fn range(input: &PhysicalInput<QuantityRange>, high: bool) -> Result<Option<(f64
 
 fn material(region: &str, input: &MaterialInput, library: &Library) -> Result<ResolvedMaterial> {
     match input {
-        MaterialInput::Library { id } => {
+        MaterialInput::Library { id, finish } => {
             let id = id.split_once("__").map_or(id.as_str(), |(m, _)| m);
             let entry = library.material(id)?;
             let conductivity = match &entry.thermal_conductivity {
@@ -570,10 +576,19 @@ fn material(region: &str, input: &MaterialInput, library: &Library) -> Result<Re
                     )));
                 }
             };
-            let emissivity = range(&entry.emissivity, false)?;
-            let absorptance = range(&entry.solar_absorptance, true)?;
+            let (absorptance, emissivity) = match finish {
+                Some(finish) => crate::conditions::Conditions::builtin()?
+                    .surface_optics(id, finish)
+                    .map_err(|e| invalid(format!("region {region}: {e}")))?,
+                None => (entry.solar_absorptance.clone(), entry.emissivity.clone()),
+            };
+            let emissivity = range(&emissivity, false)?;
+            let absorptance = range(&absorptance, true)?;
+            let source = finish.as_ref().map_or(format!("library:{id}"), |f| {
+                format!("library:{id}+finish:{f}")
+            });
             let mut provenance = format!(
-                "W1 library {id}; conservative ends (conductivity low, emissivity low, solar absorptance high); conductivity: {}",
+                "W1 {source}; conservative ends (conductivity low, emissivity low, solar absorptance high); conductivity: {}",
                 conductivity.1
             );
             for (label, value) in [
@@ -586,7 +601,7 @@ fn material(region: &str, input: &MaterialInput, library: &Library) -> Result<Re
             }
             provenance.truncate(4096);
             Ok(ResolvedMaterial {
-                source: format!("library:{id}"),
+                source,
                 conductivity_w_m_k: conductivity.0,
                 emissivity: emissivity.map(|v| v.0),
                 solar_absorptance: absorptance.map(|v| v.0),

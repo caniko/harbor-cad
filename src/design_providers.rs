@@ -10,7 +10,8 @@
 //!   optional `min_wall_m` and `surface_area_m2`;
 //! - `quantity` (order size, an integer 1..=1e6);
 //! - `max_temperature_k`, optional `min_temperature_k`;
-//! - `max_von_mises_pa`, `stress_safety_factor`.
+//! - `max_von_mises_pa`, `stress_safety_factor`;
+//! - `component_max_temperature_k`, `pcb_max_temperature_k` (component margin).
 //!
 //! A missing input, missing sourced data or an incompatible route is unknown
 //! (`None`), never a default.
@@ -42,7 +43,30 @@ pub static ALL: &[&dyn MetricProvider] = &[
     &Manufacturing::Violations,
     &Manufacturing::TemperatureMargin,
     &Manufacturing::StressMargin,
+    &ComponentMargin,
 ];
+
+/// `component_max_temperature_k` (an operator input) minus the simulated
+/// `pcb_max_temperature_k`; unknown unless both are known.
+pub struct ComponentMargin;
+
+impl MetricProvider for ComponentMargin {
+    fn name(&self) -> &'static str {
+        "component_temperature_margin_k"
+    }
+    fn unit(&self) -> &'static str {
+        "K"
+    }
+    fn evidence(&self) -> &'static str {
+        "estimated"
+    }
+    fn evaluate(&self, _: &Params, metrics: &BTreeMap<String, f64>) -> Result<Option<f64>> {
+        let get = |name: &str| metrics.get(name).copied();
+        Ok(get("component_max_temperature_k")
+            .zip(get("pcb_max_temperature_k"))
+            .map(|(limit, peak)| limit - peak))
+    }
+}
 
 fn choice<'a>(params: &'a Params, name: &str) -> Option<&'a str> {
     match params.get(name) {

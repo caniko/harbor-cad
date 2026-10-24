@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "name": "outdoor_enclosure_pilot",
-  "provenance": "Outdoor wall/pole-mounted electronics enclosure, pilot 50 units. Synthetic enclosure_fixture geometry (not a validated product design). Requirements, not physics: order quantity 50 and a 10 K margin between the housing maximum temperature and the conservative route-material service limit. Chain: spreadsheet variant -> conformal general-solid mesh -> steady enclosure conduction (docs/enclosure-thermal.md). Electronics power, site ambient, film and internal coefficients, solar load and board conductivity are declared inputs that stay missing until measured or specified, so the thermal child is refused (blocked) and the constraint stays unknown; nothing is defaulted. The pc-uv window has no sourced solar absorptance, so the solar-loaded solve is refused until one is sourced; PA12 routes are refused for the same reason. Replace source_job with an authorized enclosure_fixture job.",
+  "provenance": "Outdoor wall/pole-mounted electronics enclosure, pilot 50 units. Synthetic enclosure_fixture geometry (not a validated product design). Requirements, not physics: order quantity 50, a 10 K margin between the housing temperature extremes and the conservative route-material service limits, and a non-negative component temperature margin. Chain: spreadsheet variant -> conformal general-solid mesh -> steady enclosure conduction (docs/enclosure-thermal.md). Environment is normative, not site weather: ETSI EN 300 019-1-4 class 4.1 hot design point (40 degC air, 1120 W/m2 solar, still-air film 2.2 W/(m2*K)) for the solve and its cold point (-33 degC) for the minimum service temperature (data/conditions.json, docs/design-conditions.md). Housing and lid optics come from the categorical finish (data/finishes.json); route x finish pairs that are not compatible are refused at derivation. PCB power, board conductivity, the internal cavity film and the component temperature limit are product-specific operator inputs declared missing, so the thermal child is refused (blocked) until they are supplied; nothing is defaulted. The pc-uv window is transparent glazing: its solar load is transmittance, which the model does not represent, so the solar-loaded solve stays refused until the window is shaded, made opaque or a transmittance-aware model exists. Replace source_job with an authorized enclosure_fixture job.",
   "seed": 11,
   "space": {
     "continuous": [
@@ -49,6 +49,13 @@
           "pa12-mjf__mjf-pa12",
           "al-5052-h32__sheet-metal-laser-brake"
         ]
+      },
+      {
+        "name": "finish",
+        "choices": [
+          "powder-coat-light-grey",
+          "pigment-black-polymer"
+        ]
       }
     ]
   },
@@ -74,6 +81,13 @@
       "op": "le",
       "limit": 0.0,
       "unit": "1",
+      "safety_factor": null
+    },
+    {
+      "metric": "component_temperature_margin_k",
+      "op": "ge",
+      "limit": 0.0,
+      "unit": "K",
       "safety_factor": null
     }
   ],
@@ -181,12 +195,18 @@
                   "kind": "library",
                   "id": {
                     "$param": "route"
+                  },
+                  "finish": {
+                    "$param": "finish"
                   }
                 },
                 "lid": {
                   "kind": "library",
                   "id": {
                     "$param": "route"
+                  },
+                  "finish": {
+                    "$param": "finish"
                   }
                 },
                 "pcb": {
@@ -196,7 +216,7 @@
                     "value": {
                       "$input": "pcb_conductivity"
                     },
-                    "provenance": "declared envelope input pcb_conductivity",
+                    "provenance": "operator-supplied envelope input pcb_conductivity",
                     "synthetic": false
                   }
                 },
@@ -211,23 +231,23 @@
                 "value": {
                   "$input": "pcb_power_w"
                 },
-                "provenance": "declared envelope input pcb_power_w",
+                "provenance": "operator-supplied envelope input pcb_power_w",
                 "synthetic": false
               },
               "ambient_temperature": {
                 "availability": "known",
                 "value": {
-                  "$input": "ambient_max_k"
+                  "$input": "ambient_hot_k"
                 },
-                "provenance": "declared envelope input ambient_max_k",
+                "provenance": "sourced metric ambient_hot_k = condition:etsi-4-1.hot.ambient_temperature (ETSI EN 300 019-1-4 V2.2.1 Table 1 class 4.1 high air temperature; data/conditions.json)",
                 "synthetic": false
               },
               "film_coefficient": {
                 "availability": "known",
                 "value": {
-                  "$input": "film_coefficient"
+                  "$input": "film_hot_w_m2_k"
                 },
-                "provenance": "declared envelope input film_coefficient",
+                "provenance": "sourced metric film_hot_w_m2_k = condition:etsi-4-1.hot.film_coefficient (still-air Churchill-Chu vertical-plate low end; data/conditions.json)",
                 "synthetic": false
               },
               "exposed_regions": [
@@ -240,16 +260,16 @@
                 "value": {
                   "$input": "internal_film_coefficient"
                 },
-                "provenance": "declared envelope input internal_film_coefficient",
+                "provenance": "operator-supplied envelope input internal_film_coefficient",
                 "synthetic": false
               },
               "solar": {
                 "irradiance": {
                   "availability": "known",
                   "value": {
-                    "$input": "solar_irradiance"
+                    "$input": "solar_hot_w_m2"
                   },
-                  "provenance": "declared envelope input solar_irradiance",
+                  "provenance": "sourced metric solar_hot_w_m2 = condition:etsi-4-1.hot.solar_irradiance (ETSI EN 300 019-1-4 V2.2.1 Table 1 row k; data/conditions.json)",
                   "synthetic": false
                 },
                 "direction": [
@@ -288,51 +308,7 @@
         "kind": "declared",
         "input": {
           "availability": "missing",
-          "reason": "electronics dissipation not yet measured or specified"
-        }
-      }
-    },
-    {
-      "metric": "ambient_max_k",
-      "unit": "K",
-      "source": {
-        "kind": "declared",
-        "input": {
-          "availability": "missing",
-          "reason": "site design ambient maximum not specified; needs climate data for the installation site"
-        }
-      }
-    },
-    {
-      "metric": "film_coefficient",
-      "unit": "W/(m2*K)",
-      "source": {
-        "kind": "declared",
-        "input": {
-          "availability": "missing",
-          "reason": "exterior film coefficient not specified; needs a documented wind/natural-convection correlation or measurement for the site and mounting"
-        }
-      }
-    },
-    {
-      "metric": "internal_film_coefficient",
-      "unit": "W/(m2*K)",
-      "source": {
-        "kind": "declared",
-        "input": {
-          "availability": "missing",
-          "reason": "effective cavity-surface coefficient to the internal air node not measured; it is a modelling assumption that needs a correlation or test"
-        }
-      }
-    },
-    {
-      "metric": "solar_irradiance",
-      "unit": "W/m2",
-      "source": {
-        "kind": "declared",
-        "input": {
-          "availability": "missing",
-          "reason": "site peak solar irradiance not specified"
+          "reason": "product-specific: supplied by operator (steady electronics dissipation at the hot design point)"
         }
       }
     },
@@ -343,8 +319,62 @@
         "kind": "declared",
         "input": {
           "availability": "missing",
-          "reason": "effective board conductivity not specified; depends on the copper stack-up of the real PCB"
+          "reason": "product-specific: supplied by operator (effective board conductivity of the real copper stack-up)"
         }
+      }
+    },
+    {
+      "metric": "internal_film_coefficient",
+      "unit": "W/(m2*K)",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "missing",
+          "reason": "product-specific: supplied by operator (cavity-surface coefficient to the internal air node; depends on the board and cavity layout)"
+        }
+      }
+    },
+    {
+      "metric": "component_max_temperature_k",
+      "unit": "K",
+      "source": {
+        "kind": "declared",
+        "input": {
+          "availability": "missing",
+          "reason": "product-specific: supplied by operator (maximum allowed temperature of the limiting component on the board)"
+        }
+      }
+    },
+    {
+      "metric": "ambient_hot_k",
+      "unit": "K",
+      "source": {
+        "kind": "sourced",
+        "key": "condition:etsi-4-1.hot.ambient_temperature"
+      }
+    },
+    {
+      "metric": "solar_hot_w_m2",
+      "unit": "W/m2",
+      "source": {
+        "kind": "sourced",
+        "key": "condition:etsi-4-1.hot.solar_irradiance"
+      }
+    },
+    {
+      "metric": "film_hot_w_m2_k",
+      "unit": "W/(m2*K)",
+      "source": {
+        "kind": "sourced",
+        "key": "condition:etsi-4-1.hot.film_coefficient"
+      }
+    },
+    {
+      "metric": "min_temperature_k",
+      "unit": "K",
+      "source": {
+        "kind": "sourced",
+        "key": "condition:etsi-4-1.cold.ambient_temperature"
       }
     },
     {
@@ -459,17 +489,6 @@
       }
     },
     {
-      "metric": "unit_cost_low_usd",
-      "unit": "USD",
-      "source": {
-        "kind": "provider",
-        "name": "unit_cost_low_usd",
-        "params": [
-          "route"
-        ]
-      }
-    },
-    {
       "metric": "mass_kg",
       "unit": "kg",
       "source": {
@@ -500,6 +519,15 @@
         "params": [
           "route"
         ]
+      }
+    },
+    {
+      "metric": "component_temperature_margin_k",
+      "unit": "K",
+      "source": {
+        "kind": "provider",
+        "name": "component_temperature_margin_k",
+        "params": []
       }
     }
   ]

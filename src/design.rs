@@ -230,6 +230,10 @@ pub enum MetricSource {
     /// Pooled RMSE (`correlation::objective`) of `results correlate` against
     /// the role's succeeded job; `request` omits `job_id`.
     Correlation { role: String, request: Value },
+    /// A cited normative value (`conditions::Conditions::lookup`):
+    /// `condition:<class>.<hot|cold>.<field>` or `finish:<id>.<field>`, in
+    /// its SI unit. Usable through `$input` like a declared input.
+    Sourced { key: String },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -383,6 +387,16 @@ fn optional_str<'v>(map: &'v serde_json::Map<String, Value>, key: &str) -> Resul
     }
 }
 
+/// A `Sourced` metric as a known, cited, non-synthetic input (SI unit).
+fn sourced(key: &str) -> Result<PhysicalInput<f64>> {
+    let value = crate::conditions::Conditions::builtin()?.lookup(key)?;
+    Ok(PhysicalInput::Known {
+        value: value.value,
+        provenance: value.provenance,
+        synthetic: false,
+    })
+}
+
 /// A value in `unit`: a bare SI number for `si`, a Quantity otherwise.
 fn emit(value: f64, unit: &str, si: Option<&str>) -> Result<Value> {
     Ok(match si {
@@ -422,17 +436,24 @@ fn substitute(
                         invalid("only {\"$input\": METRIC[, \"si\": DIMENSION]} placeholders are allowed")
                     })?;
                 let si = optional_str(map, "si")?;
-                let Some(MetricSpec {
-                    unit,
-                    source: MetricSource::Declared { input },
-                    ..
-                }) = env.metric(name)
-                else {
-                    return Err(invalid(format!(
-                        "$input {name} must name a declared metric source"
-                    )));
+                let (unit, input) = match env.metric(name) {
+                    Some(MetricSpec {
+                        unit,
+                        source: MetricSource::Declared { input },
+                        ..
+                    }) => (unit, input.clone()),
+                    Some(MetricSpec {
+                        unit,
+                        source: MetricSource::Sourced { key },
+                        ..
+                    }) => (unit, sourced(key)?),
+                    _ => {
+                        return Err(invalid(format!(
+                            "$input {name} must name a declared or sourced metric source"
+                        )));
+                    }
                 };
-                return match (input, bind) {
+                return match (&input, bind) {
                     (PhysicalInput::Known { value, .. }, _) => emit(*value, unit, si),
                     (PhysicalInput::Missing { .. }, Bind::Check(_)) => emit(1., unit, si),
                     (PhysicalInput::Missing { reason }, _) => Err(invalid(format!(
@@ -681,7 +702,8 @@ pub fn child_plans(
             MetricSource::Provider { params, .. } => used.extend(params.iter().cloned()),
             MetricSource::Job { .. }
             | MetricSource::Declared { .. }
-            | MetricSource::Correlation { .. } => {}
+            | MetricSource::Correlation { .. }
+            | MetricSource::Sourced { .. } => {}
         }
     }
     let declared: BTreeSet<String> = env
@@ -918,10 +940,13 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
                     && spec.unit == "K"
                     && correlation_request(request, &uuid::Uuid::nil().to_string()).is_ok()
             }
+            MetricSource::Sourced { key } => crate::conditions::Conditions::builtin()
+                .and_then(|c| c.lookup(key))
+                .is_ok_and(|s| s.unit == spec.unit),
         };
         if !valid {
             return Err(invalid(format!(
-                "metric {} source must name a template role in every fidelity with a relative artifact and JSON pointer, a same-unit continuous parameter, a registered same-unit provider over declared parameters, a finite declared input with provenance or missing reason, or a role with a valid job-less correlation request in K",
+                "metric {} source must name a template role in every fidelity with a relative artifact and JSON pointer, a same-unit continuous parameter, a registered same-unit provider over declared parameters, a finite declared input with provenance or missing reason, a role with a valid job-less correlation request in K, or a resolvable sourced condition/finish key in its SI unit",
                 spec.metric
             )));
         }
@@ -1433,6 +1458,10 @@ pub fn compute_metrics(
             MetricSource::Declared { input } => match input {
                 PhysicalInput::Known { value, .. } => Some(*value),
                 PhysicalInput::Missing { .. } => None,
+            },
+            MetricSource::Sourced { key } => match sourced(key) {
+                Ok(PhysicalInput::Known { value, .. }) => Some(value),
+                _ => None,
             },
             MetricSource::Provider { .. } => continue,
         };
@@ -2374,7 +2403,11 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
                         (_, Some(MetricSource::Job { .. })) => "simulated",
                         (
                             _,
-                            Some(MetricSource::Parameter { .. } | MetricSource::Declared { .. }),
+                            Some(
+                                MetricSource::Parameter { .. }
+                                | MetricSource::Declared { .. }
+                                | MetricSource::Sourced { .. },
+                            ),
                         ) => "prescribed",
                         (_, Some(MetricSource::Correlation { .. })) => "measured",
                         (_, Some(MetricSource::Provider { name, .. })) => {

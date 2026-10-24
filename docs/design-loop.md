@@ -189,28 +189,45 @@ measurement path and test provenance.
 continuous parameters are wall, fin count, fin height, length and height on
 manufacturing grids, and its `route` choices are the W1-compatible pairs
 `al-6061-t6__cnc-3axis-al`, `pa12-mjf__mjf-pa12` and
-`al-5052-h32__sheet-metal-laser-brake`. The chain is `variant`
+`al-5052-h32__sheet-metal-laser-brake`. Its `finish` choices are
+`powder-coat-light-grey` (aluminium) and `pigment-black-polymer` (PA12). Route
+and finish pairs that are not compatible are refused when the thermal plan is
+derived. The chain is `variant`
 (`plan_cad_variant` of the enclosure fixture's `Params` sheet, with all five
 thermal regions) → `mesh` (`plan_cad_solid_mesh`, a conformal tetrahedral mesh of
 `gasket`, `housing`, `lid`, `pcb` and `window`) → `thermal`
 (`plan_enclosure_thermal`, steady conduction; see
 [enclosure thermal](enclosure-thermal.md)). The objective minimizes
 `unit_cost_high_usd` at a declared quantity of 50. The constraints are
-`temperature_margin_k ≥ 10 K` and `manufacturability_violations ≤ 0`. The
-margin compares `max_temperature_k`, read from the thermal receipt
-(`/regions/housing/max_k`), with the route material's conservative service
-limit. `pcb_max_temperature_k` is reported. The minimum wall is checked against
-the conservative end of the process's minimum-wall range. Electronics power,
-site ambient, exterior and internal film coefficients, solar irradiance and
-board conductivity are declared `missing`. `design validate` accepts the
-envelope, but it cannot produce a feasible design yet:
+`temperature_margin_k ≥ 10 K`, `manufacturability_violations ≤ 0` and
+`component_temperature_margin_k ≥ 0 K`. The temperature margin compares
+`max_temperature_k`, read from the thermal receipt (`/regions/housing/max_k`),
+and the class 4.1 cold-point ambient (`min_temperature_k`) with the route
+material's conservative service limits. The component margin is the operator's
+`component_max_temperature_k` minus the simulated `pcb_max_temperature_k`. The
+minimum wall is checked against the conservative end of the process's
+minimum-wall range.
+
+Ambient, solar irradiance and the exterior film are `sourced` metrics. They
+come from the ETSI EN 300 019-1-4 class 4.1 hot design point (see
+[design conditions](design-conditions.md)). A metric with
+`{"kind": "sourced", "key": "condition:<class>.<hot|cold>.<field>"}` or
+`"finish:<id>.<field>"` carries a cited value in its SI unit. Templates read it
+through `$input`, like a declared input. PCB power, board conductivity, the
+internal cavity film and the component limit are product-specific and are
+declared `missing` ("product-specific: supplied by operator"). `design validate`
+accepts the envelope, but it cannot produce a feasible design yet:
 
 - Native FreeCAD/Gmsh/CalculiX runtime qualification waits on the security
   hold.
-- The missing declared inputs refuse the thermal plan, so the child is
-  `blocked` and the thermal constraint stays `unknown`. The pc-uv window and
-  the PA12 route have no sourced solar absorptance, so their solar-loaded
-  solves refuse even after the inputs are declared.
+- The missing operator inputs refuse the thermal plan, so the child is
+  `blocked` and the thermal constraints stay `unknown`.
+- The pc-uv window is transparent glazing. Its solar load is transmittance,
+  which the model does not represent, so the solar-loaded solve refuses even
+  after the operator inputs are supplied. The window must be shaded or opaque,
+  or the model must gain a transmittance term.
+- PA12's -40 °C minimum service temperature leaves 7 K at the class 4.1 cold
+  point, below the 10 K margin.
 
 `examples/design-enclosure-demo.json` runs the same chain with explicitly
 `synthetic: true` inputs and a declared window. `design status` and

@@ -1106,7 +1106,7 @@ fn enclosure_and_calibration_examples_validate() {
     };
     let enclosure = read("design-enclosure.json");
     let prepared = prepare(&enclosure, Some("research")).unwrap();
-    assert_eq!(prepared.combinations, 3);
+    assert_eq!(prepared.combinations, 6);
     let roles: Vec<_> = enclosure.templates["screen"]
         .iter()
         .map(|t| (t.role.as_str(), t.after.as_deref()))
@@ -1119,16 +1119,34 @@ fn enclosure_and_calibration_examples_validate() {
             ("thermal", Some("mesh"))
         ]
     );
-    // Thermal inputs are declared but missing: the derived FEM refuses rather
-    // than run on invented boundary values, so the thermal constraint stays unknown.
-    let params = Params::from([(
-        "route".into(),
-        ParamValue::Choice("pa12-mjf__mjf-pa12".into()),
-    )]);
+    // Product-specific inputs are declared but missing: the derived FEM refuses
+    // rather than run on invented values, so the thermal constraints stay unknown.
+    // The environment comes from the cited ETSI EN 300 019-1-4 class 4.1 points.
+    let params = Params::from([
+        (
+            "route".into(),
+            ParamValue::Choice("pa12-mjf__mjf-pa12".into()),
+        ),
+        (
+            "finish".into(),
+            ParamValue::Choice("pigment-black-polymer".into()),
+        ),
+    ]);
     let metrics = compute_metrics(&enclosure, &params, &BTreeMap::new(), PROVIDERS);
     assert_eq!(metrics["quantity"], Some(50.));
+    assert_eq!(metrics["ambient_hot_k"], Some(313.15));
+    assert_eq!(metrics["solar_hot_w_m2"], Some(1120.));
+    assert_eq!(metrics["film_hot_w_m2_k"], Some(2.2));
+    assert_eq!(metrics["min_temperature_k"], Some(273.15 - 33.));
+    assert_eq!(metrics["pcb_power_w"], None);
     assert_eq!(metrics["temperature_margin_k"], None);
+    assert_eq!(metrics["component_temperature_margin_k"], None);
     assert_eq!(metrics["unit_cost_high_usd"], None);
+    // With a simulated housing peak, PA12's -40 degC minimum leaves 7 K at the
+    // class 4.1 cold point, below the 10 K requirement.
+    let simulated = BTreeMap::from([("max_temperature_k".to_string(), Some(330.))]);
+    let metrics = compute_metrics(&enclosure, &params, &simulated, PROVIDERS);
+    assert!((metrics["temperature_margin_k"].unwrap() - 7.).abs() < 1e-9);
     let calibrate = read("design-calibrate.json");
     prepare(&calibrate, Some("research")).unwrap();
 }
