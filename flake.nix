@@ -259,6 +259,8 @@
         cp -r ${self}/adapters ./adapters
         cp -r ${self}/scripts ./scripts
         cp -r ${self}/examples ./examples
+        cp -r ${self}/data ./data
+        cp -r ${self}/src ./src
         cp ${./flake.lock} flake.lock
         cp ${./Cargo.lock} Cargo.lock
         ${testEnv}/bin/python -m pytest -q python/tests
