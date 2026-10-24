@@ -891,7 +891,9 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
             || p.name.len() > 32
             || !names.insert(p.name.as_str())
             || !bounded_text(&p.unit, 32)
-            || !(p.low.is_finite() && p.high.is_finite() && p.step.is_finite())
+            || !p.low.is_finite()
+            || !p.high.is_finite()
+            || !p.step.is_finite()
             || p.low >= p.high
             || p.step <= 0.
             || !(1. ..=1e6).contains(&steps.round())

@@ -247,7 +247,9 @@ pub(crate) fn retain(store: &Store, id: &str, plan: &ExecutionPlan) -> Result<()
         "immutable rendered-input staging intent",
     )?;
     private_dir(&staging)?;
-    let result = (|| {
+    // A rollback can leave the sole copy if the source disappears mid-submit.
+    // The persisted intent lets orphan recovery prove removability later.
+    (|| {
         for record in &records {
             copy_verified(&store.job_dir(&expected.job_id)?, &staging, record)?;
         }
@@ -279,10 +281,7 @@ pub(crate) fn retain(store: &Store, id: &str, plan: &ExecutionPlan) -> Result<()
         )?;
         store.add_artifact(id, &intent)?;
         Ok(())
-    })();
-    // A rollback can leave the sole copy if the source disappears mid-submit.
-    // The persisted intent lets orphan recovery prove removability later.
-    result
+    })()
 }
 
 pub(crate) fn registered(

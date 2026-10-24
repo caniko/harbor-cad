@@ -178,9 +178,9 @@ fn circle(points: &[[f64; 2]]) -> Result<([f64; 2], f64, f64)> {
         matrix[i] = matrix[i].map(|v| v / value);
         for k in 0..3 {
             if k != i {
-                let v = matrix[k][i];
-                for j in 0..4 {
-                    matrix[k][j] -= v * matrix[i][j];
+                let (v, pivot) = (matrix[k][i], matrix[i]);
+                for (entry, p) in matrix[k].iter_mut().zip(pivot) {
+                    *entry -= v * p;
                 }
             }
         }

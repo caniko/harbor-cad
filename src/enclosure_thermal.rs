@@ -100,7 +100,9 @@ impl SolidMesh {
             || !matches!(self.element_order, 1 | 2)
             || !(1..=MAX_ELEMENTS).contains(&self.max_elements)
             || !positive(self.volume_relative_tolerance, 0.1)
-            || !(self.min_quality.is_finite() && self.min_quality > 0. && self.min_quality < 1.)
+            || !self.min_quality.is_finite()
+            || self.min_quality <= 0.
+            || self.min_quality >= 1.
             || !(1e-9..=1e-3).contains(&self.geometry_tolerance_m)
         {
             return Err(invalid(
@@ -511,7 +513,9 @@ impl ThermalModel {
         if materials != names
             || !names.contains(self.heat_source_region.as_str())
             || !positive(self.heat_source_power_w, 1e5)
-            || !(self.ambient_k.is_finite() && self.ambient_k > 150. && self.ambient_k <= 500.)
+            || !self.ambient_k.is_finite()
+            || self.ambient_k <= 150.
+            || self.ambient_k > 500.
             || !positive(self.film_w_m2_k, 1e4)
             || !positive(self.internal_film_w_m2_k, 1e4)
             || !positive(self.energy_balance_tolerance, 1e-3)

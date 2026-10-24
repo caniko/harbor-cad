@@ -2060,10 +2060,11 @@ impl ExecutionPlan {
             }
             if matches!(stage.operation, StageOperation::FemImported)
                 && self.imported_fem.is_none()
-                && !self
+                && self
                     .cad_solids
                     .as_ref()
-                    .is_some_and(|recipe| recipe.thermal.is_some())
+                    .and_then(|recipe| recipe.thermal.as_ref())
+                    .is_none()
             {
                 return Err(invalid(
                     "imported FEM requires a source-bound version-8 recipe",
@@ -2115,9 +2116,9 @@ impl ExecutionPlan {
                 ));
             }
             let op_name = serde_json::to_string(&stage.operation)?;
-            if !operations.insert(op_name)
-                && !(self.thermal_contact.is_some()
-                    && stage.operation == StageOperation::ThermalReference)
+            if !(operations.insert(op_name)
+                || (self.thermal_contact.is_some()
+                    && stage.operation == StageOperation::ThermalReference))
             {
                 return Err(invalid(
                     "one stage per fixed-output adapter operation required",
