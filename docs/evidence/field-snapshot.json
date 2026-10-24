@@ -3,12 +3,23 @@
   "date": "2026-10-05",
   "source_revision": "637ef959a1de9b63aba4e8a2cb815803980957f3",
   "evidence_root": "/data/scratch/tmp/opencode/harbor-cad-authority-20261005",
-  "report": {"path": "field-replay-1/verification.json", "sha256": "bc3d58f43dfc7278cd8d659a333b16c21c3f73c139576bbc95a7611e04e93439"},
-  "log": {"path": "field-replay-2.log", "sha256": "464360aa3d1df97b2dba109ab9547cc7cfe532bfdd95a184a7df1a10d8a95d0d"},
+  "report": {
+    "path": "field-replay-1/verification.json",
+    "sha256": "bc3d58f43dfc7278cd8d659a333b16c21c3f73c139576bbc95a7611e04e93439"
+  },
+  "log": {
+    "path": "field-replay-2.log",
+    "sha256": "464360aa3d1df97b2dba109ab9547cc7cfe532bfdd95a184a7df1a10d8a95d0d"
+  },
   "command_record": "field-replay-2-command.json",
   "scope": "capture and verified copying of actual retained resolution-8/16 HIP OpenLB Float64 PVD/VTM/VTI files; replay, not new native execution",
   "harness_lock_matches_repository_packages": true,
-  "passed": ["relative native collection graph preserved", "all copied file bytes match parsed identities", "science, execution, units and requested/observed times bound", "snapshot hashes verified after publication"],
+  "passed": [
+    "relative native collection graph preserved",
+    "all copied file bytes match parsed identities",
+    "science, execution, units and requested/observed times bound",
+    "snapshot hashes verified after publication"
+  ],
   "local_cpu_gate": "scripts/check_cpu.py passed full Rust suite, Clippy -D warnings, formatting, locked build and 35 Python cases",
   "durable_current_b1": "subsequently passed the scoped native CLI/MCP run; see native-hip-b1.json",
   "physical_validation": "unqualified"

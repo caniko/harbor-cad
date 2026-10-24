@@ -12,10 +12,30 @@
   },
   "scope": "Exact CPU libRadtran atmosphere and independently approved registered-source Mitsuba scalar_spectral transport, authoritative original retention before acknowledgment, source mutation/loss quarantine, original packet reconstruction, CLI/MCP parity, units, exports and owned lifecycle",
   "transport_jobs": [
-    {"interface": "cli", "id": "bf30a323-f797-4d4f-8410-4055f5a15946", "state": "succeeded", "roots_and_reservation_released": true},
-    {"interface": "mcp", "id": "bb4d0ef5-0de9-490f-851d-c3915ceef131", "state": "succeeded", "roots_and_reservation_released": true},
-    {"action": "forced-death", "id": "367389ca-e69b-4e59-afe7-13de66e25c2f", "state": "failed", "roots_and_reservation_released": true},
-    {"action": "cancel", "id": "f93fe4c9-c1f0-408a-8850-a488ac048956", "state": "cancelled", "roots_and_reservation_released": true}
+    {
+      "interface": "cli",
+      "id": "bf30a323-f797-4d4f-8410-4055f5a15946",
+      "state": "succeeded",
+      "roots_and_reservation_released": true
+    },
+    {
+      "interface": "mcp",
+      "id": "bb4d0ef5-0de9-490f-851d-c3915ceef131",
+      "state": "succeeded",
+      "roots_and_reservation_released": true
+    },
+    {
+      "action": "forced-death",
+      "id": "367389ca-e69b-4e59-afe7-13de66e25c2f",
+      "state": "failed",
+      "roots_and_reservation_released": true
+    },
+    {
+      "action": "cancel",
+      "id": "f93fe4c9-c1f0-408a-8850-a488ac048956",
+      "state": "cancelled",
+      "roots_and_reservation_released": true
+    }
   ],
   "source_originals_unchanged": true,
   "physical_validation": "unqualified"

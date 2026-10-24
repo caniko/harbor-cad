@@ -17,12 +17,12 @@ and integrated quantities.
 
 ## Supported scalar quantities
 
-| Quantity | Field SI unit | Overlap measure | Conserved integral |
-|---|---|---|---|
-| Temperature | K | constant thermal capacitance, J/K | capacitance-weighted temperature, J |
-| Signed surface heat flux | W/m² | area, m² | signed heat power, W |
-| Incident irradiance | W/m² | area, m² | incident radiant power, W |
-| Retained mass density | kg/m³ | volume, m³ | retained mass, kg |
+| Quantity                 | Field SI unit | Overlap measure                   | Conserved integral                  |
+| ------------------------ | ------------- | --------------------------------- | ----------------------------------- |
+| Temperature              | K             | constant thermal capacitance, J/K | capacitance-weighted temperature, J |
+| Signed surface heat flux | W/m²          | area, m²                          | signed heat power, W                |
+| Incident irradiance      | W/m²          | area, m²                          | incident radiant power, W           |
+| Retained mass density    | kg/m³         | volume, m³                        | retained mass, kg                   |
 
 Temperature transfer uses **constant** thermal capacitances; it is not a general
 enthalpy transfer for temperature-dependent heat capacities or phase change.

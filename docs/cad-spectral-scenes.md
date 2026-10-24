@@ -94,7 +94,12 @@ wire messages. Oversized files and symlinks refuse before numerical ingestion.
 seed. For example:
 
 ```json
-{"schema_version":1,"job_id":"QUALIFIED_OPTICAL_JOB_UUID","seed":17,"region_name":"solid"}
+{
+  "schema_version": 1,
+  "job_id": "QUALIFIED_OPTICAL_JOB_UUID",
+  "seed": 17,
+  "region_name": "solid"
+}
 ```
 
 The view requires independently recorded execution and verified original

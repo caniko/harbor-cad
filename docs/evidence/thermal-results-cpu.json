@@ -42,7 +42,10 @@
     "original closed source trees unchanged; read-only result operations leave jobs, events and artifacts unchanged",
     "bounded two-CPU, 2 GiB, no-swap and 128-task kernel controls verified"
   ],
-  "retained_failed_attempts": ["thermal-results-1: invalid lease wait rejected before execution", "thermal-results-diagnostic-1: native energy and field schedules differed"],
+  "retained_failed_attempts": [
+    "thermal-results-1: invalid lease wait rejected before execution",
+    "thermal-results-diagnostic-1: native energy and field schedules differed"
+  ],
   "physical_validation": "unqualified",
   "scope": "registered v5/v8 static FEM and v6 synthetic planar-box transient temperature queries and moisture screening at the exact recorded package identities; no condensate, frost, ingress or boot-reliability inference"
 }

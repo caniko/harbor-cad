@@ -27,8 +27,14 @@
   },
   "uniform_reference": "/data/scratch/tmp/opencode/harbor-cad-resume-20261007/retained-cooling-uniform-2/verification.json",
   "uniform_reference_sha256": "1931b50eb2f4de02755fdc9d0e3359f75c216ab23954061167d15ebbf11a51ec",
-  "uniform_maximum_span_temperature_errors": [0.009696599083828361, 0.008181747813931217],
+  "uniform_maximum_span_temperature_errors": [
+    0.009696599083828361, 0.008181747813931217
+  ],
   "uniform_coarse_maximum_span_temperature_error": 0.03753748987599481,
-  "refused_prior_models": ["BGK temporal overheat without clipping", "full-way insulated ghost energy loss", "coarse partially frozen retained enthalpy refinement above 0.02"],
+  "refused_prior_models": [
+    "BGK temporal overheat without clipping",
+    "full-way insulated ghost energy loss",
+    "coarse partially frozen retained enthalpy refinement above 0.02"
+  ],
   "physical_validation": "unqualified"
 }

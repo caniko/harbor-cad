@@ -22,5 +22,5 @@
   "material_provenance": "synthetic equal-phase constant properties; no expansion",
   "boundary_provenance": "prescribed cold xmin; insulated xmax; periodic y; zero velocity",
   "geometry_provenance": "synthetic fixed-volume planar reference",
-  "moisture_risk": {"assessment": "missing", "reason": "humidity unavailable"}
+  "moisture_risk": { "assessment": "missing", "reason": "humidity unavailable" }
 }

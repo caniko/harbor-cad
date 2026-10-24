@@ -1,7 +1,11 @@
 {
   "schema_version": 1,
   "qualification_date": "2026-10-05",
-  "lock_status": {"Cargo.lock": "committed", "uv.lock": "committed", "flake.lock": "created through scoped Canix update; immutable root revisions verified"},
+  "lock_status": {
+    "Cargo.lock": "committed",
+    "python/uv.lock": "committed",
+    "flake.lock": "created through scoped Canix update; immutable root revisions verified"
+  },
   "flake_lock_sha256": "c82b720484076521ba2a59ca4bf891873b69971a0c9766bd7f58c181d403a807",
   "sqlite": {
     "review_date": "2026-10-06",
@@ -42,7 +46,11 @@
     "api_evidence": "Pinned lib/default.nix, toolchain helper and lib/python.nix inspected",
     "effective_policy": "Harbor-Py mkPkgs defaults allowUnfree=true; explicitly overridden to false in both package sets",
     "packaging_qualification": "CLI, MCP and CPU native packages/checks passed; docs/evidence/packaged-cpu.json",
-    "cli_evaluation": {"source_revision":"2e52eb0699f471ec0f00f1f2a7013dc7444ad1a1","derivation":"/nix/store/h1g62w3d4fssnjqnh4jr5x9hzm448gc8-harbor-cad-0.1.0.drv","realized":false}
+    "cli_evaluation": {
+      "source_revision": "2e52eb0699f471ec0f00f1f2a7013dc7444ad1a1",
+      "derivation": "/nix/store/h1g62w3d4fssnjqnh4jr5x9hzm448gc8-harbor-cad-0.1.0.drv",
+      "realized": false
+    }
   },
   "nix_inputs": {
     "nixpkgs": "73e728ddb6b7a12d18808f510813a13ee1fe4cce",
@@ -62,7 +70,9 @@
     "license": "LGPL-2.0-or-later (Nixpkgs metadata)",
     "security_gate": "Version >=1.1.4 required before opening a document; isolated patched importer remains mandatory",
     "python_abi": "FreeCAD's own Nixpkgs interpreter/dependencies; isolated from MCP and ParaView",
-    "build": "passed as runtime-cpu dependency", "runtime": "synthetic fixture and CAD-only source inspection passed through packaged CLI/MCP; changed approved source rejected", "sandbox": "actual CPU fixture/source inspection passed; full production importer policy unqualified"
+    "build": "passed as runtime-cpu dependency",
+    "runtime": "synthetic fixture and CAD-only source inspection passed through packaged CLI/MCP; changed approved source rejected",
+    "sandbox": "actual CPU fixture/source inspection passed; full production importer policy unqualified"
   },
   "openlb": {
     "version": "1.9.0",
@@ -71,7 +81,13 @@
     "patch": "nix/patches/openlb-vtk-output-precision.patch",
     "patch_sha256": "36da0a99912ca529812f3d7e44d689064ec69b8393fad8728548ba08027ee897",
     "compiler_observed": "GCC 15.3.0",
-    "cpu_abi": {"precision": "float64", "descriptor": "D3Q19 with force", "parallel": "none", "platform": "CPU_SISD", "relaxation_time": 0.8},
+    "cpu_abi": {
+      "precision": "float64",
+      "descriptor": "D3Q19 with force",
+      "parallel": "none",
+      "platform": "CPU_SISD",
+      "relaxation_time": 0.8
+    },
     "scope": "Synthetic rectangular channel, periodic x/z, y-wall bounce back, lattice Mach <=0.1",
     "native_build": "passed using the immutable source checkout plus the recorded patch",
     "driver_commit": "0c9cac4473ff12676f511a350ab00f03286a27ab",
@@ -84,9 +100,30 @@
     "cpu_velocity_verification": "passed at resolutions 8 and 16, independently decoded retained VTK",
     "pressure_verification": "unqualified beyond finite Float64 round trip",
     "physical_validation": "unqualified",
-    "cuda": {"priority": "best_effort", "architecture": "sm_86", "build": "unqualified", "runtime": "unqualified", "sandbox": "unqualified"},
-     "hip": {"priority": "primary_on_amd", "architecture": "gfx1100", "precision": "float64", "rocm_runtime": "7.2.3", "rocm_compiler_package": "22.0.0-rocm", "build": "passed in Nix sandbox with explicit architecture", "runtime": "procedural probe and packaged CLI/MCP B1 passed on RX 7900 XTX at the recorded exact source/runtime identities", "numerical": "periodic_forced_channel Float64 forced BGK D3Q19, resolutions 8/16; analytical and retained CPU velocity agreement passed", "sandbox": "selected-device single-AMD-KFD isolation passed on the observed kernel; multi-GPU exclusion remains unqualified", "evidence": "docs/evidence/gpu-backends.json; docs/evidence/hip-sandbox.json; docs/evidence/native-hip-b1.json"},
-    "vulkan": {"runtime": "unsupported at the pinned OpenLB source", "decision": "docs/gpu-backends.md", "performance_against_hip": "not measured"}
+    "cuda": {
+      "priority": "best_effort",
+      "architecture": "sm_86",
+      "build": "unqualified",
+      "runtime": "unqualified",
+      "sandbox": "unqualified"
+    },
+    "hip": {
+      "priority": "primary_on_amd",
+      "architecture": "gfx1100",
+      "precision": "float64",
+      "rocm_runtime": "7.2.3",
+      "rocm_compiler_package": "22.0.0-rocm",
+      "build": "passed in Nix sandbox with explicit architecture",
+      "runtime": "procedural probe and packaged CLI/MCP B1 passed on RX 7900 XTX at the recorded exact source/runtime identities",
+      "numerical": "periodic_forced_channel Float64 forced BGK D3Q19, resolutions 8/16; analytical and retained CPU velocity agreement passed",
+      "sandbox": "selected-device single-AMD-KFD isolation passed on the observed kernel; multi-GPU exclusion remains unqualified",
+      "evidence": "docs/evidence/gpu-backends.json; docs/evidence/hip-sandbox.json; docs/evidence/native-hip-b1.json"
+    },
+    "vulkan": {
+      "runtime": "unsupported at the pinned OpenLB source",
+      "decision": "docs/gpu-backends.md",
+      "performance_against_hip": "not measured"
+    }
   },
   "wetting_cpu_reference": {
     "review_date": "2026-10-06",
@@ -157,7 +194,7 @@
     "sdk_revision": "2118f14f8a19bc158d8a1cf90af58d85d187f849",
     "api": "mcp.server.MCPServer",
     "python_requirement": ">=3.12,<3.14",
-    "dependency_hashes": "uv.lock",
+    "dependency_hashes": "python/uv.lock",
     "runtime_test": "passed with the official SDK stdio Client against the Rust worker",
     "nix_clean_runtime": "passed; packaged official MCP client also exercised native CPU job submission"
   },
@@ -168,7 +205,13 @@
     "native_input_receipt_revision": "0facca23e010f4941fd0fd8f5af26c6e3257756f",
     "service_owner_plan_mount_revision": "3bd597f6d2beaac0f64a38698174edabd6102b55",
     "native_dri_binding_revision": "2863fa5b18d661dd00b33f7b69acc2e2846dc305",
-    "cpu_checks": {"rust_unit_tests": 5, "rust_integration_tests": 37, "official_mcp_python_tests": 2, "render_contract_cases": 5, "clippy": "passed with -D warnings"},
+    "cpu_checks": {
+      "rust_unit_tests": 5,
+      "rust_integration_tests": 37,
+      "official_mcp_python_tests": 2,
+      "render_contract_cases": 5,
+      "clippy": "passed with -D warnings"
+    },
     "systemd_receipt_sha256": "03758eb00d174725aa31346c62f6fb3d198e224f6fe0cf896bdaa8042052394e",
     "systemd_owner_receipt_sha256": "6383e16e32d94da3674c7a08eef23718806bf2e46ad0392eacdb0f68e23227c1",
     "systemd_owner_frozen_binary_sha256": "832a5713b05bc82e35b7642d5b6e9fe3af2a3eed1ca0c2078431953ab15087a3",
@@ -203,7 +246,10 @@
     "uv": "0.12.5",
     "uv_bootstrap_sha256": "3e195ccf1ed60c8bb24a6447ce306441a4181d54b602407e09bc56e963911c15",
     "cpu_gate": "scripts/check_cpu.py; 20-minute shared command budget",
-    "generator_gaps": ["push/PR concurrency remains event-scoped", "no explicit total-job timeout input"],
+    "generator_gaps": [
+      "push/PR concurrency remains event-scoped",
+      "no explicit total-job timeout input"
+    ],
     "python": "3.13.15",
     "rust": "rust-toolchain.toml",
     "hosted_execution": "not run; no push performed",
@@ -228,7 +274,14 @@
     "drjit_version": "1.5.0",
     "drjit_cp313_wheel_sha256": "33a4b146cc56a02ea0dd9c43034277c59ae3c5dd3490678c2cbc8ef69a1e8c93",
     "abi": "isolated Python 3.13 x86_64-linux; no FreeCAD/ParaView/MCP interpreter mixing",
-    "outputs": ["spectral-drjit", "spectral-mitsuba", "spectral-environment-cpu", "spectral-reference-cpu", "runtime-spectral-reference-cpu", "runtime-spectral-worker"],
+    "outputs": [
+      "spectral-drjit",
+      "spectral-mitsuba",
+      "spectral-environment-cpu",
+      "spectral-reference-cpu",
+      "runtime-spectral-reference-cpu",
+      "runtime-spectral-worker"
+    ],
     "selected_reference_variant": "scalar_spectral",
     "precision": "Float32",
     "native_execution": "unqualified; source/ELF inspection is not a package or solver gate",
@@ -236,6 +289,11 @@
     "policy": "libre BSD upstream wheels; optional driver loading grants neither hardware selection nor GPU execution",
     "source_contract": "docs/spectral-reference.md"
   },
-  "missing_stacks": ["hybrid FEM/PaStiX qualification", "libRadtran and native Mitsuba/Dr.Jit qualification", "Catalyst/Conduit", "qualified VTKHDF"],
+  "missing_stacks": [
+    "hybrid FEM/PaStiX qualification",
+    "libRadtran and native Mitsuba/Dr.Jit qualification",
+    "Catalyst/Conduit",
+    "qualified VTKHDF"
+  ],
   "evidence": "docs/qualification.md"
 }

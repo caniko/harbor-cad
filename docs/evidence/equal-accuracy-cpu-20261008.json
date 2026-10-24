@@ -27,8 +27,20 @@
   "maximum_original_temperature_difference_k": 0.0,
   "equal_accuracy_gate_k": 1e-12,
   "summary_by_threads": {
-    "1": {"median_end_to_end_s": 16.353552431042772, "minimum_end_to_end_s": 15.878481460968032, "maximum_end_to_end_s": 16.926269545976538, "median_cpu_usage_usec": 14598593, "maximum_job_cgroup_peak_bytes": 71417856},
-    "2": {"median_end_to_end_s": 15.458660325035453, "minimum_end_to_end_s": 15.225623152975459, "maximum_end_to_end_s": 15.511579245969187, "median_cpu_usage_usec": 14091811, "maximum_job_cgroup_peak_bytes": 192008192}
+    "1": {
+      "median_end_to_end_s": 16.353552431042772,
+      "minimum_end_to_end_s": 15.878481460968032,
+      "maximum_end_to_end_s": 16.926269545976538,
+      "median_cpu_usage_usec": 14598593,
+      "maximum_job_cgroup_peak_bytes": 71417856
+    },
+    "2": {
+      "median_end_to_end_s": 15.458660325035453,
+      "minimum_end_to_end_s": 15.225623152975459,
+      "maximum_end_to_end_s": 15.511579245969187,
+      "median_cpu_usage_usec": 14091811,
+      "maximum_job_cgroup_peak_bytes": 192008192
+    }
   },
   "two_core_over_one_core_median_time": 0.9452784274376612,
   "timing_scope": "ordinary approved submission through terminal solve and atomic checksum-verified export; separate independent scientific replay excluded",

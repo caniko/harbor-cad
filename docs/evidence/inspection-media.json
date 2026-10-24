@@ -74,7 +74,14 @@
     "scope": "actual production DrmSandbox and NativeProcess library under bounded systemd service",
     "encode_decode_passed": true,
     "mount_isolation_passed": true,
-    "read_only_pci_attributes": ["vendor", "device", "subsystem_vendor", "subsystem_device", "revision", "uevent"],
+    "read_only_pci_attributes": [
+      "vendor",
+      "device",
+      "subsystem_vendor",
+      "subsystem_device",
+      "revision",
+      "uevent"
+    ],
     "other_gpu_nodes_hidden": true,
     "other_device_metadata_hidden": true,
     "pci_config_and_resources_hidden": true,
@@ -87,7 +94,10 @@
     "function": "drmNodeIsDRM requires /sys/dev/char/MAJOR:MINOR/device/drm",
     "minimal_repro_path": "/data/scratch/tmp/opencode/harbor-cad-vaapi-libdrm-source/minimal-repro.json",
     "minimal_repro_sha256": "b527836f5302a3c77747c8aa9478ae57228093b30b95ce5470097b9e2920341c",
-    "initial_failures": ["missing selected DRM sysfs metadata", "64x64 fixture below observed 128x128 hardware minimum"],
+    "initial_failures": [
+      "missing selected DRM sysfs metadata",
+      "64x64 fixture below observed 128x128 hardware minimum"
+    ],
     "policy": "revalidate character-device minor and PCI identity; expose allowlisted selected metadata read-only; never mount all sysfs or add another device"
   },
   "physical_validation": "unqualified"

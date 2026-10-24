@@ -20,15 +20,24 @@
       "max_step_s": 10.0,
       "integration_substeps": 8,
       "observation_times_s": [10.0, 60.0, 120.0],
-      "ambient_history": [[0.0, 253.15], [120.0, 253.15]],
-      "heater_history": [[0.0, 0.0], [120.0, 0.0]],
+      "ambient_history": [
+        [0.0, 253.15],
+        [120.0, 253.15]
+      ],
+      "heater_history": [
+        [0.0, 0.0],
+        [120.0, 0.0]
+      ],
       "numerical_tolerance": 0.02,
       "energy_tolerance": 0.02,
       "geometry_provenance": "synthetic congruent lower block",
       "material_provenance": "synthetic constant thermal properties",
       "history_provenance": "explicit synthetic cold ambient",
       "convection_provenance": "prescribed synthetic Robin coefficient",
-      "moisture_risk": {"assessment": "missing", "reason": "separate native-source moisture assessment required"}
+      "moisture_risk": {
+        "assessment": "missing",
+        "reason": "separate native-source moisture assessment required"
+      }
     },
     {
       "schema_version": 1,
@@ -48,15 +57,24 @@
       "max_step_s": 10.0,
       "integration_substeps": 8,
       "observation_times_s": [10.0, 60.0, 120.0],
-      "ambient_history": [[0.0, 263.15], [120.0, 263.15]],
-      "heater_history": [[0.0, 0.0], [120.0, 0.0]],
+      "ambient_history": [
+        [0.0, 263.15],
+        [120.0, 263.15]
+      ],
+      "heater_history": [
+        [0.0, 0.0],
+        [120.0, 0.0]
+      ],
       "numerical_tolerance": 0.02,
       "energy_tolerance": 0.02,
       "geometry_provenance": "synthetic congruent upper block",
       "material_provenance": "synthetic constant thermal properties",
       "history_provenance": "explicit independent synthetic cold ambient",
       "convection_provenance": "prescribed synthetic Robin coefficient",
-      "moisture_risk": {"assessment": "missing", "reason": "separate native-source moisture assessment required"}
+      "moisture_risk": {
+        "assessment": "missing",
+        "reason": "separate native-source moisture assessment required"
+      }
     }
   ],
   "mechanical": {
@@ -78,6 +96,9 @@
   "coupling_time_s": 120.0,
   "maximum_projection_error_k": [1.0, 1.0],
   "maximum_relative_conservation_error": 1e-12,
-  "moisture_risk": {"assessment": "missing", "reason": "humidity unavailable"},
+  "moisture_risk": {
+    "assessment": "missing",
+    "reason": "humidity unavailable"
+  },
   "coupling_provenance": "explicit one-way constant-capacitance temperature projection; no contact-to-thermal feedback"
 }

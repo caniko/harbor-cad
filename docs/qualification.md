@@ -37,21 +37,21 @@ The real OpenLB 1.9.0 driver was compiled with GCC 15.3.0 against revision
 The test uses a **procedural STL**, independently of FreeCAD. It is evidence
 for this bounded CPU formulation, not for CAD integration or a GPU backend.
 
-| Parameter | Explicit fixture value |
-|---|---|
-| Geometry | 0.02 × 0.01 × 0.01 m channel; STL vertices in mm |
-| Boundaries | Periodic x/z; stationary bounce-back y walls |
-| Kinematic viscosity | 1e-5 m²/s |
-| Acceleration | 0.001 m/s² |
-| Density | 1 kg/m³, synthetic material |
-| Precision / collision | Float64 D3Q19 forced BGK, relaxation time 0.8 |
-| Duration / retained times | 20 s; 0, 10 and 20 s |
-| Numerical gate | Relative velocity L2 error ≤0.05 and improvement under refinement |
+| Parameter                 | Explicit fixture value                                            |
+| ------------------------- | ----------------------------------------------------------------- |
+| Geometry                  | 0.02 × 0.01 × 0.01 m channel; STL vertices in mm                  |
+| Boundaries                | Periodic x/z; stationary bounce-back y walls                      |
+| Kinematic viscosity       | 1e-5 m²/s                                                         |
+| Acceleration              | 0.001 m/s²                                                        |
+| Density                   | 1 kg/m³, synthetic material                                       |
+| Precision / collision     | Float64 D3Q19 forced BGK, relaxation time 0.8                     |
+| Duration / retained times | 20 s; 0, 10 and 20 s                                              |
+| Numerical gate            | Relative velocity L2 error ≤0.05 and improvement under refinement |
 
-| Resolution | Fluid cells | Lattice steps | Lattice Mach | Relative velocity L2 error |
-|---|---:|---:|---:|---:|
-| 8 | 1024 | 1280 | 0.0270632938683 | 0.0111244282661 |
-| 16 | 8192 | 5120 | 0.0135316469341 | 0.00278138734196 |
+| Resolution | Fluid cells | Lattice steps |    Lattice Mach | Relative velocity L2 error |
+| ---------- | ----------: | ------------: | --------------: | -------------------------: |
+| 8          |        1024 |          1280 | 0.0270632938683 |            0.0111244282661 |
+| 16         |        8192 |          5120 | 0.0135316469341 |           0.00278138734196 |
 
 The Python verifier independently decodes zlib-compressed VTK payloads,
 checks actual Float64 byte lengths and finite values, follows relative
@@ -123,9 +123,9 @@ boundaries. The same model, resolution, duration, precision and tolerances then
 passed:
 
 | Resolution | CPU analytical velocity relative L2 | HIP analytical velocity relative L2 | Maximum retained CPU/HIP velocity relative L2 difference |
-|---|---:|---:|---:|
-| 8 | 0.01112442826614978 | 0.011124428266122175 | 3.124827453983309e-14 |
-| 16 | 0.0027813873419648702 | 0.0027813873418746048 | 1.0485508411701897e-13 |
+| ---------- | ----------------------------------: | ----------------------------------: | -------------------------------------------------------: |
+| 8          |                 0.01112442826614978 |                0.011124428266122175 |                                    3.124827453983309e-14 |
+| 16         |               0.0027813873419648702 |               0.0027813873418746048 |                                   1.0485508411701897e-13 |
 
 Every 0/10/20-s retained PVD→VTM→VTI step was decoded independently. Float64
 payloads, topology, coordinates and components were checked; material IDs
@@ -388,13 +388,13 @@ roots after complete-tree closure. Live controls included zero swap, one CPU,
 package and report hashes are in [evidence/shared-admission.json](evidence/shared-admission.json).
 This is CPU lifecycle/admission evidence; GPU VRAM and B1 remain independent.
 
-| Gate | Status |
-|---|---|
-| A0 | Partial: locked CPU packages/parity/contracts passed; production importer closure-only isolation, resource controls and descendant cleanup passed for controlled fixtures; other native policies remain separately unqualified |
-| A1 | Analytical airflow reference plus real low-Mach OpenLB CPU velocity/refinement check; thermal/wetting/FEM references incomplete |
-| B1 | Passed for the synthetic single-card AMD fixture: packaged FreeCAD→HIP OpenLB→immutable fields→EGL→VAAPI→checksummed bundle through CLI and official MCP; worker restart, idempotency and GPU partial-field recovery passed; CUDA best-effort |
-| B2 | Renderer/media RAM/CPU/wall/output measured; no qualified numerical GPU filter, per-process VRAM peak or complete topology/ghost-cell round trip |
-| C–F | Not implemented |
+| Gate | Status                                                                                                                                                                                                                                        |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A0   | Partial: locked CPU packages/parity/contracts passed; production importer closure-only isolation, resource controls and descendant cleanup passed for controlled fixtures; other native policies remain separately unqualified                |
+| A1   | Analytical airflow reference plus real low-Mach OpenLB CPU velocity/refinement check; thermal/wetting/FEM references incomplete                                                                                                               |
+| B1   | Passed for the synthetic single-card AMD fixture: packaged FreeCAD→HIP OpenLB→immutable fields→EGL→VAAPI→checksummed bundle through CLI and official MCP; worker restart, idempotency and GPU partial-field recovery passed; CUDA best-effort |
+| B2   | Renderer/media RAM/CPU/wall/output measured; no qualified numerical GPU filter, per-process VRAM peak or complete topology/ghost-cell round trip                                                                                              |
+| C–F  | Not implemented                                                                                                                                                                                                                               |
 
 ### Execution binding, retention and importer qualification
 

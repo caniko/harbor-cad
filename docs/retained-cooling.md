@@ -78,7 +78,7 @@ artifacts with units and independent source/execution identities.
 Use existing Rust/Serde/Schemars contracts, Rust integration tests, Pytest native
 reconstruction tests and operation-only Nix packages. Verify each slice with
 `cargo test --locked`, `cargo clippy --locked --all-targets -- -D warnings`,
-`cargo build --locked`, focused `uv run --locked pytest`, and the complete
+`cargo build --locked`, focused `uv run --locked --project python pytest`, and the complete
 `python3 -B scripts/check_cpu.py` gate before its local commit. Package/campaign
 execution uses the existing guarded Canix lease and immutable source capture.
 This document defines acceptance; it records no executed cooling capability.

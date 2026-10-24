@@ -26,12 +26,14 @@ def main():
     # interpreter already on PATH and never installs another host interpreter.
     if os.environ.get("GITHUB_ACTIONS") == "true":
         run(uv, "python", "install", "--no-config", "--no-bin", "3.13.15")
-    run(uv, "sync", "--locked", UV_PYTHON_DOWNLOADS="never")
+    run(uv, "sync", "--locked", "--project", "python", UV_PYTHON_DOWNLOADS="never")
     run("cargo", "fmt", "--all", "--", "--check")
     run(
         uv,
         "run",
         "--locked",
+        "--project",
+        "python",
         "ruff",
         "format",
         "--check",
@@ -39,7 +41,18 @@ def main():
         "adapters",
         "scripts",
     )
-    run(uv, "run", "--locked", "ruff", "check", "python", "adapters", "scripts")
+    run(
+        uv,
+        "run",
+        "--locked",
+        "--project",
+        "python",
+        "ruff",
+        "check",
+        "python",
+        "adapters",
+        "scripts",
+    )
     run("cargo", "clippy", "--locked", "--all-targets", "--", "-D", "warnings")
     run("cargo", "test", "--locked")
     run("cargo", "build", "--locked")
@@ -47,6 +60,8 @@ def main():
         uv,
         "run",
         "--locked",
+        "--project",
+        "python",
         "pytest",
         "-q",
         "python/tests",

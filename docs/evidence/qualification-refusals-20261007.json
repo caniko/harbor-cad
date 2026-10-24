@@ -12,11 +12,31 @@
     "refusal_log_sha256": "9d0e0e62d40f2e2cbf6a9cdfecb52b1eb5bf6c9282a1cf7a6340858e5218669e",
     "refusal_log_bytes": 735,
     "attempts": [
-      {"name": "snow-native-1", "command_sha256": "dc24eaa1ecefd95268e21f46d83ab23162685f64d3d93a7235a7759ad09ed1dc", "exit_code": 1},
-      {"name": "snow-native-2", "command_sha256": "81988d9d6370ca9fc82bc9db37803013046c960c06c46bc33b73a20d5663c57c", "exit_code": 1},
-      {"name": "retained-phase-1", "command_sha256": "2dc2a6ba5b2f6d0e2793e85f3d656644ed4e5d8e68a666083e2308ebe5ce8d43", "exit_code": 1},
-      {"name": "spectral-abi-2", "command_sha256": "eb62dac2e5af28888c8f178f43558f45a622da33776de28f204b10dd1660cfc9", "exit_code": 1},
-      {"name": "spectral-native-diagnostic-1", "command_sha256": "d0dcf9a15225009f912e1ae5ef2e913267a89986310371501b913088a6a9ea0a", "exit_code": 1}
+      {
+        "name": "snow-native-1",
+        "command_sha256": "dc24eaa1ecefd95268e21f46d83ab23162685f64d3d93a7235a7759ad09ed1dc",
+        "exit_code": 1
+      },
+      {
+        "name": "snow-native-2",
+        "command_sha256": "81988d9d6370ca9fc82bc9db37803013046c960c06c46bc33b73a20d5663c57c",
+        "exit_code": 1
+      },
+      {
+        "name": "retained-phase-1",
+        "command_sha256": "2dc2a6ba5b2f6d0e2793e85f3d656644ed4e5d8e68a666083e2308ebe5ce8d43",
+        "exit_code": 1
+      },
+      {
+        "name": "spectral-abi-2",
+        "command_sha256": "eb62dac2e5af28888c8f178f43558f45a622da33776de28f204b10dd1660cfc9",
+        "exit_code": 1
+      },
+      {
+        "name": "spectral-native-diagnostic-1",
+        "command_sha256": "d0dcf9a15225009f912e1ae5ef2e913267a89986310371501b913088a6a9ea0a",
+        "exit_code": 1
+      }
     ],
     "file_convention": "NAME-command.json, NAME.log, NAME-exit.txt; originals retained independently"
   },
@@ -24,14 +44,70 @@
     "minimum_combined_start_gib": 24,
     "evaluation_scope_gib": 32,
     "attempts": [
-      {"name": "build-45", "revision": "066644ff9336797a4140a8a4b7485df6030fdc26", "available_gib": 12, "command_sha256": "849e5be5c3650ad852bc8fce21b3f9434b91b3474ac5e2f4586e3d1a5979689b", "stdout_sha256": "65f6dc527b676eeef04b8d73c9b15a54b3649b48385c6984c9af8a0a3219ab6d", "exit_code": 1},
-      {"name": "build-46", "revision": "98690d4d1a291c2f9491ec20148e6846eba6b65b", "available_gib": 9, "command_sha256": "52f8f64263fd10a9e7f8f70b7d91c9e4e0420f67e8b7a95a70ad04024f809d1c", "stdout_sha256": "b26d7a9d747d4503e1a383003f7a559a822d979aab666884218b2d1556c8ca96", "exit_code": 1},
-      {"name": "build-47", "revision": "3ad8dbc0cd13c5d94d9d1e3dcfc76d439334b662", "available_gib": 10, "command_sha256": "70e1d758e31a2b88ad98281cfd674167f075f5bba026f144c6f397d03de800e7", "stdout_sha256": "bed0262b421c75e059c3e6d08aca721444d46d80763109f8d1cdae64cfbfc053", "exit_code": 1},
-      {"name":"build-48","revision":"b305bf97fb78df6c7f66a263ed269ac1d8e26c5a","available_gib":9,"command_sha256":"23db5dc11d14d786b10bf8a3a64fa180426eeeb647f0cb168e87f268961078a3","stdout_sha256":"b26d7a9d747d4503e1a383003f7a559a822d979aab666884218b2d1556c8ca96","exit_code":1},
-      {"name":"build-49","revision":"2cace0564fd5a10c779c97b8169bff0c5d69ab30","available_gib":8,"command_sha256":"a366b4ea493831ee6eb0f34899307723e0162b474664a0965d0b2a81e207aa6e","stdout_sha256":"f08aca422e69660ec05ba710ac89afdbe18e3ce29c75ab7aa59fb375323b882f","exit_code":1},
-      {"name":"build-50","revision":"5b41b483d4b90d997db5e0bea9447d779b6b01e5","available_gib":9,"command_sha256":"d0aa30ea2990d341dbb517f2a70aead6b589d63d076e2e35df2a50647e6fc5fc","stdout_sha256":"b26d7a9d747d4503e1a383003f7a559a822d979aab666884218b2d1556c8ca96","exit_code":1},
-      {"name":"build-51","revision":"c455260a84d71f15767effececf62437d3a49015","available_gib":9,"command_sha256":"f170b33d6aa953f0a479adff402ba2d9f342c58057fc5f6cde101592eab28046","stdout_sha256":"b26d7a9d747d4503e1a383003f7a559a822d979aab666884218b2d1556c8ca96","exit_code":1},
-      {"name":"build-52","revision":"677127c25fff840417ce67eaca1ae8e75f0d1171","available_gib":11,"command_sha256":"b39c212c0bf8cd60aff1e45b2b0ab94db62caf395baea3f278bc9f1e5b295dbf","stdout_sha256":"5ee9393ab4d32d8d18659226d72a256a19564e14bc81402ab3c4daeeee2ae4ac","exit_code":1}
+      {
+        "name": "build-45",
+        "revision": "066644ff9336797a4140a8a4b7485df6030fdc26",
+        "available_gib": 12,
+        "command_sha256": "849e5be5c3650ad852bc8fce21b3f9434b91b3474ac5e2f4586e3d1a5979689b",
+        "stdout_sha256": "65f6dc527b676eeef04b8d73c9b15a54b3649b48385c6984c9af8a0a3219ab6d",
+        "exit_code": 1
+      },
+      {
+        "name": "build-46",
+        "revision": "98690d4d1a291c2f9491ec20148e6846eba6b65b",
+        "available_gib": 9,
+        "command_sha256": "52f8f64263fd10a9e7f8f70b7d91c9e4e0420f67e8b7a95a70ad04024f809d1c",
+        "stdout_sha256": "b26d7a9d747d4503e1a383003f7a559a822d979aab666884218b2d1556c8ca96",
+        "exit_code": 1
+      },
+      {
+        "name": "build-47",
+        "revision": "3ad8dbc0cd13c5d94d9d1e3dcfc76d439334b662",
+        "available_gib": 10,
+        "command_sha256": "70e1d758e31a2b88ad98281cfd674167f075f5bba026f144c6f397d03de800e7",
+        "stdout_sha256": "bed0262b421c75e059c3e6d08aca721444d46d80763109f8d1cdae64cfbfc053",
+        "exit_code": 1
+      },
+      {
+        "name": "build-48",
+        "revision": "b305bf97fb78df6c7f66a263ed269ac1d8e26c5a",
+        "available_gib": 9,
+        "command_sha256": "23db5dc11d14d786b10bf8a3a64fa180426eeeb647f0cb168e87f268961078a3",
+        "stdout_sha256": "b26d7a9d747d4503e1a383003f7a559a822d979aab666884218b2d1556c8ca96",
+        "exit_code": 1
+      },
+      {
+        "name": "build-49",
+        "revision": "2cace0564fd5a10c779c97b8169bff0c5d69ab30",
+        "available_gib": 8,
+        "command_sha256": "a366b4ea493831ee6eb0f34899307723e0162b474664a0965d0b2a81e207aa6e",
+        "stdout_sha256": "f08aca422e69660ec05ba710ac89afdbe18e3ce29c75ab7aa59fb375323b882f",
+        "exit_code": 1
+      },
+      {
+        "name": "build-50",
+        "revision": "5b41b483d4b90d997db5e0bea9447d779b6b01e5",
+        "available_gib": 9,
+        "command_sha256": "d0aa30ea2990d341dbb517f2a70aead6b589d63d076e2e35df2a50647e6fc5fc",
+        "stdout_sha256": "b26d7a9d747d4503e1a383003f7a559a822d979aab666884218b2d1556c8ca96",
+        "exit_code": 1
+      },
+      {
+        "name": "build-51",
+        "revision": "c455260a84d71f15767effececf62437d3a49015",
+        "available_gib": 9,
+        "command_sha256": "f170b33d6aa953f0a479adff402ba2d9f342c58057fc5f6cde101592eab28046",
+        "stdout_sha256": "b26d7a9d747d4503e1a383003f7a559a822d979aab666884218b2d1556c8ca96",
+        "exit_code": 1
+      },
+      {
+        "name": "build-52",
+        "revision": "677127c25fff840417ce67eaca1ae8e75f0d1171",
+        "available_gib": 11,
+        "command_sha256": "b39c212c0bf8cd60aff1e45b2b0ab94db62caf395baea3f278bc9f1e5b295dbf",
+        "stdout_sha256": "5ee9393ab4d32d8d18659226d72a256a19564e14bc81402ab3c4daeeee2ae4ac",
+        "exit_code": 1
+      }
     ],
     "file_convention": "NAME/evaluation-command.json, evaluation-stdout.json, evaluation-stderr.log, evaluation-exit.txt, revision.txt; no derivation realization started"
   },
@@ -45,8 +121,18 @@
     "refusal_log_bytes": 734,
     "wait_seconds": 300,
     "attempts": [
-      {"name":"retained-phase-3","revision":"5b41b483d4b90d997db5e0bea9447d779b6b01e5","command_sha256":"446b4112194c5ef8355e8ae42a03430742610494cff2317e5c6c67b3462b15e7","exit_code":1},
-      {"name":"spectral-native-diagnostic-2","revision":"5b41b483d4b90d997db5e0bea9447d779b6b01e5","command_sha256":"b9664a7dacbbdb41bdb5441fad99e3987d63fba1df2595f13f9468033e7017cd","exit_code":1}
+      {
+        "name": "retained-phase-3",
+        "revision": "5b41b483d4b90d997db5e0bea9447d779b6b01e5",
+        "command_sha256": "446b4112194c5ef8355e8ae42a03430742610494cff2317e5c6c67b3462b15e7",
+        "exit_code": 1
+      },
+      {
+        "name": "spectral-native-diagnostic-2",
+        "revision": "5b41b483d4b90d997db5e0bea9447d779b6b01e5",
+        "command_sha256": "b9664a7dacbbdb41bdb5441fad99e3987d63fba1df2595f13f9468033e7017cd",
+        "exit_code": 1
+      }
     ],
     "file_convention": "NAME-command.json, NAME.log, NAME-exit.txt; no native execution started"
   },
@@ -59,9 +145,27 @@
     "refusal_log_sha256": "24e1d2cec9818d5fd088fafdaf821ff153fca11978527d13871a89a0d5c96858",
     "refusal_log_bytes": 735,
     "attempts": [
-      {"name":"retained-phase-5","revision":"c455260a84d71f15767effececf62437d3a49015","wait_seconds":300,"command_sha256":"5c4b3d894f56619989da2aafd143e9e0cfbd7866a7de0537dbf3bbf87b796417","exit_code":1},
-      {"name":"spectral-native-diagnostic-3","revision":"5b41b483d4b90d997db5e0bea9447d779b6b01e5","wait_seconds":300,"command_sha256":"4257476cc380b1d418d555e1113e9ac09de962cbbe19ca7f6f1cfbc496c4ec65","exit_code":1},
-      {"name":"cpu-remainder-1","revision":"97039ebbf3bb9a631fcfd8bff1a10925a6df54fe","wait_seconds":3600,"command_sha256":"4bcaf1292308db4186d9dc9383a1c05af8bac4ddf1e37b57c362e5bd4755caf1","exit_code":1}
+      {
+        "name": "retained-phase-5",
+        "revision": "c455260a84d71f15767effececf62437d3a49015",
+        "wait_seconds": 300,
+        "command_sha256": "5c4b3d894f56619989da2aafd143e9e0cfbd7866a7de0537dbf3bbf87b796417",
+        "exit_code": 1
+      },
+      {
+        "name": "spectral-native-diagnostic-3",
+        "revision": "5b41b483d4b90d997db5e0bea9447d779b6b01e5",
+        "wait_seconds": 300,
+        "command_sha256": "4257476cc380b1d418d555e1113e9ac09de962cbbe19ca7f6f1cfbc496c4ec65",
+        "exit_code": 1
+      },
+      {
+        "name": "cpu-remainder-1",
+        "revision": "97039ebbf3bb9a631fcfd8bff1a10925a6df54fe",
+        "wait_seconds": 3600,
+        "command_sha256": "4bcaf1292308db4186d9dc9383a1c05af8bac4ddf1e37b57c362e5bd4755caf1",
+        "exit_code": 1
+      }
     ],
     "file_convention": "NAME-command.json, NAME.log, NAME-exit.txt; no systemd service or native campaign started"
   },

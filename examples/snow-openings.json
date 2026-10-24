@@ -2,16 +2,22 @@
   "schema_version": 1,
   "synthetic": true,
   "model": "prescribed_closed_prisms",
-  "geometry_tolerance": {"value": 1e-8, "unit": "m"},
+  "geometry_tolerance": { "value": 1e-8, "unit": "m" },
   "provenance": "explicit synthetic snow coverage; no deposition or adhesion model",
   "openings": [
     {
       "name": "vent",
       "normal_axis": "z",
-      "plane": {"value": 0.0, "unit": "mm"},
+      "plane": { "value": 0.0, "unit": "mm" },
       "rectangle": [
-        [{"value": 0.0, "unit": "mm"}, {"value": 40.0, "unit": "mm"}],
-        [{"value": 0.0, "unit": "mm"}, {"value": 40.0, "unit": "mm"}]
+        [
+          { "value": 0.0, "unit": "mm" },
+          { "value": 40.0, "unit": "mm" }
+        ],
+        [
+          { "value": 0.0, "unit": "mm" },
+          { "value": 40.0, "unit": "mm" }
+        ]
       ],
       "provenance": "prescribed synthetic planar opening"
     }
@@ -20,18 +26,36 @@
     {
       "name": "left",
       "bounds": [
-        [{"value": 0.0, "unit": "mm"}, {"value": 30.0, "unit": "mm"}],
-        [{"value": 0.0, "unit": "mm"}, {"value": 20.0, "unit": "mm"}],
-        [{"value": -10.0, "unit": "mm"}, {"value": 10.0, "unit": "mm"}]
+        [
+          { "value": 0.0, "unit": "mm" },
+          { "value": 30.0, "unit": "mm" }
+        ],
+        [
+          { "value": 0.0, "unit": "mm" },
+          { "value": 20.0, "unit": "mm" }
+        ],
+        [
+          { "value": -10.0, "unit": "mm" },
+          { "value": 10.0, "unit": "mm" }
+        ]
       ],
       "provenance": "first prescribed synthetic snow prism"
     },
     {
       "name": "right",
       "bounds": [
-        [{"value": 20.0, "unit": "mm"}, {"value": 40.0, "unit": "mm"}],
-        [{"value": 10.0, "unit": "mm"}, {"value": 40.0, "unit": "mm"}],
-        [{"value": -10.0, "unit": "mm"}, {"value": 10.0, "unit": "mm"}]
+        [
+          { "value": 20.0, "unit": "mm" },
+          { "value": 40.0, "unit": "mm" }
+        ],
+        [
+          { "value": 10.0, "unit": "mm" },
+          { "value": 40.0, "unit": "mm" }
+        ],
+        [
+          { "value": -10.0, "unit": "mm" },
+          { "value": 10.0, "unit": "mm" }
+        ]
       ],
       "provenance": "second prescribed synthetic snow prism"
     }

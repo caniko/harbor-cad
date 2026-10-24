@@ -14,15 +14,15 @@ FreeCAD → geometry/meshes → solvers → scientific fields → GPU filters �
 
 Rust owns contracts, validation, scheduling, resources, lifecycle and artifacts. Python owns narrow FreeCAD/ParaView/Mitsuba bridges and MCP. Native solvers own numerical algorithms; implement thin OpenLB C++ drivers. Use versioned descriptors and files, not cross-language embedding or duplicate schedulers.
 
-| Stage | Selected stack | Execution |
-|---|---|---|
-| CAD / FEM mesh | Security-patched FreeCAD; Gmsh | CPU; optional GPU viewport |
-| Airflow / local water / qualified phase change | Public OpenLB; model-specific drivers | HIP/ROCm first on AMD; CUDA best-effort; each backend separately qualified |
-| Thermal / mechanical / contact | CalculiX + compatible PaStiX4CalculiX/PaRSEC | Hybrid CUDA; independent CPU references |
-| Spectral exposure | libRadtran → matched Mitsuba/Dr.Jit | CPU atmosphere; qualified CUDA/OptiX transport |
-| Scientific filters | Compatible ParaView/VTK/Viskores | Qualified GPU-filter allowlist |
-| Rendering / encoding | ParaView EGL → FFmpeg | Verified render and media devices |
-| Later optimization | Catalyst/Conduit; qualified VTKHDF | Optional after baseline delivery |
+| Stage                                          | Selected stack                               | Execution                                                                  |
+| ---------------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------- |
+| CAD / FEM mesh                                 | Security-patched FreeCAD; Gmsh               | CPU; optional GPU viewport                                                 |
+| Airflow / local water / qualified phase change | Public OpenLB; model-specific drivers        | HIP/ROCm first on AMD; CUDA best-effort; each backend separately qualified |
+| Thermal / mechanical / contact                 | CalculiX + compatible PaStiX4CalculiX/PaRSEC | Hybrid CUDA; independent CPU references                                    |
+| Spectral exposure                              | libRadtran → matched Mitsuba/Dr.Jit          | CPU atmosphere; qualified CUDA/OptiX transport                             |
+| Scientific filters                             | Compatible ParaView/VTK/Viskores             | Qualified GPU-filter allowlist                                             |
+| Rendering / encoding                           | ParaView EGL → FFmpeg                        | Verified render and media devices                                          |
+| Later optimization                             | Catalyst/Conduit; qualified VTKHDF           | Optional after baseline delivery                                           |
 
 Do not add another mandatory physics framework, cloud service, network database or web dashboard. Public source availability and an exact model/backend benchmark—not announcements—determine support. [R04–R10]
 
@@ -52,11 +52,11 @@ The flake does not control host kernel drivers. Verify loaded runtime libraries 
 
 Route **operations**, not programs:
 
-| Fleetix role | Work |
-|---|---|
-| Compute | OpenLB, PaStiX, Mitsuba, Viskores numerical filters |
-| Render | ParaView EGL; optional FreeCAD viewport |
-| Media | FFmpeg encoding |
+| Fleetix role | Work                                                |
+| ------------ | --------------------------------------------------- |
+| Compute      | OpenLB, PaStiX, Mitsuba, Viskores numerical filters |
+| Render       | ParaView EGL; optional FreeCAD viewport             |
+| Media        | FFmpeg encoding                                     |
 
 Compute policy selects a backend, not a physical GPU or scheduler. Resolve PCI identity and backend UUIDs against actual hardware; ordinals are diagnostic only. A Mesa PCI selector is not a CUDA ID. Reject ambiguous/stale bindings; absent routes stay disabled unless an explicit recorded override applies. Qualify partitions separately. Split filter/render stages when they use different devices unless independent selection is proven. [R01]
 
@@ -70,14 +70,14 @@ Record requested/observed device, runtime, precision, context/backend and execut
 
 Rust owns versioned schemas; generate JSON Schema and test Python parity.
 
-| Contract | Required contents |
-|---|---|
-| `CaseSpec`, `PhysicsApplicability` | Geometry/material provenance, units, boundaries, formulation, validated ranges, exclusions, tolerances |
-| `ExecutionPlan`, `TransferSpec` | Immutable DAG, dependencies, resource estimates, quantity mappings and conservation/error policy |
-| `HostExecutionProfile`, `GpuSelection` | Allowed roots/devices/packages, budgets, routes, overrides, effective enforcement |
-| `ObservationPlan` | Metrics/probes, retained fields/times, checkpoints, previews, budgets/backpressure |
-| `ArtifactManifest`, `ValidationReport` | Hashes, formats, units/times, field association, provenance, evidence and limitations |
-| `WorkerRequest` | Protocol version, request ID, typed operation, idempotency key |
+| Contract                               | Required contents                                                                                      |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `CaseSpec`, `PhysicsApplicability`     | Geometry/material provenance, units, boundaries, formulation, validated ranges, exclusions, tolerances |
+| `ExecutionPlan`, `TransferSpec`        | Immutable DAG, dependencies, resource estimates, quantity mappings and conservation/error policy       |
+| `HostExecutionProfile`, `GpuSelection` | Allowed roots/devices/packages, budgets, routes, overrides, effective enforcement                      |
+| `ObservationPlan`                      | Metrics/probes, retained fields/times, checkpoints, previews, budgets/backpressure                     |
+| `ArtifactManifest`, `ValidationReport` | Hashes, formats, units/times, field association, provenance, evidence and limitations                  |
+| `WorkerRequest`                        | Protocol version, request ID, typed operation, idempotency key                                         |
 
 Adapters implement `capabilities`, `prepare`, `run`, `inspect`; checkpoint/resume only when verified. Keep reusable case parameters runtime-configurable where supported. Capabilities are keyed by **source + formulation + dimensionality + backend + precision + refinement + runtime/hardware**, not generic solver names.
 
@@ -97,14 +97,14 @@ Use whole-device flow/thermal models and local gap/wetting submodels. Estimate a
 
 ## 5. Engineering recipes and boundaries
 
-| Recipe | Implement and verify | Never infer automatically |
-|---|---|---|
-| Cold soak → restart | Transient thermal history, power, interfaces; component temperatures and heater energy | Electronic boot reliability |
-| Thermal expansion / seals | Preload, contact/gasket data, temperature transfer; displacement and residual compression | Sealing with missing cold-material data |
-| Wind / local water | Wall-mounted airflow; qualified wetting/retention; mass balance and refinement | Whole-device waterproofness from splash images |
-| Snow | Prescribed coverage, insulation and blocked openings | Snow deposition or adhesion |
-| Retained water → freeze | Conservative state transfer; phase fractions, temperature, energy balance | Expansion pressure, fracture or freeze–thaw lifetime |
-| Solar / UV | Angular direct/diffuse inputs, surface irradiance and time-integrated dose | Material lifetime without calibration |
+| Recipe                    | Implement and verify                                                                      | Never infer automatically                            |
+| ------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Cold soak → restart       | Transient thermal history, power, interfaces; component temperatures and heater energy    | Electronic boot reliability                          |
+| Thermal expansion / seals | Preload, contact/gasket data, temperature transfer; displacement and residual compression | Sealing with missing cold-material data              |
+| Wind / local water        | Wall-mounted airflow; qualified wetting/retention; mass balance and refinement            | Whole-device waterproofness from splash images       |
+| Snow                      | Prescribed coverage, insulation and blocked openings                                      | Snow deposition or adhesion                          |
+| Retained water → freeze   | Conservative state transfer; phase fractions, temperature, energy balance                 | Expansion pressure, fracture or freeze–thaw lifetime |
+| Solar / UV                | Angular direct/diffuse inputs, surface irradiance and time-integrated dose                | Material lifetime without calibration                |
 
 Start with one-way transfers. Record source/destination regions, units, orientation, interpolation and conservation losses. **Velocity alone does not supply a convection coefficient:** use documented measurements/correlations or validated thermal-flow data with heat flux and wall/reference temperatures; reject ill-conditioned conversions.
 
@@ -156,16 +156,16 @@ Use one Python MCP distribution and the official SDK; verify and test the API at
 
 ## 9. Delivery gates and acceptance
 
-| Gate | Required result |
-|---|---|
-| A0 | Locked clean-runtime packages; patched importer; effective sandbox/unfree policy; Fleetix/schema parity; worker/MCP contracts |
-| A1 | Small airflow, thermal-boundary, wetting-feasibility and FEM references; identify unsupported combinations without blocking B1 unnecessarily |
-| **B1** | **Synthetic FreeCAD → real GPU OpenLB → fields → EGL image → hardware video → bundle, through CLI and MCP** |
-| B2 | One verified GPU filter; bounded observations; format round trips; measured resource peaks |
-| C | Cold start, expansion/contact, justified thermal coupling, hybrid FEM and moisture assessment |
-| D | Local water, prescribed snow and qualified freezing with applicability, conservation and refinement |
-| E | Spectral surface irradiance/dose, analytical references and GPU evidence |
-| F | Optional Catalyst; bounded studies; retention/recovery; measured equal-accuracy optimization |
+| Gate   | Required result                                                                                                                              |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| A0     | Locked clean-runtime packages; patched importer; effective sandbox/unfree policy; Fleetix/schema parity; worker/MCP contracts                |
+| A1     | Small airflow, thermal-boundary, wetting-feasibility and FEM references; identify unsupported combinations without blocking B1 unnecessarily |
+| **B1** | **Synthetic FreeCAD → real GPU OpenLB → fields → EGL image → hardware video → bundle, through CLI and MCP**                                  |
+| B2     | One verified GPU filter; bounded observations; format round trips; measured resource peaks                                                   |
+| C      | Cold start, expansion/contact, justified thermal coupling, hybrid FEM and moisture assessment                                                |
+| D      | Local water, prescribed snow and qualified freezing with applicability, conservation and refinement                                          |
+| E      | Spectral surface irradiance/dose, analytical references and GPU evidence                                                                     |
+| F      | Optional Catalyst; bounded studies; retention/recovery; measured equal-accuracy optimization                                                 |
 
 Finish vertical slices, not placeholder adapters. One owner controls schemas/locks; parallelize adapters after contracts stabilize.
 

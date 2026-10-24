@@ -5,23 +5,55 @@
   "source_baseline": "80616ecb096c8c0611428769731b8bbaaa7ee996",
   "evidence_root": "/data/scratch/tmp/opencode/harbor-cad-authority-20261005",
   "command_record": "hip-sandbox-4-command.json",
-  "report": {"path": "hip-sandbox-4/verification.json", "sha256": "886987a1abc1413ea87887375796306601a65f4bfeb181be22f3250dac261e87"},
+  "report": {
+    "path": "hip-sandbox-4/verification.json",
+    "sha256": "886987a1abc1413ea87887375796306601a65f4bfeb181be22f3250dac261e87"
+  },
   "kernel_release": "7.2.8-cachyos-lto",
   "kernel_source_matched": false,
-  "raw_kfd_vm": {"path": "kfd-vm-2/verification.json", "sha256": "1aa26e1d6e53d2545a1c7f470a5845b3f25cff11fd5c2f111e08e4dfafaf5648", "uapi_major": 1, "uapi_minor": 23, "invalid_fd_errno": 22, "non_drm_fd_errno": 22, "unavailable_gpu_id_errno": 22, "exact_selected_drm_fd_and_gpu_id_errno": 0},
+  "raw_kfd_vm": {
+    "path": "kfd-vm-2/verification.json",
+    "sha256": "1aa26e1d6e53d2545a1c7f470a5845b3f25cff11fd5c2f111e08e4dfafaf5648",
+    "uapi_major": 1,
+    "uapi_minor": 23,
+    "invalid_fd_errno": 22,
+    "non_drm_fd_errno": 22,
+    "unavailable_gpu_id_errno": 22,
+    "exact_selected_drm_fd_and_gpu_id_errno": 0
+  },
   "rocm_revision": "c2d94761153e1033a91744842dfc66eddd631fde",
   "sources": [
-    {"url": "https://github.com/ROCm/rocm-systems/blob/c2d94761153e1033a91744842dfc66eddd631fde/projects/clr/rocclr/device/rocm/rocdevice.cpp", "path": "research/rocdevice.cpp", "sha256": "95943ee943a8b645f4becf5b477595f56db8338b8bc19f7db4ba9bf18ff18974"},
-    {"url": "https://github.com/ROCm/rocm-systems/blob/c2d94761153e1033a91744842dfc66eddd631fde/projects/rocr-runtime/runtime/hsa-runtime/core/runtime/amd_gpu_agent.cpp", "path": "research/amd_gpu_agent.cpp", "sha256": "c39d5f922e855ce57d3c1903beef325e6004431c2ee66ae000aac72a0e5999da"}
+    {
+      "url": "https://github.com/ROCm/rocm-systems/blob/c2d94761153e1033a91744842dfc66eddd631fde/projects/clr/rocclr/device/rocm/rocdevice.cpp",
+      "path": "research/rocdevice.cpp",
+      "sha256": "95943ee943a8b645f4becf5b477595f56db8338b8bc19f7db4ba9bf18ff18974"
+    },
+    {
+      "url": "https://github.com/ROCm/rocm-systems/blob/c2d94761153e1033a91744842dfc66eddd631fde/projects/rocr-runtime/runtime/hsa-runtime/core/runtime/amd_gpu_agent.cpp",
+      "path": "research/amd_gpu_agent.cpp",
+      "sha256": "c39d5f922e855ce57d3c1903beef325e6004431c2ee66ae000aac72a0e5999da"
+    }
   ],
-  "identity": {"pci": "0000:03:00.0", "render_node": "/dev/dri/renderD128", "kfd_node": 1, "kfd_gpu_id": 4672, "unique_id": "7cf529dea4b33bad", "backend_uuid": "GPU-37636635323964656134623333626164", "architecture": "gfx1100"},
+  "identity": {
+    "pci": "0000:03:00.0",
+    "render_node": "/dev/dri/renderD128",
+    "kfd_node": 1,
+    "kfd_gpu_id": 4672,
+    "unique_id": "7cf529dea4b33bad",
+    "backend_uuid": "GPU-37636635323964656134623333626164",
+    "architecture": "gfx1100"
+  },
   "numerical_results": [
-    {"resolution": 8, "relative_velocity_l2_error": 0.011124428266122175},
-    {"resolution": 16, "relative_velocity_l2_error": 0.0027813873418746048}
+    { "resolution": 8, "relative_velocity_l2_error": 0.011124428266122175 },
+    { "resolution": 16, "relative_velocity_l2_error": 0.0027813873418746048 }
   ],
   "tolerance": 0.05,
   "sandbox_inventory": "exactly one matching HIP device",
-  "kfd_only_negative": {"probe_exit_code": 1, "native_log": "no ROCm-capable device is detected", "render_node_denied": true},
+  "kfd_only_negative": {
+    "probe_exit_code": 1,
+    "native_log": "no ROCm-capable device is detected",
+    "render_node_denied": true
+  },
   "multi_gpu_exclusion": "unqualified; candidate rejects another KFD GPU node",
   "durable_worker_hip": "unqualified; authority-bound single-KFD-GPU support implemented, packaged qualification pending",
   "physical_validation": "unqualified"

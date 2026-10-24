@@ -8,6 +8,18 @@
 in {
   options.programs.harbor-cad = {
     enable = lib.mkEnableOption "harbor-cad CLI and MCP";
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+    };
+    mcp.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+    };
+    mcp.package = lib.mkOption {
+      type = lib.types.package;
+      default = self.packages.${pkgs.stdenv.hostPlatform.system}.mcp;
+    };
     worker.enable = lib.mkEnableOption "opt-in persistent local worker";
     worker.profile = lib.mkOption {
       type = lib.types.path;
@@ -15,11 +27,11 @@ in {
     };
   };
   config = lib.mkIf cfg.enable {
-    home.packages = [self.packages.${pkgs.stdenv.hostPlatform.system}.default self.packages.${pkgs.stdenv.hostPlatform.system}.mcp];
+    home.packages = [cfg.package] ++ lib.optional cfg.mcp.enable cfg.mcp.package;
     systemd.user.services.harbor-cad = lib.mkIf cfg.worker.enable {
       Unit.Description = "Local harbor-cad worker";
       Service = {
-        ExecStart = "${self.packages.${pkgs.stdenv.hostPlatform.system}.worker}/bin/harbor-cad worker --state %h/.local/state/harbor-cad --profile ${cfg.worker.profile}";
+        ExecStart = "${cfg.package}/bin/harbor-cad worker --state %h/.local/state/harbor-cad --profile ${cfg.worker.profile}";
         Restart = "on-failure";
         UMask = "0077";
         NoNewPrivileges = true;
