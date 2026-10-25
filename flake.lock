@@ -53,17 +53,34 @@
     "harbor-rs": {
       "flake": false,
       "locked": {
-        "lastModified": 1790721878,
-        "narHash": "sha256-0u1e4g+ot8TabABSzCIrUAE9Gc8++rY2THsgNctq3Vc=",
+        "lastModified": 1792749764,
+        "narHash": "sha256-Enz72xFZnkOaS/h010NuS4ujwySSEno0QkfpVsm8jcU=",
         "owner": "caniko",
         "repo": "harbor-rs",
-        "rev": "c4ffa5d9b9232eae1f6693dfbcbcdd2548f31592",
+        "rev": "29073b5141de6244f1d41f567827d87948be91fa",
         "type": "github"
       },
       "original": {
         "owner": "caniko",
         "repo": "harbor-rs",
-        "rev": "c4ffa5d9b9232eae1f6693dfbcbcdd2548f31592",
+        "rev": "29073b5141de6244f1d41f567827d87948be91fa",
+        "type": "github"
+      }
+    },
+    "nix-cache-pin": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792571507,
+        "narHash": "sha256-8DdsRc5/cgwAtlHYEicNsMPgNCHR8qT/aurDteVkuQw=",
+        "owner": "caniko",
+        "repo": "nix-cache-pin",
+        "rev": "a69647e9be1afe5f9973732b9286b4e7de3b31b4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "caniko",
+        "repo": "nix-cache-pin",
+        "rev": "a69647e9be1afe5f9973732b9286b4e7de3b31b4",
         "type": "github"
       }
     },
@@ -155,6 +172,7 @@
         "fleetix": "fleetix",
         "harbor-py": "harbor-py",
         "harbor-rs": "harbor-rs",
+        "nix-cache-pin": "nix-cache-pin",
         "nixpkgs": "nixpkgs",
         "openlb": "openlb",
         "pyproject-build-systems": "pyproject-build-systems",
