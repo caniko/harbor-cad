@@ -578,6 +578,191 @@ impl Admission {
         tx.commit()?;
         Ok(())
     }
+
+    /// Unregister state roots that no longer exist. Runs inside the same SQLite
+    /// immediate transaction (writer lease) as every admission mutation; a dry
+    /// run reads one consistent snapshot through a read-only connection. Existing
+    /// roots are never touched. A missing root is refused while any durable
+    /// reservation references it or any live same-user process still holds an
+    /// open file or working directory beneath it (for example an unlinked
+    /// `worker.lock`).
+    pub fn prune(root: &Path, dry_run: bool) -> Result<PruneReport> {
+        let mut report = PruneReport {
+            dry_run,
+            ..Default::default()
+        };
+        let db = root.join("admission.sqlite3");
+        if !db.exists() {
+            return Ok(report);
+        }
+        private_dir(root)?;
+        regular_private(&safe_path(root, "admission.sqlite3")?)?;
+        let read = Connection::open_with_flags(&db, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+        read.busy_timeout(std::time::Duration::from_secs(5))?;
+        let Some(data) = read
+            .query_row("SELECT authority FROM policy WHERE id=1", [], |r| {
+                r.get::<_, String>(0)
+            })
+            .optional()?
+        else {
+            return Ok(report);
+        };
+        let ledger = if dry_run {
+            None
+        } else {
+            Some(Self::open(root, &serde_json::from_str(&data)?)?)
+        };
+        let (connection, behavior) = match &ledger {
+            Some(ledger) => (&ledger.connection, rusqlite::TransactionBehavior::Immediate),
+            None => (&read, rusqlite::TransactionBehavior::Deferred),
+        };
+        let tx = rusqlite::Transaction::new_unchecked(connection, behavior)?;
+        let reservations = Self::reservations(&tx)?;
+        let open = live_paths()?;
+        let mut opaque: Vec<_> = open
+            .iter()
+            .filter(|(_, p)| p.is_none())
+            .map(|(pid, _)| pid)
+            .collect();
+        opaque.dedup();
+        for state in Self::roots(&tx)? {
+            let reason = match fs::symlink_metadata(&state) {
+                Ok(_) => {
+                    report
+                        .kept
+                        .push(PruneEntry::new(&state, "state root exists"));
+                    continue;
+                }
+                Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
+                    format!("state root cannot be inspected: {e}")
+                }
+                Err(_) => {
+                    if reservations
+                        .iter()
+                        .any(|r| Path::new(&r.root).starts_with(&state))
+                    {
+                        "durable admission reservation references this root".into()
+                    } else if let Some((pid, _)) = open
+                        .iter()
+                        .find(|(_, p)| p.as_ref().is_some_and(|p| p.starts_with(&state)))
+                    {
+                        format!("live process {pid} holds an open file beneath this root")
+                    } else if !opaque.is_empty() {
+                        format!("lock-holding processes {opaque:?} cannot be inspected")
+                    } else {
+                        if !dry_run {
+                            tx.execute(
+                                "DELETE FROM roots WHERE path=?1",
+                                [state.to_str().ok_or_else(|| invalid("UTF-8 state root"))?],
+                            )?;
+                        }
+                        report.pruned.push(PruneEntry::new(
+                            &state,
+                            "registered state root missing; no reservation or live holder",
+                        ));
+                        continue;
+                    }
+                }
+            };
+            report.refused.push(PruneEntry::new(&state, &reason));
+        }
+        tx.commit()?;
+        Ok(report)
+    }
+}
+
+#[derive(Debug, Default, Serialize)]
+pub struct PruneReport {
+    pub dry_run: bool,
+    pub pruned: Vec<PruneEntry>,
+    pub kept: Vec<PruneEntry>,
+    pub refused: Vec<PruneEntry>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PruneEntry {
+    pub root: PathBuf,
+    pub reason: String,
+}
+
+impl PruneEntry {
+    fn new(root: &Path, reason: &str) -> Self {
+        Self {
+            root: root.into(),
+            reason: reason.into(),
+        }
+    }
+}
+
+/// Paths open (descriptors and working directory) in live same-user processes;
+/// `None` marks a lock holder (`/proc/locks`) whose descriptors are not
+/// inspectable. Non-dumpable processes that hold no lock cannot own a state-root
+/// lock and are skipped.
+// ponytail: OFD locks report pid -1 and are not attributed; harbor-cad uses flock.
+fn live_paths() -> Result<Vec<(u32, Option<PathBuf>)>> {
+    let missing = |e: &std::io::Error| e.kind() == std::io::ErrorKind::NotFound;
+    let locked: Vec<u32> = fs::read_to_string("/proc/locks")?
+        .lines()
+        .filter_map(|line| {
+            line.split_whitespace()
+                .filter(|t| *t != "->")
+                .nth(4)?
+                .parse()
+                .ok()
+        })
+        .collect();
+    let uid = unsafe { libc::geteuid() };
+    let mut open = Vec::new();
+    for entry in fs::read_dir("/proc")? {
+        let entry = entry?;
+        let Some(pid) = entry.file_name().to_str().and_then(|n| n.parse().ok()) else {
+            continue;
+        };
+        let dir = entry.path();
+        match fs::metadata(&dir) {
+            Ok(m) if m.uid() == uid => {}
+            Ok(_) => continue,
+            Err(e) if missing(&e) => continue,
+            Err(e) => return Err(e.into()),
+        }
+        let mut links = vec![dir.join("cwd")];
+        match fs::read_dir(dir.join("fd")) {
+            Ok(fds) => {
+                for fd in fds {
+                    match fd {
+                        Ok(fd) => links.push(fd.path()),
+                        Err(e) if missing(&e) => {}
+                        Err(e) => return Err(e.into()),
+                    }
+                }
+            }
+            Err(e) if missing(&e) => continue,
+            Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
+                if locked.contains(&pid) {
+                    open.push((pid, None));
+                }
+                continue;
+            }
+            Err(e) => return Err(e.into()),
+        }
+        for link in links {
+            match fs::read_link(&link) {
+                Ok(target) => {
+                    let target = target.to_string_lossy();
+                    let target = target.strip_suffix(" (deleted)").unwrap_or(&target);
+                    open.push((pid, Some(PathBuf::from(target))));
+                }
+                Err(e) if missing(&e) => {}
+                Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
+                    if locked.contains(&pid) {
+                        open.push((pid, None));
+                    }
+                }
+                Err(e) => return Err(e.into()),
+            }
+        }
+    }
+    Ok(open)
 }
 
 pub(crate) fn cards_reserved(root: &Path, pcis: &[String]) -> Result<bool> {
