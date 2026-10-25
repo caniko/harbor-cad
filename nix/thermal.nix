@@ -19,6 +19,7 @@
   '';
   closure = pkgs.closureInfo {rootPaths = [adapter];};
 in {
+  inherit calculix;
   thermal-cpu = adapter;
   runtime-thermal-cpu = pkgs.writeText "harbor-cad-thermal-runtime.json" (builtins.toJSON {
     schema_version = 1;

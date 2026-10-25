@@ -3,7 +3,11 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/73e728ddb6b7a12d18808f510813a13ee1fe4cce";
     harbor-rs = {
-      url = "github:caniko/harbor-rs/c4ffa5d9b9232eae1f6693dfbcbcdd2548f31592";
+      url = "github:caniko/harbor-rs/29073b5141de6244f1d41f567827d87948be91fa";
+      flake = false;
+    };
+    nix-cache-pin = {
+      url = "github:caniko/nix-cache-pin/a69647e9be1afe5f9973732b9286b4e7de3b31b4";
       flake = false;
     };
     harbor-py = {
@@ -168,13 +172,28 @@
       programs.alejandra.enable = true;
       programs.ruff-format.enable = true;
     };
+    # nixpkgs only moves to revisions whose upstream binaries for these
+    # packages and the custom derivations' nixpkgs inputs are already cached.
+    cachePin = rust.mkCachePin {
+      inherit (inputs) nix-cache-pin;
+      inherit pkgs;
+      consumerAttr = "legacyPackages.${system}";
+      packages = ["freecad" "rocmPackages.clr" "rocmPackages.rocthrust" "rocmPackages.rocprim"];
+      from = {
+        inherit (native) paraview openlb-cpu openlb-hip;
+        inherit (filters) kokkos-hip vtk-hip filter-hip;
+        inherit (fem) gmsh;
+        thermal-calculix = thermal.calculix;
+        libradtran = atmosphere.atmosphere-native-cpu;
+      };
+      # nixpkgs is pinned by revision in its URL, so the updater rewrites it.
+      extra.lockOnly = false;
+    };
   in {
     # Canix's scoped updater reads this ownership contract before any lock
-    # mutation. All inputs here are explicit immutable pins, not cache-managed.
-    cachePinMeta = {
-      schemaVersion = 4;
-      pins = {};
-    };
+    # mutation. nixpkgs is cache-managed; every other input is an immutable pin.
+    inherit (cachePin) cachePinMeta;
+    legacyPackages.${system} = pkgs // {cachePinTargets = cachePin.targets;};
     lib = {
       inherit gpuLib;
       fleetixRevision = fleetix.rev;
@@ -241,6 +260,7 @@
         test '${toString pkgs.config.allowUnfree}' = ""
         test '${toString cudaPkgs.config.allowUnfree}' = ""
         test '${fleetix.rev}' = '2230d9ee804a66d94424a91919182e4fcca13ab2'
+        test '${builtins.toJSON self.cachePinMeta.pins.nixpkgs.caches}' = '["https://cache.nixos.org"]'
         test '${builtins.hashString "sha256" (builtins.readFile (fleetix + "/lib/generated/gpu-contract.json"))}' = "$(${cli}/bin/harbor-cad doctor | ${pkgs.jq}/bin/jq -r .fleetix_contract_digest)"
         mkdir $out
       '';

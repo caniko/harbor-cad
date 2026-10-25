@@ -88,7 +88,7 @@
       openlb_backend = backend;
     });
 in {
-  inherit cad visualization media openlb-cpu openlb-cuda openlb-hip;
+  inherit cad visualization media paraview openlb-cpu openlb-cuda openlb-hip;
   cad-mesh-fixtures = cadFixtures;
   runtime-cad-only = pkgs.writeText "harbor-cad-cad-runtime.json" (builtins.toJSON {
     bwrap = "${pkgs.bubblewrap}/bin/bwrap";
