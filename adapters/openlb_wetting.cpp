@@ -112,8 +112,17 @@ int main(int argc, char** argv) {
     params.set<PHYS_CHAR_LENGTH>(diameter); params.set<C_RHO>(liquid); params.set<NU_LIQUID>(nu);
     params.set<RHO_LIQUID>(1.); params.set<RHO_VAPOR>(vapor/liquid); params.set<SURFACE_TENSION>(lattice_sigma); params.set<parameters::INTERFACE_WIDTH>(lattice_width); params.set<parameters::THETA>(angle);
     Mesh mesh=createMesh(params); MyCase experiment(params,mesh);
-    prepareGeometry(experiment); prepareLattice(experiment); setInitialValues(experiment);
+    prepareGeometry(experiment); prepareLattice(experiment);
     auto& flow=experiment.getLattice(NavierStokes{}); auto& phase=experiment.getLattice(Component1{});
+#ifdef PLATFORM_GPU_HIP
+    // Upstream setInitialValues launches PreCoupling before initialize() first
+    // uploads the lattice. The device dynamics-dispatch field is still zero then,
+    // so the wall processor's neighbor computeRho() calls through a null
+    // Dynamics pointer (GPU fault at address 0). Upload the prepared lattice
+    // first; host state is unchanged and the replay below re-uploads it.
+    flow.setProcessingContext(ProcessingContext::Simulation); phase.setProcessingContext(ProcessingContext::Simulation);
+#endif
+    setInitialValues(experiment);
 #ifdef PLATFORM_GPU_HIP
     // Upstream setInitialValues runs PreCoupling/ChemPotCalc before initialize()
     // uploads host state, then re-equilibrates phase populations on the host. On

@@ -1,0 +1,18 @@
+Without MPI, SuperCommunicator::communicate() only calls copy() and never
+wait(). The HIP copy tasks run on non-blocking streams, so they neither wait
+for earlier kernels on other streams nor finish before the caller continues.
+The PostCollide population copy can then overlap stream()'s pointer rotation,
+which makes periodic-overlap fields nondeterministic. Order and complete the
+copies here.
+--- a/src/core/platform/gpu/hip/communicator.hh
++++ b/src/core/platform/gpu/hip/communicator.hh
+@@ -886,5 +886,9 @@ void ConcreteBlockCommunicator<ConcreteBlockLattice<T,DESCRIPTOR,Platform::GPU_HIP>>::copy()
+ {
++  gpu::hip::device::synchronize();
+   for (auto& task : _copyTasks) {
+     task->copy();
+   }
++  for (auto& task : _copyTasks) {
++    task->wait();
++  }
+ }
