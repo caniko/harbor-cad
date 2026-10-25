@@ -549,27 +549,12 @@ product data. The component limit and board conductivities are cited defaults
 pending the real part datasheet and stack-up. The preserved failures and the
 Paperclip audit are unchanged.
 
-**Cache-security hold, still open.** `/etc/nix/nix.conf` is unchanged (SHA-256
-`52c2f6453b70f19f2610607ef5f73719ec8470ef45abe85ac44d125450173e98`) and still
-trusts `lantian`. The running generation is unchanged
-(`rghhw421…-nixos-system-atlas-26.11.20260823.56c02bc`). Containment attempts,
-both under `/data/scratch/tmp/opencode/harbor-cad-cache-security-20261020/`:
-
-- v1 `operator-unified.sh` (SHA-256 `4f5114e6…7d13e1d8`), evidence
-  `operator-Eke6ZHo4`: refused at root-plan line 8 because sudo exports
-  `XDG_CONFIG_DIRS`.
-- v2 `operator-unified-v2.sh` (SHA-256
-  `acb15b7019293789ea04aec07cc3a544e5b10ae8de7ae0e7592c12ec28e9e044`) scrubs it.
-  Evidence `operator-by6AgK4k`: refused at root-plan line 27, the quiet-window
-  guard (more than one `nix-daemon` process; other sessions' `nix build`/`nix
-  eval` were connected).
-
-Nothing on the host changed in either attempt. Disposition is pre-authorized
-only if every containment check and the `lantian:` provenance triage pass.
-Nix-token rotation is unverified. The harbor-cad consumer patch
-`/data/scratch/tmp/claude-1000/harbor-cad-cache-pin-29073b5.patch` (harbor-rs
-`29073b5`, `lib.mkCachePin`) is still unapplied. Canix `5df6b230d`, an opt-in
-`igpu-amdgpu` boot specialisation for Atlas, is local only and not activated.
+**Cache-security gate.** A build-host cache-security gate (retired third-party
+binary cache) was contained and dispositioned by the operator on 2026-10-25;
+details are kept in the operator's private incident evidence. The harbor-cad
+consumer wiring (harbor-rs `29073b5`, `lib.mkCachePin`) has since landed as
+harbor-cad PR #5 (`8d1cf6c`). Canix `5df6b230d`, an opt-in `igpu-amdgpu` boot
+specialisation for Atlas, is local only and not activated.
 
 ### Product workstreams W1–W9, source/CPU only — 2026-10-23
 
@@ -610,23 +595,16 @@ every recipe. Preserved failures are unchanged: coarse enthalpy `0.0232` and
 uniform Stefan `0.0375` against the `0.02` gate, and the independent Paperclip
 revised-attempt-2 audit.
 
-**Cache-security hold, still open.** `/etc/nix/nix.conf` is unchanged (SHA-256
-`52c2f6453b70f19f2610607ef5f73719ec8470ef45abe85ac44d125450173e98`) and still
-trusts the retired `lantian` cache; the running generation is unchanged. The
-operator's unified containment script
-`/data/scratch/tmp/opencode/harbor-cad-cache-security-20261020/operator-unified.sh`
-(SHA-256 `4f5114e6e429d156df8d69e04d748400a1b114de4843e4080b92929e7d13e1d8`) has
-not been executed and no operator evidence has been returned. Nix-token rotation
-is unverified. The three retained 2026-10-20 outputs
-(`ypjddczm…-harbor-cad-0.1.0`, `qn41nvb7…-harbor-cad-mcp`,
+**Cache-security gate.** A build-host cache-security gate (retired third-party
+binary cache) was contained and dispositioned by the operator on 2026-10-25;
+details are kept in the operator's private incident evidence. The three retained
+2026-10-20 outputs (`ypjddczm…-harbor-cad-0.1.0`, `qn41nvb7…-harbor-cad-mcp`,
 `vra25l54…-harbor-cad-tests`) have been garbage-collected; earlier packaged
-evidence that names them is historical and points to collected paths. The script
-therefore audits only the running system.
+evidence that names them is historical and points to collected paths.
 
 harbor-rs PR #20 (`29073b5141de6244f1d41f567827d87948be91fa`, `lib.mkCachePin`
-over nix-cache-pin `0.3.0`) merged with green CI. The Harbor-CAD consumer patch
-`/data/scratch/tmp/claude-1000/harbor-cad-cache-pin-29073b5.patch` is prepared but
-not applied: locking awaits the user after containment.
+over nix-cache-pin `0.3.0`) merged with green CI. The Harbor-CAD consumer wiring
+has since landed as harbor-cad PR #5 (`8d1cf6c`).
 
 ### Cooling campaign profile preflight — 2026-10-19
 
@@ -742,15 +720,12 @@ The installed MCP server hash matches source; the test service peaks at
 183,193,600 bytes/no swap and both test/build-client trees are terminal/empty.
 This closes the scoped package/interface slice, not native factorization or A0–F.
 
-**Separate security gate:** the inherited `attic.xuyh0120.win/lantian` cache
-returned HTTP503 with a compromise notice. Its repository owner
-[reports compromised servers](https://github.com/xddxdd/nix-cachyos-kernel/issues/110#issuecomment-6189203183)
-and shutdown pending investigation; the owner's belief that kernels were not
-tampered with is not an integrity audit. Selected outputs were locally built,
-but existing dependency-closure provenance remains unaudited. Canix owns the
-substituter/signing policy at `root/modules/config/nix.nix:108/118`; host/trust
-changes are outside this task. Functional checks remain recorded, not dependency-
-security clearance. [Exact evidence](evidence/fem-factorization-readiness-20261020.json)
+**Separate security gate:** an inherited third-party binary cache returned
+HTTP503 with a compromise notice. Selected outputs were locally built. A
+build-host cache-security gate (retired third-party binary cache) was contained
+and dispositioned by the operator on 2026-10-25; details are kept in the
+operator's private incident evidence. Functional checks remain recorded, not
+dependency-security clearance. [Exact evidence](evidence/fem-factorization-readiness-20261020.json)
 retains the response and primary-source snapshot; no host compromise is asserted.
 
 ### Complete MCP framework/tool/profile inventory — 2026-10-20
