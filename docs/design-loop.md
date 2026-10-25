@@ -320,7 +320,9 @@ it. Findings:
 (fixed PCB power, radiation on) with explicitly
 `synthetic: true` inputs and a declared window. `design status` and
 `design export` list those inputs in `synthetic_inputs`, and the export
-statement starts with `SYNTHETIC`.
+statement starts with `SYNTHETIC`. Both enclosure envelopes need one worker
+whose native runtime carries the FreeCAD importer, the Gmsh solid mesher and
+the CalculiX stage: the `runtime-enclosure-design-worker` package.
 
 Calibration needs no extra command. `examples/design-calibrate.json` is an
 envelope whose parameters are the uncertain inputs (film coefficient and

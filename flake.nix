@@ -233,6 +233,21 @@
         filter = null;
       });
       inherit (native) cad-mesh-fixtures runtime-cad-fixtures runtime-cad-only;
+      # One worker runs the whole enclosure design chain:
+      # enclosure_fixture/variant (FreeCAD) -> solid mesh (Gmsh) -> enclosure thermal (CalculiX).
+      runtime-enclosure-design-worker = pkgs.writeText "harbor-cad-native-runtime.json" (builtins.toJSON {
+        bwrap = "${pkgs.bubblewrap}/bin/bwrap";
+        cad = "${native.cad}/bin/harbor-cad-import";
+        cad_closure = "${pkgs.closureInfo {rootPaths = [native.cad];}}/store-paths";
+        cad_mesh = "${cadMesh.cad-mesh-cpu}/bin/harbor-cad-cad-mesh";
+        cad_mesh_closure = "${pkgs.closureInfo {rootPaths = [cadMesh.cad-mesh-cpu];}}/store-paths";
+        fem_imported = "${femImported.fem-imported-cpu}/bin/harbor-cad-fem-imported";
+        fem_imported_closure = "${pkgs.closureInfo {rootPaths = [femImported.fem-imported-cpu];}}/store-paths";
+        openlb = null;
+        openlb_backend = "cpu";
+        render = null;
+        video = null;
+      });
       runtime-filter-hip = pkgs.writeText "harbor-cad-native-runtime.json" (builtins.toJSON {
         bwrap = "${pkgs.bubblewrap}/bin/bwrap";
         cad = null;
