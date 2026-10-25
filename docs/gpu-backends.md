@@ -58,6 +58,14 @@ resolutions 8/16, with relative L2 errors `0.011124428266122175` and
 `0.0027813873418746048`. At every retained time, CPU/HIP velocity differences
 were below `1.05e-13` relative L2 (acceptance `1e-10`) and material IDs matched
 exactly. Pressure differences are retained diagnostics, not an accuracy claim.
+
+The package is now requalified with the non-MPI communicator sync patch
+described under [Recipe backends](#recipe-backends), superseding the earlier
+pass on the unpatched build; the numbers above are unchanged. Ten repeated gate
+runs produced bit-identical retained HIP fields. Ten unpatched runs matched
+them bit for bit too: this fixture does not expose the race, so the earlier
+pass held without the ordering guarantee the patch now provides.
+
 The trusted numerical probe used a bounded service and the production shared
 physical-card reservation helper. Full details are in
 [`qualification.md`](qualification.md#actual-openlb-hip-reference).
@@ -150,15 +158,14 @@ corrections keep the CPU numerics unchanged:
   `computeRho()` call would go through a null pointer and fault the GPU.
 - The Simulation context, which uploads host state, is re-entered only after
   retained observations, never on every step.
-- The HIP wetting build patches OpenLB's non-MPI HIP communicator
-  (`nix/patches/openlb-hip-communicator-sync.patch`). Without MPI,
+- Every HIP OpenLB build, wetting and airflow, patches OpenLB's non-MPI HIP
+  communicator (`nix/patches/openlb-hip-communicator-sync.patch`). Without MPI,
   `communicate()` never waits for its overlap copies, which run on
   non-blocking streams. The population copy can then overlap the pointer
   rotation in `stream()`, so the periodic seam differs from run to run. The
   wetting transient amplifies that from rounding level to about 1e-6. With
   the patch, repeated HIP runs are bit-identical and phase agrees with CPU at
-  about 1e-14. The airflow package is not patched; its qualification stands
-  as recorded.
+  about 1e-14.
 
 Plans put the selection both in the descriptor and on the stage
 (`GpuRequirement::Required`). They reserve VRAM equal to the host allowance, as
