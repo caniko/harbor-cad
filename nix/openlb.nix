@@ -18,7 +18,11 @@ in
       pname = "harbor-cad-openlb-${backend}";
       version = "1.9.0";
       src = inputs.openlb;
-      patches = [./patches/openlb-vtk-output-precision.patch] ++ lib.optionals hip [./patches/openlb-hip-dependencies.patch];
+      patches =
+        [./patches/openlb-vtk-output-precision.patch]
+        # Without MPI, upstream HIP overlap copies are never awaited, so stream()
+        # can race the periodic/overlap copies.
+        ++ lib.optionals hip [./patches/openlb-hip-dependencies.patch ./patches/openlb-hip-communicator-sync.patch];
       nativeBuildInputs = [pkgs.gnumake] ++ lib.optionals cuda [cudaPackages.cuda_nvcc] ++ lib.optionals hip [rocm];
       buildInputs = [pkgs.zlib pkgs.tinyxml-2 pkgs.nlohmann_json] ++ lib.optionals cuda [cudaPackages.cuda_cudart] ++ lib.optionals hip [rocm pkgs.rocmPackages.rocthrust pkgs.rocmPackages.rocprim];
       dontConfigure = true;
