@@ -11,7 +11,11 @@
     import ./openlb.nix {inherit pkgs inputs cudaPkgs backend;};
   native = base.overrideAttrs (old: {
     pname = "harbor-cad-openlb-wetting-${backend}";
-    patches = old.patches ++ [./patches/openlb-wetting-initial-center.patch];
+    # Keep the communicator sync last, as qualified in the wetting HIP evidence.
+    patches = let
+      sync = ./patches/openlb-hip-communicator-sync.patch;
+    in
+      lib.remove sync old.patches ++ [./patches/openlb-wetting-initial-center.patch] ++ lib.optional (backend == "hip") sync;
     preBuild =
       old.preBuild
       + ''
