@@ -12,7 +12,7 @@ the operator-assisted cache scope and the user-authorized Phase 4 boot step.
 - [x] W2 spreadsheet-alias CAD variants (v2) and the synthetic `enclosure_fixture` seed. Only a FreeCAD 1.1.3 development smoke, as reported by the coordinator. The packaged gate needs FreeCAD ≥1.1.4.
 - [x] W3 bounded design loop: `design init|validate|plan|submit|propose|status|export` and five MCP tools.
 - [x] W4 `results correlate` / MCP `results_correlate`.
-- [x] W5 harbor-rs PR #20 merged (`29073b5`, `lib.mkCachePin`, nix-cache-pin `0.3.0` = `a69647e`); consumer patch prepared.
+- [x] W5 harbor-rs PR #20 merged (`29073b5`, `lib.mkCachePin`, nix-cache-pin `0.3.0` = `a69647e`); consumer wiring landed as harbor-cad PR #5 (`8d1cf6c`).
 - [x] W7 wetting HIP implemented (unqualified); typed CPU-only refusal for freezing/retained cooling; render/compute routing documented.
 - [x] W8 chained templates, manufacturing providers, calibration and enclosure example envelopes.
 - [x] W9 general-solid mesh and steady enclosure thermal; `verify_enclosure_thermal_cpu.py` 4/4 with the pure-Python reference solver.
@@ -29,19 +29,14 @@ the operator-assisted cache scope and the user-authorized Phase 4 boot step.
 - [x] Source gate at `f738aed` (ambient Cargo 1.100, not pinned 1.94): treefmt clean, Clippy `-D warnings`, 284 Rust / 300 Python tests, Ruff; both enclosure examples validate; MCP matrix 71 tools.
 - [x] W18 documentation refresh: spec §10, the 2026-10-24 ledger slice, this plan and the handoff.
 
-## Phase 0 — cache security (operator-assisted)
+## Phase 0 — cache security (done)
 
-- History: v1 `operator-unified.sh` was refused at root-plan line 8 (`operator-Eke6ZHo4`, sudo exports `XDG_CONFIG_DIRS`); host unchanged.
-- [ ] Operator runs `operator-unified-v2.sh` (SHA-256 `acb15b70…0e9e044`) in a quiet window (`pgrep -c -x nix-daemon` = 1). The first v2 attempt `operator-by6AgK4k` was refused at the quiet-window guard; host unchanged.
-- [ ] Verify checksums, failed logs, generation/config hashes, the daemon drain/identity and effective policy: retired trust absent, `require-sigs=true`.
-- [ ] Triage the running-system inventory and the `lantian:` provenance (also signed by `cache.nixos.org-1`, or a local build; read-only NAR hash comparison). Any path signed only by `lantian` stops the work.
-- [ ] Record the pre-authorized disposition only if every check passes. Confirm the Nix-token rotation.
+- [x] A build-host cache-security gate (retired third-party binary cache) was contained and dispositioned by the operator on 2026-10-25; details are kept in the operator's private incident evidence.
 
 ## Phase 3 — after disposition
 
-- [ ] Apply the cache-pin patch; run `nix flake lock --option substitute false` (user approval).
-- [ ] Run `nix eval .#cachePinMeta --json`; the policy check needs caches `["https://cache.nixos.org"]`.
-- [ ] Run `canix repo update cache-pin nixpkgs` to move to the newest fully cached revision, and record the report.
+- [x] Done: harbor-cad PR #5 (`8d1cf6c`) wires `lib.mkCachePin` with the lock; the policy check asserts caches `["https://cache.nixos.org"]`.
+- [ ] Next: run `canix repo update cache-pin nixpkgs` to move to the newest fully cached revision, and record the report.
 - [ ] Run `canix cache binary build` for `default`, `mcp`, `python-test-environment`, `runtime-{cpu,hip}`, `openlb-hip`, `filter-hip`, `wetting-native-{cpu,hip}`, `runtime-wetting-worker-hip`, the CAD/mesh/FEM/thermal runtimes (CalculiX) and `gui`; GC-root each qualified output.
 - [ ] Run `scripts/check_cpu.py` in the pinned devShell.
 - [ ] Run the native gates `verify_native_hip`, `verify_openlb_hip`, `verify_filter_hip`, `verify_hip_sandbox`, `verify_wetting_hip`, `verify_cad_variant_worker`, `verify_study_worker`, `verify_egl_fields`/`verify_vaapi` (DRM policies) and `verify_enclosure_thermal_cpu.py --ccx`.

@@ -27,9 +27,8 @@ not a transferable qualification for changed packages or hosts.
     in-plane 8.1 W/(m·K) bound applies. The exported design report states this
     board requirement.
   - Disposition "released for build and native qualification" is
-    **pre-authorized only if** every containment check passes and the `lantian:`
-    provenance triage finds no path signed only by `lantian`. Anything
-    suspicious stops Phase 3 and goes back to the user.
+    **pre-authorized only if** every containment check and the provenance
+    triage pass. Anything suspicious stops Phase 3 and goes back to the user.
   - The coordinator issues `nix flake lock --option substitute false` after
     containment, and the user approves that prompt.
   - iGPU activation (Phase 4) is in scope. The user authorizes the host step at
@@ -49,7 +48,7 @@ Tasks and checks are in [todo.md](todo.md).
 | W2 | Spreadsheet-alias CAD variants; synthetic `enclosure_fixture` seed | [cad-variants](../docs/cad-variants.md) |
 | W3 | Bounded approval-bound design loop over ordinary jobs; 5 MCP tools | [design-loop](../docs/design-loop.md) |
 | W4 | Measured CSV vs thermal-history correlation | [correlation](../docs/correlation.md) |
-| W5 | harbor-rs `lib.mkCachePin` (PR #20 merged); consumer patch prepared, not applied | Phase 3 |
+| W5 | harbor-rs `lib.mkCachePin` (PR #20 merged); consumer wiring landed as harbor-cad PR #5 (`8d1cf6c`) | Phase 3 |
 | W7 | Wetting HIP path implemented, unqualified; typed CPU-only refusals; render/compute routing | [gpu-backends](../docs/gpu-backends.md) |
 | W8 | Chained templates, W1 providers, calibration envelopes | [design-loop](../docs/design-loop.md) |
 | W9 | General-solid Gmsh mesh; steady enclosure conduction (CalculiX deck) | [enclosure-thermal](../docs/enclosure-thermal.md) |
@@ -70,40 +69,17 @@ source/CPU only. They have no Nix build, no native qualification and no A0–F
 closure. See the 2026-10-23 and 2026-10-24 ledger slices for the gate counts
 (latest at `f738aed`: 284 Rust and 300 Python tests) and limits.
 
-## Phase 0 — cache security (blocks everything below)
+## Phase 0 — cache security (done)
 
-`/etc/nix/nix.conf` (SHA-256 `52c2f645…`) still trusts the compromised `lantian`
-cache. Two attempts changed nothing on the host. v1 (`operator-Eke6ZHo4`) was
-refused at root-plan line 8, because sudo exports `XDG_CONFIG_DIRS`. v2
-(`operator-by6AgK4k`) was refused at the quiet-window guard while other sessions'
-Nix clients were connected.
-
-1. In a quiet window (`pgrep -c -x nix-daemon` prints `1`), the operator runs
-   `/data/scratch/tmp/opencode/harbor-cad-cache-security-20261020/operator-unified-v2.sh`
-   (SHA-256 `acb15b7019293789ea04aec07cc3a544e5b10ae8de7ae0e7592c12ec28e9e044`),
-   returns the `operator-…` path, and rotates the leaked Nix token.
-2. The agent verifies the evidence:
-   - checksums;
-   - the config hash transition away from `52c2f645…`, with the original store
-     target unchanged;
-   - the old daemon drained, the new daemon running, and no overrides in its
-     environment;
-   - root and user policy: `require-sigs=true` and no `lantian`;
-   - `triage.json`, `missing-roots.txt`, and an unchanged running generation.
-3. Provenance triage. For every path that is signed `lantian:`, check whether it
-   also has a `cache.nixos.org-1` signature or is a local build. Compare the NAR
-   hash read-only against cache.nixos.org where the path exists there. Any path
-   signed only by `lantian` stops the work and goes back to the user.
-4. If everything passes, record the pre-authorized disposition in `result.json`,
-   the ledger and the handoff. On any failure, diagnose the log. Never retry
-   blindly or weaken a guard.
+A build-host cache-security gate (retired third-party binary cache) was
+contained and dispositioned by the operator on 2026-10-25; details are kept in
+the operator's private incident evidence.
 
 ## Phase 3 — after disposition, in order (revision 2's Phase B)
 
-1. Apply `/data/scratch/tmp/claude-1000/harbor-cad-cache-pin-29073b5.patch`, then
-   run `nix flake lock --option substitute false` (user approves). Run
-   `nix eval .#cachePinMeta --json` and commit the wiring with the lock.
-2. Run `canix repo update cache-pin nixpkgs` and keep its report. Drop a custom
+1. Done: harbor-cad PR #5 (`8d1cf6c`) wires `lib.mkCachePin` with the lock.
+2. Next: bump nixpkgs via the cache-pin search. Run
+   `canix repo update cache-pin nixpkgs` and keep its report. Drop a custom
    derived target from `from`; never weaken `caches`.
 3. Run `canix cache binary build` with bounded jobs for the CLI, MCP and test
    environment, the CPU/HIP runtimes, `openlb-hip` and `filter-hip`, wetting, and
