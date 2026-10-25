@@ -1,7 +1,7 @@
 {
   description = "Local-first scientific CAD worker, isolated adapters and explicit qualification";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/73e728ddb6b7a12d18808f510813a13ee1fe4cce";
+    nixpkgs.url = "github:NixOS/nixpkgs/3ec636362e1816bc2f0888fa0fa2c69f1bc9e504";
     harbor-rs = {
       url = "github:caniko/harbor-rs/29073b5141de6244f1d41f567827d87948be91fa";
       flake = false;

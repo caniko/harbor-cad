@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "sourceOfTruth": "flake.lock",
+  "targets": [
+    {
+      "inputName": "nixpkgs",
+      "revision": "3ec636362e1816bc2f0888fa0fa2c69f1bc9e504",
+      "branch": "nixos-unstable",
+      "branchFallbacks": [],
+      "members": [
+        {
+          "name": "nixpkgs",
+          "packages": [
+            "freecad",
+            "rocmPackages.clr",
+            "rocmPackages.rocthrust",
+            "rocmPackages.rocprim"
+          ],
+          "wishPackages": []
+        }
+      ]
+    }
+  ]
+}
