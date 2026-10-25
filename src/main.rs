@@ -19,6 +19,11 @@ enum Commands {
         #[command(subcommand)]
         command: Authority,
     },
+    /// Operator maintenance of the same-user admission journal.
+    Admission {
+        #[command(subcommand)]
+        command: Admission,
+    },
     Doctor,
     Backend {
         #[command(subcommand)]
@@ -125,6 +130,15 @@ enum Cost {
 #[derive(Subcommand)]
 enum Authority {
     Install { file: PathBuf },
+}
+#[derive(Subcommand)]
+enum Admission {
+    /// Unregister missing state roots with no reservation or live holder.
+    Prune {
+        /// Report what would be pruned without writing.
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 #[derive(Subcommand)]
 enum Backend {
@@ -481,6 +495,12 @@ fn run(cli: Cli) -> Result<()> {
             return print(
                 &serde_json::json!({"authority_digest":digest(&authority)?,"admission_root":root}),
             );
+        }
+        Commands::Admission {
+            command: Admission::Prune { dry_run },
+        } => {
+            let root = harbor_cad::admission::shared_root()?;
+            return print(&harbor_cad::admission::Admission::prune(&root, dry_run)?);
         }
         Commands::Doctor => {
             return print(&worker::doctor()?);

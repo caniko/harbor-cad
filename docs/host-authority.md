@@ -82,6 +82,28 @@ unit/invocation and complete cgroup tree. Missing/ambiguous ownership retains
 capacity. A queued cancellation can release after proving no owned service lives.
 Services explicitly receive `MemorySwapMax=0` in addition to RAM/CPU/task limits.
 
+### Pruning deleted state roots
+
+A registered state root that no longer exists blocks every admission and policy
+installation, because its retained bytes and ownership cannot be accounted.
+Deleting a state directory does not unregister it; the operator does so
+explicitly:
+
+```sh
+harbor-cad admission prune --dry-run   # report only, read-only snapshot
+harbor-cad admission prune
+```
+
+Pruning runs in the same SQLite immediate transaction (writer lease) as every
+admission mutation, so it waits for, and never interleaves with, a concurrent
+reservation. Existing roots are always kept. A missing root is refused while any
+durable reservation references it, or while any live same-user process still holds
+an open file or working directory beneath it (such as an unlinked
+`worker.lock`); a lock holder whose descriptors cannot be inspected refuses every
+missing root. Release such a reservation through verified closure first. The JSON
+report lists `pruned`, `kept` and `refused` roots with reasons. Missing roots
+still fail admission closed until pruned. There is deliberately no MCP tool.
+
 Legacy workers without `--authority` retain the previously documented per-root
 CPU-reference behavior. They do not qualify aggregate capacity or GPU execution.
 HIP submissions require this authority and the independently correlated exact

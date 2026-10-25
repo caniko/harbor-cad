@@ -202,3 +202,104 @@ fn policy_promotion_requires_closed_reservations_and_never_upgrades_bound_jobs()
         digest(&host).unwrap()
     );
 }
+
+fn registered(ledger: &Path) -> Vec<String> {
+    let db = rusqlite::Connection::open(ledger.join("admission.sqlite3")).unwrap();
+    let mut query = db.prepare("SELECT path FROM roots ORDER BY path").unwrap();
+    query
+        .query_map([], |r| r.get(0))
+        .unwrap()
+        .collect::<Result<_, _>>()
+        .unwrap()
+}
+
+fn roots(entries: &[harbor_cad::admission::PruneEntry]) -> Vec<std::path::PathBuf> {
+    entries.iter().map(|e| e.root.clone()).collect()
+}
+
+#[test]
+fn prune_unregisters_only_missing_unreferenced_roots_and_dry_run_writes_nothing() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut host = policy(temp.path());
+    host.max_ram_bytes *= 4;
+    let ledger = temp.path().join("admission");
+    let kept = Store::open(&temp.path().join("kept")).unwrap();
+    let gone = Store::open(&temp.path().join("gone")).unwrap();
+    let reserved = Store::open(&temp.path().join("reserved")).unwrap();
+    let held = temp.path().join("held");
+    harbor_cad::storage::private_dir(&held).unwrap();
+    let id = submit(&reserved, &host, "reserved");
+    let queued = submit(&kept, &host, "queued");
+    let admission = Admission::open(&ledger, &host).unwrap();
+    admission.register_state(&kept.root).unwrap();
+    admission.register_state(&gone.root).unwrap();
+    admission.register_state(&held).unwrap();
+    assert!(admission.reserve(&reserved, &id).unwrap());
+    // A live process holding an unlinked lock beneath a deleted root is a holder.
+    let lock = std::fs::File::create(held.join("worker.lock")).unwrap();
+    fs2::FileExt::lock_exclusive(&lock).unwrap();
+    let (gone_root, reserved_root) = (gone.root.clone(), reserved.root.clone());
+    drop((gone, reserved));
+    for root in [&gone_root, &reserved_root, &held] {
+        std::fs::remove_dir_all(root).unwrap();
+    }
+    // Missing roots keep failing admission closed until pruned.
+    assert!(admission.reserve(&kept, &queued).is_err());
+    let before = registered(&ledger);
+    let dry = Admission::prune(&ledger, true).unwrap();
+    assert!(dry.dry_run);
+    assert_eq!(registered(&ledger), before);
+    let report = Admission::prune(&ledger, false).unwrap();
+    for report in [&dry, &report] {
+        assert_eq!(roots(&report.pruned), std::slice::from_ref(&gone_root));
+        assert_eq!(roots(&report.kept), std::slice::from_ref(&kept.root));
+        assert_eq!(
+            roots(&report.refused),
+            [held.clone(), reserved_root.clone()]
+        );
+    }
+    assert!(report.refused[0].reason.contains("live process"));
+    assert!(report.refused[1].reason.contains("reservation"));
+    assert!(!registered(&ledger).contains(&gone_root.to_str().unwrap().to_string()));
+    drop(lock);
+    assert_eq!(
+        roots(&Admission::prune(&ledger, false).unwrap().pruned),
+        [held]
+    );
+    // The reservation for the deleted root still fails reconciliation closed;
+    // only its explicit release lets prune unregister the root.
+    assert!(admission.reconcile(|_, _| Ok(true)).is_err());
+    let db = rusqlite::Connection::open(ledger.join("admission.sqlite3")).unwrap();
+    db.execute("DELETE FROM reservations", []).unwrap();
+    assert_eq!(
+        roots(&Admission::prune(&ledger, false).unwrap().pruned),
+        [reserved_root]
+    );
+    assert!(admission.reserve(&kept, &queued).unwrap());
+}
+
+#[test]
+fn prune_waits_for_the_admission_writer_lease() {
+    let temp = tempfile::tempdir().unwrap();
+    let host = policy(temp.path());
+    let ledger = temp.path().join("admission");
+    let gone = temp.path().join("gone");
+    harbor_cad::storage::private_dir(&gone).unwrap();
+    Admission::open(&ledger, &host)
+        .unwrap()
+        .register_state(&gone)
+        .unwrap();
+    std::fs::remove_dir(&gone).unwrap();
+    let writer = rusqlite::Connection::open(ledger.join("admission.sqlite3")).unwrap();
+    writer.execute_batch("BEGIN IMMEDIATE").unwrap();
+    let pruning = {
+        let ledger = ledger.clone();
+        std::thread::spawn(move || Admission::prune(&ledger, false).unwrap())
+    };
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    assert!(!pruning.is_finished());
+    assert_eq!(registered(&ledger).len(), 1);
+    writer.execute_batch("COMMIT").unwrap();
+    assert_eq!(roots(&pruning.join().unwrap().pruned), [gone]);
+    assert!(registered(&ledger).is_empty());
+}
