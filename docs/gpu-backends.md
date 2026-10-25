@@ -130,7 +130,7 @@ below has been built or run on the card yet.
 | Recipe | Backend | Why |
 |---|---|---|
 | Airflow channel (`openlb`) | HIP qualified for the scoped fixture; CUDA best-effort | See above. |
-| Planar wetting (`openlb_wetting`) | CPU; **HIP implemented, unqualified** | Upstream GPU CI (`.ci/build_cuda_only.sh`) builds `examples/multiComponent/contactAngle2d`, the example this driver wraps. CUDA is not offered: the driver has no CUDA device-identity code. |
+| Planar wetting (`openlb_wetting`) | CPU; **HIP implemented, unqualified** (native CPU parity gate passes; worker gate pending) | Upstream GPU CI (`.ci/build_cuda_only.sh`) builds `examples/multiComponent/contactAngle2d`, the example this driver wraps. CUDA is not offered: the driver has no CUDA device-identity code. |
 | Solidification (`openlb_freezing`) | CPU only; typed `Unqualified` refusal | Upstream GPU CI builds no `TotalEnthalpy` example (`stefanMelting2d` and `galliumMelting2d` are absent). The driver's energy ledger also reads populations on the host between `collide()` and `AndStream()` every step. Porting either would mean new numerical code to qualify. |
 | Retained cooling (`openlb_retained_cooling`) | CPU only; the plan cannot request a GPU | Same total-enthalpy stack, plus Bouzidi half-link post-processors applied to host cells after every stream. |
 | FEM (CalculiX) | CPU | No HIP sparse direct solver is integrated. SPOOLES is CPU-only, and the CUDA PaStiX/PaRSEC candidates are inspection-only. |
@@ -139,13 +139,26 @@ below has been built or run on the card yet.
 The HIP wetting driver follows the airflow driver. It selects and verifies the
 PCI/UUID card before allocating anything and rejects a silent CPU block. Its
 receipt carries the same device, compiled-runtime and kernel-completion fields,
-which the worker checks with `HipIdentity::verify_receipt`. Two GPU-specific
+which the worker checks with `HipIdentity::verify_receipt`. Three GPU-specific
 corrections keep the CPU numerics unchanged:
 
 - Upstream initialization mixes host and device stages, so the driver replays
-  them in the CPU order with explicit transfers.
+  them in the CPU order with explicit transfers. It also uploads the prepared
+  lattice before upstream `setInitialValues`: that function runs the wall
+  post-processor before `initialize()` performs the first upload, and the
+  device dynamics-dispatch field is still zero then. The neighbor
+  `computeRho()` call would go through a null pointer and fault the GPU.
 - The Simulation context, which uploads host state, is re-entered only after
   retained observations, never on every step.
+- The HIP wetting build patches OpenLB's non-MPI HIP communicator
+  (`nix/patches/openlb-hip-communicator-sync.patch`). Without MPI,
+  `communicate()` never waits for its overlap copies, which run on
+  non-blocking streams. The population copy can then overlap the pointer
+  rotation in `stream()`, so the periodic seam differs from run to run. The
+  wetting transient amplifies that from rounding level to about 1e-6. With
+  the patch, repeated HIP runs are bit-identical and phase agrees with CPU at
+  about 1e-14. The airflow package is not patched; its qualification stands
+  as recorded.
 
 Plans put the selection both in the descriptor and on the stage
 (`GpuRequirement::Required`). They reserve VRAM equal to the host allowance, as

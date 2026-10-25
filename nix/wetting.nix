@@ -11,7 +11,12 @@
     import ./openlb.nix {inherit pkgs inputs cudaPkgs backend;};
   native = base.overrideAttrs (old: {
     pname = "harbor-cad-openlb-wetting-${backend}";
-    patches = old.patches ++ [./patches/openlb-wetting-initial-center.patch];
+    patches =
+      old.patches
+      ++ [./patches/openlb-wetting-initial-center.patch]
+      # Without MPI, upstream HIP overlap copies are never awaited; the wetting
+      # transient amplifies that seam race far beyond the Float64 parity gate.
+      ++ lib.optionals (backend == "hip") [./patches/openlb-hip-communicator-sync.patch];
     preBuild =
       old.preBuild
       + ''
