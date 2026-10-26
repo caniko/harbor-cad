@@ -142,7 +142,7 @@
       },
       "max_envelope": {
         "availability": "missing",
-        "reason": "Only a flat-blank limit (990.6 x 1193.8 mm, 1193.8 mm max bend length, max gauge 6.35 mm; Protolabs design guidelines) is published; no formed-part 3D envelope found."
+        "reason": "Only a flat-blank limit (990.6 x 1193.8 mm, 1193.8 mm max bend length, max gauge 6.35 mm; Protolabs design guidelines) is published; no formed-part 3D envelope found. Re-checked 2026-10-26: https://www.protolabs.com/services/sheet-metal-fabrication/forming/ states only a 47 in (1193.8 mm) max bend length and a 2:1 U-channel ratio, and https://facfox.com/docs/kb/sheet-fabrication-guideline only a flat 1016 x 1219.2 mm maximum; a flat-blank or bend-length limit is not the formed-part 3D envelope this check compares against, so none is substituted."
       },
       "typical_tolerance": {
         "availability": "known",

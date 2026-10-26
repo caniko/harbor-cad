@@ -219,6 +219,8 @@ class 4.1 hot design point, and the minimum service check uses its cold point
 cited conservative low end of `enclosed-cavity-natural` (1.2 W/(m²·K)). The
 component limit (85 °C) and the board conductivities (8.1 in-plane,
 0.26 W/(m·K) through-plane) are cited conservative defaults, not product data.
+The export's `requirements` carries the continuous-copper-plane board
+requirement and the +85 °C component rating with the winner.
 The single categorical `route` lists only compatible `MATERIAL__PROCESS__FINISH`
 triples; the finish's sourced optics override the material's. The pc-uv window
 uses the `transparent_solar` conservative bound.

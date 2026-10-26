@@ -86,6 +86,12 @@ Its low end, 0.15, assumes no board face is worse than FLIR's metal value.
 Polished bare metal (unplated shield cans, bare copper pours) can be lower,
 so the value is also a board requirement. It only feeds the optional
 `cavity_radiation` bound (see [enclosure thermal](enclosure-thermal.md)).
+These conditions are data, not provenance prose: the in-plane conductivity,
+the board emissivity and the component limit (every part rated to at least
++85 °C) each carry an explicit `requirement` field.
+`Conditions::requirement(key)` returns it for an `electronics:` key, and
+`design export` lists the requirements of the winner's resolved inputs (see
+[design loop](design-loop.md)).
 
 ## Design points
 

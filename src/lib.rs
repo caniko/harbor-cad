@@ -87,6 +87,9 @@ pub enum Error {
     IdempotencyConflict,
     #[error("resource unavailable: {0}")]
     Resource(String),
+    /// Requested geometry violates a precondition of its parametric source.
+    #[error("geometry precondition: {0}")]
+    GeometryPrecondition(String),
     #[error(transparent)]
     Io(#[from] std::io::Error),
     #[error(transparent)]
@@ -109,6 +112,7 @@ impl Error {
                 Self::Unqualified(_) => "unqualified",
                 Self::IdempotencyConflict => "idempotency_conflict",
                 Self::Resource(_) => "resource_unavailable",
+                Self::GeometryPrecondition(_) => "geometry_precondition",
                 Self::Io(_) => "io_error",
                 Self::Json(_) => "protocol_error",
                 Self::Sql(_) => "state_error",

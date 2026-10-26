@@ -3,7 +3,7 @@
   "source_job": "00000000-0000-0000-0000-000000000000",
   "sheet_name": "Params",
   "parameters": {
-    "wall": {"value": 3.0, "unit": "mm"},
+    "wall": {"value": 4.0, "unit": "mm"},
     "fin_count": {"value": 10, "unit": "1"},
     "fin_height": {"value": 20.0, "unit": "mm"}
   },

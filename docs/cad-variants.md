@@ -67,7 +67,7 @@ A request with `schema_version: 2` goes through the same `cad variant` /
 
 ```json
 {"schema_version": 2, "source_job": "<uuid>", "sheet_name": "Params",
- "parameters": {"wall": {"value": 3.0, "unit": "mm"}, "fin_count": {"value": 10, "unit": "1"}},
+ "parameters": {"wall": {"value": 4.0, "unit": "mm"}, "fin_count": {"value": 10, "unit": "1"}},
  "regions": ["housing", "lid"], "geometry_tolerance": {"value": 1e-5, "unit": "m"},
  "provenance": "..."}
 ```
@@ -124,4 +124,15 @@ drain_diameter, boss_count and pcb_power_area_side. The named solids are
 `window` (pane), `pcb` (heat-source block) and `mount` (L wall bracket). Fins
 and bosses use fixed slots (16 and 4); higher counts clamp. The fixture is
 synthetic geometry, not a validated product design.
+
+The rim groove is centred in the wall, so each rim lip beside it is
+(wall − groove_width)/2. Planning a v2 variant of an `enclosure_fixture`
+source refuses an effective wall below groove_width + 1.5 mm (two 0.75 mm
+lips) with the `geometry_precondition` error code; the effective value is the
+requested edit, else the source sheet's registered value. Thinner lips are
+sub-millimetre slivers: in the first pilot, 2.5–3.0 mm walls left 0.25–0.5 mm
+lips that failed the 0.05 mesh quality gate (minimum 0.013–0.0495 at 6 mm) and
+the process minimum wall. A design loop records the refusal as a blocked child
+(`chained planning refused: geometry precondition: …`), so the candidate stays
+unknown and never reaches the mesher.
 `examples/enclosure-variant.json` is a v2 request template for it.

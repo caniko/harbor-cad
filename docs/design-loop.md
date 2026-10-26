@@ -249,7 +249,11 @@ metric (maximized) over feasible candidates. `design export` repeats it as
 `{index, fidelity, objective, value}` points. `design export` reports the
 winner, its child job IDs and labels each constraint `simulated`, `calibrated`/`estimated` (provider),
 `prescribed` (parameter or declared input), `measured` (correlation) or
-`unknown`. When the objective minimizes a correlation metric, the winner also
+`unknown`. Its `requirements` list names the product requirements (for
+example a board construction) that the data entries of the winner's resolved
+`sourced` inputs declare in an explicit `requirement` field (see
+[design conditions](design-conditions.md)); the winner's results hold only for
+a product that meets them. When the objective minimizes a correlation metric, the winner also
 carries `calibration` entries labelled `calibrated`, with the approved
 measurement path and test provenance.
 
@@ -257,7 +261,9 @@ measurement path and test provenance.
 
 `examples/design-enclosure.json` covers the outdoor enclosure pilot. Its
 continuous parameters are wall, fin count, fin height, length and height on
-manufacturing grids. Its single categorical `route` lists only compatible
+manufacturing grids. The wall starts at 3.5 mm, the fixture's
+groove_width + 1.5 mm rim precondition (see [CAD variants](cad-variants.md)),
+so no evaluation is spent on a wall the planner refuses. Its single categorical `route` lists only compatible
 `MATERIAL__PROCESS__FINISH` triples (process and finish `compatible_materials`
 in `data/processes.json` and `data/finishes.json`; `tests/design.rs` checks
 each): white and RAL 7035 powder coat on CNC 6061-T6 and on laser/brake
@@ -265,12 +271,16 @@ each): white and RAL 7035 powder coat on CNC 6061-T6 and on laser/brake
 route × finish pair. The screen chain is `variant` (`plan_cad_variant` of the
 enclosure fixture's `Params` sheet, with all five thermal regions) → `mesh`
 (`plan_cad_solid_mesh`, a conformal tetrahedral mesh of `gasket`, `housing`,
-`lid`, `pcb` and `window`, 6 mm) → `thermal_lo` and `thermal_hi`
+`lid`, `pcb` and `window`, 4 mm) → `thermal_lo` and `thermal_hi`
 (`plan_enclosure_thermal` at 1 W and 15 W in linear `power_sweep` mode with
 `radiation: "linearized_lower_bound"`; see
 [enclosure thermal](enclosure-thermal.md)). The refine tier
-(`refine_top_k` 1) remeshes at 4 mm, chains `thermal_lo` → `thermal_hi` →
-`thermal_check`, and runs the check at the superposed supported power. The
+(`refine_top_k` 1) re-runs the chain as `thermal_lo` → `thermal_hi` →
+`thermal_check`, and runs the check at the superposed supported power. Both
+tiers mesh at 4 mm: at 6 mm, isolated slivers on otherwise sound candidates
+fell below the 0.05 quality gate and passed at 4 mm. The 4 mm pilot meshes had
+64,000–81,000 elements, within the 200,000 `max_elements` budget the output
+allowances are sized from. The
 objective minimizes `unit_cost_high_usd` at a declared quantity of 50. The
 constraints are `temperature_margin_k ≥ 10 K` (housing at 1 W and the class
 4.1 cold point), `manufacturability_violations ≤ 0` and
@@ -281,7 +291,11 @@ the 10 K housing margin are declared requirements. The component limit
 board conductivity (`electronics:pcb-fr4-copper-in-plane.low`, 8.1 W/(m·K),
 and `electronics:pcb-fr4-copper-through-plane.low`, 0.26 W/(m·K)) are cited
 conservative defaults, not product data (see
-[design conditions](design-conditions.md)). The minimum wall is checked
+[design conditions](design-conditions.md)). The in-plane value and the
+component limit hold only for a product that meets their data entries'
+`requirement` (continuous copper planes; every part rated to +85 °C), so
+`design export` lists both under `requirements` and adds a `REQUIREMENTS`
+sentence to the statement. The minimum wall is checked
 against the conservative end of the process's minimum-wall range.
 
 Ambient, solar irradiance and the exterior film are `sourced` metrics. They

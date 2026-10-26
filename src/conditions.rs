@@ -59,6 +59,10 @@ pub struct ElectronicsDefault {
     /// `temperature`, `thermal_conductivity` or `dimensionless` (e.g. an emissivity).
     pub dimension: String,
     pub value: PhysicalInput<QuantityRange>,
+    /// A condition the product must meet for this default to hold (e.g. a
+    /// board construction); `design export` lists it for the winner.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requirement: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -308,6 +312,15 @@ impl Conditions {
                 }
             };
             context(&e.id, "value", check(&e.value, &e.dimension, min, max))?;
+            if e.requirement
+                .as_ref()
+                .is_some_and(|r| r.trim().is_empty() || r.len() > 1024)
+            {
+                return Err(invalid(format!(
+                    "{}: requirement must be bounded nonempty text",
+                    e.id
+                )));
+            }
         }
         for id in &self.transparent_materials {
             self.library.material(id)?;
@@ -443,6 +456,17 @@ impl Conditions {
             pick(&finish.solar_absorptance, &material.solar_absorptance),
             pick(&finish.emissivity, &material.emissivity),
         ))
+    }
+
+    /// The product requirement under which a sourced key's value holds, if
+    /// its data entry declares one (`electronics:<id>.<end>` only).
+    pub fn requirement(&self, key: &str) -> Option<&str> {
+        let (id, _) = key.strip_prefix("electronics:")?.split_once('.')?;
+        self.electronics
+            .iter()
+            .find(|e| e.id == id)?
+            .requirement
+            .as_deref()
     }
 
     /// `condition:<class>.<hot|cold>.<ambient_temperature|solar_irradiance|film_coefficient>`,

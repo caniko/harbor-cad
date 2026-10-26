@@ -66,13 +66,20 @@ fn imported_geometry_rejects_source_scope_units_nonrigid_placements_and_weak_gat
 }
 
 fn archived_source(store: &Store) -> String {
-    archived_source_with_geometry(store, descriptor())
+    archived_source_with_geometry(store, descriptor(), None)
 }
 
-fn archived_source_with_geometry(store: &Store, geometry: serde_json::Value) -> String {
+fn archived_source_with_geometry(
+    store: &Store,
+    geometry: serde_json::Value,
+    formulation: Option<&str>,
+) -> String {
     // Persisted-record fixture only; these opaque bytes establish no native
     // CAD execution or hardware qualification.
     let mut case = CaseSpec::reference();
+    if let Some(formulation) = formulation {
+        case.applicability.formulation = formulation.into();
+    }
     case.regions = vec!["solid".into()];
     case.geometry.source = "controlled.FCStd".into();
     let document = b"opaque archived original CAD document";
@@ -707,7 +714,7 @@ fn material_triangles_bind_every_original_region_and_refuse_substitution_without
     geometry["source_transform"] = serde_json::json!([
         1., 0., 0., 10., 0., 1., 0., -2., 0., 0., 1., 30., 0., 0., 0., 1.
     ]);
-    let id = archived_source_with_geometry(&store, geometry);
+    let id = archived_source_with_geometry(&store, geometry, None);
     let data = manufactured_box_triangles([
         [10., -2., 30.],
         [30., -2., 30.],
@@ -1445,12 +1452,18 @@ fn independent_imported_mesh_gate_rejects_translated_inverted_duplicate_or_wrong
 }
 
 fn sheet_source(store: &Store) -> String {
+    sheet_source_as(store, None)
+}
+
+fn sheet_source_as(store: &Store, formulation: Option<&str>) -> String {
     // Persisted alias evidence only; no native spreadsheet was opened.
-    let id = archived_source(store);
+    let id = archived_source_with_geometry(store, descriptor(), formulation);
     let evidence = serde_json::json!({"schema_version":1,"sheets":[{"name":"Params","label":"Params","aliases":{
         "length":{"cell":"B1","dimension":"length","value_si":0.02},
         "fin_count":{"cell":"B2","dimension":"dimensionless","value_si":8.0},
-        "angle":{"cell":"B3","dimension":"other","value_si":null}}}]});
+        "angle":{"cell":"B3","dimension":"other","value_si":null},
+        "wall":{"cell":"B4","dimension":"length","value_si":0.004},
+        "groove_width":{"cell":"B5","dimension":"length","value_si":0.002}}}]});
     let root = store.job_dir(&id).unwrap();
     let record = commit_artifact(
         &root,
@@ -1620,6 +1633,42 @@ fn sheet_variant_binds_registered_aliases_and_refuses_unknown_bad_or_excess_para
     // Neither can one whose registered sheet evidence changed on disk.
     std::fs::write(store.job_dir(&id).unwrap().join("sheets.json"), b"{}").unwrap();
     assert!(plan_sheet(&store, sheet_request(&id)).is_err());
+}
+
+#[test]
+fn enclosure_fixture_variant_refuses_rim_lips_below_the_geometry_precondition() {
+    let temp = tempfile::tempdir().unwrap();
+    let store = Store::open(&temp.path().join("state")).unwrap();
+    let fixture = sheet_source_as(&store, Some("enclosure_fixture"));
+    let edit = |id: &str, parameters: serde_json::Value| {
+        let mut request = sheet_request(id);
+        request["parameters"] = parameters;
+        plan_sheet(&store, request)
+    };
+    let mm = |v: f64| serde_json::json!({"value": v, "unit": "mm"});
+    // groove_width 2 mm (sheet value): 3.5 mm keeps two 0.75 mm lips.
+    edit(&fixture, serde_json::json!({"wall": mm(3.5)})).unwrap();
+    edit(&fixture, serde_json::json!({})).unwrap();
+    for parameters in [
+        serde_json::json!({"wall": mm(3.0)}),
+        serde_json::json!({"wall": mm(3.5), "groove_width": mm(2.5)}),
+    ] {
+        let error = edit(&fixture, parameters.clone()).unwrap_err();
+        assert!(
+            matches!(error, harbor_cad::Error::GeometryPrecondition(_)),
+            "{parameters}: {error}"
+        );
+        assert_eq!(error.diagnostic().code, "geometry_precondition");
+    }
+    // The precondition belongs to the enclosure fixture, not to every sheet.
+    let other = Store::open(&temp.path().join("other")).unwrap();
+    let plain = sheet_source_as(&other, None);
+    let mut request = sheet_request(&plain);
+    request["parameters"] = serde_json::json!({"wall": mm(3.0)});
+    plan_sheet(&other, request).unwrap();
+    use harbor_cad::cad_sheet_variant::enclosure_rim_precondition;
+    assert!(enclosure_rim_precondition(None, Some(0.002)).is_err());
+    assert!(enclosure_rim_precondition(Some(0.0035), None).is_err());
 }
 
 #[test]
@@ -1799,6 +1848,12 @@ fn enclosure_fixture_plan_is_fixed_synthetic_and_owns_its_region_snapshot() {
         harbor_cad::cad_sheet_variant::AnyCadVariantRequest::Sheet(request) => {
             request.normalized().unwrap();
             assert_eq!(request.regions, ENCLOSURE_REGIONS);
+            // The fixture's 2 mm groove leaves two >= 0.75 mm rim lips.
+            harbor_cad::cad_sheet_variant::enclosure_rim_precondition(
+                request.parameters["wall"].si("length").ok(),
+                Some(0.002),
+            )
+            .unwrap();
         }
         harbor_cad::cad_sheet_variant::AnyCadVariantRequest::Box(_) => panic!("box example"),
     }

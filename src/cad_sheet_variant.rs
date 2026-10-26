@@ -4,7 +4,7 @@
 //! registered `Spreadsheet::Sheet` change. Original identity, staging and
 //! historical rechecks reuse the version-1 path in `cad_variant`.
 use crate::{
-    Result,
+    Error, Result,
     cad::{Region, RegionSnapshot},
     cad_source::hash,
     contracts::*,
@@ -18,6 +18,23 @@ use std::{collections::BTreeMap, path::PathBuf};
 
 pub const ENCLOSURE_REGIONS: [&str; 6] = ["housing", "lid", "gasket", "window", "pcb", "mount"];
 pub const MAX_PARAMETERS: usize = 32;
+/// Material the enclosure fixture must keep beside its rim groove: two 0.75 mm
+/// lips. The groove (`groove_width`) is centred in the `wall`, so each lip is
+/// (wall - groove_width)/2; thinner lips are sub-millimetre slivers that fail
+/// the mesh quality gate and the process minimum wall.
+pub const ENCLOSURE_RIM_LIPS_M: f64 = 1.5e-3;
+
+/// Refuse an enclosure-fixture variant whose rim lips would be thinner than
+/// `ENCLOSURE_RIM_LIPS_M` in total (SI lengths; unknown values refuse).
+pub fn enclosure_rim_precondition(wall_m: Option<f64>, groove_width_m: Option<f64>) -> Result<()> {
+    match (wall_m, groove_width_m) {
+        // 1 nm slack absorbs binary noise in exact grid values (3.5 = 2 + 1.5 mm).
+        (Some(wall), Some(groove)) if wall + 1e-9 >= groove + ENCLOSURE_RIM_LIPS_M => Ok(()),
+        (wall, groove) => Err(Error::GeometryPrecondition(format!(
+            "enclosure fixture wall {wall:?} m must be at least groove_width {groove:?} m + {ENCLOSURE_RIM_LIPS_M} m (two 0.75 mm rim lips beside the centred gasket groove)"
+        ))),
+    }
+}
 
 /// Either variant request; `schema_version` selects the strict decoder.
 #[derive(Clone, Debug, Serialize, JsonSchema)]
@@ -209,7 +226,6 @@ struct AliasRecord {
     #[allow(dead_code)]
     cell: String,
     dimension: String,
-    #[allow(dead_code)]
     value_si: Option<f64>,
 }
 
@@ -252,6 +268,18 @@ fn resolve(store: &Store, request: CadSheetVariantRequest) -> Result<CadSheetVar
         ) {
             return Err(invalid("sheet value must keep the alias dimension"));
         }
+    }
+    if plan.channel_case()?.applicability.formulation == "enclosure_fixture" {
+        // Effective value: the requested edit, else the source sheet's value.
+        let length = |alias: &str| match values.get(alias) {
+            Some(SheetValue::Length(value)) => Some(*value),
+            Some(SheetValue::Dimensionless(_)) => None,
+            None => aliases
+                .get(alias)
+                .filter(|r| r.dimension == "length")
+                .and_then(|r| r.value_si),
+        };
+        enclosure_rim_precondition(length("wall"), length("groove_width"))?;
     }
     let document = crate::cad_variant::original_document(store, &id, &plan)?;
     let spec = CadSheetVariantSpec {

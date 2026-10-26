@@ -746,6 +746,7 @@ fn worker_runs_approved_design_to_known_optimum_and_resumes_without_duplicates()
     assert_eq!(report["winner"]["index"], best["index"]);
     assert_eq!(report["winner"]["constraints"][0]["evidence"], "simulated");
     assert_eq!(report["physical_validation"], "unqualified");
+    assert_eq!(report["requirements"], json!([]));
     assert!(
         report["statement"]
             .as_str()
@@ -1383,6 +1384,50 @@ fn enclosure_examples_approve_at_least_the_planner_output_floor() {
 }
 
 #[test]
+fn enclosure_examples_keep_the_rim_precondition_and_screen_at_the_refine_mesh_size() {
+    use harbor_cad::cad_sheet_variant::enclosure_rim_precondition;
+    // adapters/enclosure_fixture.py: groove_width 2 mm, centred in the wall.
+    const GROOVE_WIDTH_M: f64 = 0.002;
+    for name in ["design-enclosure.json", "design-enclosure-demo.json"] {
+        let raw: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("examples")
+                    .join(name),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        let wall = raw["space"]["continuous"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["name"] == "wall")
+            .unwrap();
+        assert_eq!(wall["unit"], "mm");
+        let (low, step) = (
+            wall["low"].as_f64().unwrap(),
+            wall["step"].as_f64().unwrap(),
+        );
+        // No grid wall is refused by the planner, and the bound is tight.
+        enclosure_rim_precondition(Some(low * 1e-3), Some(GROOVE_WIDTH_M)).unwrap();
+        assert!(
+            enclosure_rim_precondition(Some((low - step) * 1e-3), Some(GROOVE_WIDTH_M)).is_err()
+        );
+        // Sub-mm features meshed at 6 mm gave isolated slivers below the 0.05
+        // quality gate that pass at 4 mm, so screen meshes at the refine size.
+        for templates in raw["templates"].as_object().unwrap().values() {
+            for t in templates.as_array().unwrap() {
+                if let Some(mesh) = t["plan_request"]["request"].get("mesh") {
+                    assert_eq!(mesh["characteristic_length_max_m"], 0.004, "{name}");
+                    assert_eq!(mesh["min_quality"], 0.05, "{name}");
+                }
+            }
+        }
+    }
+}
+
+#[test]
 fn enclosure_and_calibration_examples_validate() {
     let read = |name: &str| -> DesignEnvelope {
         serde_json::from_str(
@@ -1521,6 +1566,34 @@ fn enclosure_and_calibration_examples_validate() {
     assert_eq!(metrics["temperature_margin_k"], None);
     assert_eq!(metrics["max_supported_pcb_power_w"], None);
     assert_eq!(metrics["unit_cost_high_usd"], None);
+    // The resolved in-plane board conductivity and component limit carry their
+    // data entries' explicit product requirements into the export; the
+    // through-plane low end bounds every board and carries none.
+    let required = requirements(&enclosure, &metrics).unwrap();
+    assert_eq!(
+        required
+            .iter()
+            .map(|r| (r.metric.as_str(), r.source.as_str()))
+            .collect::<Vec<_>>(),
+        [
+            (
+                "pcb_in_plane_conductivity",
+                "electronics:pcb-fr4-copper-in-plane.low"
+            ),
+            (
+                "component_max_temperature_k",
+                "electronics:component-limit-industrial.low"
+            ),
+        ]
+    );
+    assert!(required[0].requirement.contains("continuous copper planes"));
+    assert!(required[1].requirement.contains("+85 degC"));
+    let mut unresolved = metrics.clone();
+    unresolved.insert("pcb_in_plane_conductivity".into(), None);
+    assert_eq!(requirements(&enclosure, &unresolved).unwrap().len(), 1);
+    let demo = read("design-enclosure-demo.json");
+    let demo_metrics = compute_metrics(&demo, Level::Screen, &params, &BTreeMap::new(), PROVIDERS);
+    assert!(requirements(&demo, &demo_metrics).unwrap().is_empty());
     // With a simulated housing peak, PA12's -40 degC minimum leaves 7 K at the
     // class 4.1 cold point, below the 10 K requirement; aluminium keeps 67 K
     // cold-side, so its margin is the hot side.

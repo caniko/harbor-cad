@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "name": "outdoor_enclosure_demo",
-  "provenance": "SYNTHETIC DEMO, not design evidence. Same chain as design-enclosure.json with explicitly synthetic declared inputs (synthetic: true) so the variant -> mesh -> enclosure thermal loop can be exercised end to end; status and export list these inputs under synthetic_inputs and prefix the statement with SYNTHETIC. The window is declared with synthetic optical values because the W1 library has no pc-uv solar absorptance. The PCB limit of 358.15 K is a synthetic demo requirement. Replace source_job with an authorized enclosure_fixture job.",
+  "provenance": "SYNTHETIC DEMO, not design evidence. Exercises the variant -> mesh -> enclosure thermal loop end to end with the earlier single-solve chain: one solve at a fixed synthetic PCB power, full T^4 exterior radiation (radiation: true, not a bound), an isotropic synthetic board conductivity and a declared synthetic window (conductivity, emissivity, solar absorptance) instead of the pilot's cavity solar bound. It does not use the pilot's power sweep, orthotropic board lower bound, linearized radiation lower bound or transparent_solar bound (see design-enclosure.json), so design export lists no conservative bounds. Declared inputs are explicitly synthetic (synthetic: true): status and export list them under synthetic_inputs and prefix the statement with SYNTHETIC. The PCB limit of 358.15 K is a synthetic demo requirement. Walls span 3.5-6 mm and the mesh is 4 mm, as in design-enclosure.json (the fixture's centred gasket groove needs a wall of at least groove_width + 1.5 mm). Replace source_job with an authorized enclosure_fixture job.",
   "seed": 11,
   "space": {
     "continuous": [
       {
         "name": "wall",
-        "low": 2.0,
+        "low": 3.5,
         "high": 6.0,
         "step": 0.5,
         "unit": "mm"
@@ -157,7 +157,7 @@
               "window"
             ],
             "mesh": {
-              "characteristic_length_max_m": 0.006,
+              "characteristic_length_max_m": 0.004,
               "element_order": 1,
               "max_elements": 200000,
               "volume_relative_tolerance": 0.01,
