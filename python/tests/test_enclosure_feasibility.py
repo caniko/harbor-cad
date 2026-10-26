@@ -478,7 +478,7 @@ def test_supported_power_rises_as_the_window_shrinks():
         expected = values["solar_w_m2"] * direction[2] * (pane or 0.0) ** 2
         assert deposit == pytest.approx(expected, rel=1e-9), pane
         supported.append(supported_power(powers, lo, hi, limits))
-    assert all(a < b for a, b in zip(supported, supported[1:])), supported
+    assert all(a < b for a, b in itertools.pairwise(supported)), supported
 
 
 def test_cavity_radiation_postcondition_fails_on_the_analogue():
