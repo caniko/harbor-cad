@@ -1315,7 +1315,33 @@ fn manufacturing_providers_reuse_w1_and_never_fabricate_missing_inputs() {
     )
     .unwrap();
     assert!((stress - (240e6 / 2. / 50e6 - 1.)).abs() < 1e-9);
-    assert!(PROVIDERS.iter().all(|p| p.evidence() == "estimated"));
+    // Every provider estimates, except the window area read back from geometry.
+    for p in PROVIDERS {
+        let expected = if p.name() == "window_area_m2" {
+            "prescribed"
+        } else {
+            "estimated"
+        };
+        assert_eq!(p.evidence(), expected, "{}", p.name());
+    }
+}
+
+#[test]
+fn window_area_is_the_recomputed_pane_extent_product() {
+    let none = Params::new();
+    // The fixture's default 60 x 40 mm pane, as one recompute reported it.
+    let pane = [
+        ("window_xmin_m", 0.0725),
+        ("window_xmax_m", 0.1325),
+        ("window_ymin_m", 0.055),
+        ("window_ymax_m", 0.095),
+    ];
+    let area = provider_value("window_area_m2", &none, &pane).unwrap();
+    assert!((area - 0.06 * 0.04).abs() < 1e-12, "{area}");
+    assert_eq!(provider_value("window_area_m2", &none, &pane[..3]), None);
+    let mut flat = pane;
+    flat[1].1 = flat[0].1;
+    assert_eq!(provider_value("window_area_m2", &none, &flat), None);
 }
 
 #[test]
@@ -1450,6 +1476,75 @@ fn enclosure_examples_keep_the_geometry_preconditions_and_screen_at_the_refine_m
 }
 
 #[test]
+fn window_objective_ranks_larger_panes_first_and_pareto_keeps_the_power_trade_off() {
+    let env: DesignEnvelope = serde_json::from_str(
+        &std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/design-enclosure.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    // (window area m2, supported power W, housing margin K); synthetic metric
+    // values, no solve. Constraints: margin >= 10 K, violations <= 0, >= 3 W.
+    let cases = [
+        (0.010, 2.0, 20.), // 0: below 3 W, largest pane at 2 W: on the front
+        (0.005, 2.6, 20.), // 1: below 3 W, on the front
+        (0.004, 2.4, 20.), // 2: dominated by 1
+        (0.012, 2.8, 5.),  // 3: fails the housing margin: never on the front
+        (0.003, 3.2, 20.), // 4: feasible
+        (0.002, 3.5, 20.), // 5: feasible, smaller pane, more power
+    ];
+    let iterations: Vec<Iteration> = cases
+        .iter()
+        .enumerate()
+        .map(|(index, (area, power, margin))| {
+            let metrics: Metrics = [
+                ("window_area_m2", *area),
+                ("max_supported_pcb_power_w", *power),
+                ("temperature_margin_k", *margin),
+                ("manufacturability_violations", 0.),
+                ("unit_cost_high_usd", 300.),
+            ]
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), Some(v)))
+            .collect();
+            let a = assess(&env, &metrics);
+            Iteration {
+                index: index as u32,
+                origin: "proposer".into(),
+                fidelity: Level::Screen,
+                parent: None,
+                state: "evaluated".into(),
+                params: Params::new(),
+                metrics,
+                standing: a.standing,
+                objective: a.objective,
+                violation: a.violation,
+                min_margin: a.min_margin,
+                jobs: vec![],
+            }
+        })
+        .collect();
+    let mut ranked: Vec<(u32, Assessment)> = iterations
+        .iter()
+        .map(|i| (i.index, assess(&env, &i.metrics)))
+        .collect();
+    rank(&mut ranked);
+    // Feasibility first, then the larger window.
+    assert_eq!(ranked[0].0, 4);
+    assert_eq!(ranked[1].0, 5);
+    let front: Vec<(u32, bool)> = pareto_front(&env, &iterations)
+        .iter()
+        .map(|p| (p.index, p.feasible))
+        .collect();
+    assert_eq!(
+        front,
+        [(0, false), (1, false), (4, true), (5, true)],
+        "the largest pane at each supported power"
+    );
+}
+
+#[test]
 fn enclosure_and_calibration_examples_validate() {
     let read = |name: &str| -> DesignEnvelope {
         serde_json::from_str(
@@ -1533,7 +1628,26 @@ fn enclosure_and_calibration_examples_validate() {
             .find(|c| c.metric == metric)
             .unwrap()
     };
-    assert_eq!(constraint("max_supported_pcb_power_w").limit, 1.);
+    assert_eq!(constraint("max_supported_pcb_power_w").limit, 3.);
+    for metric in [
+        "temperature_margin_k",
+        "manufacturability_violations",
+        "max_supported_pcb_power_w",
+    ] {
+        constraint(metric);
+    }
+    // Maximize the window (a negative weight on the minimized sum, so ranking
+    // and the Pareto set prefer the larger pane); cost stays a reported metric.
+    let [term] = &enclosure.objective.terms[..] else {
+        panic!("one objective term")
+    };
+    assert_eq!((term.metric.as_str(), term.weight), ("window_area_m2", -1.));
+    assert!(
+        enclosure
+            .metric_sources
+            .iter()
+            .any(|m| m.metric == "unit_cost_high_usd")
+    );
     assert_eq!(
         enclosure.pareto_metric.as_deref(),
         Some("max_supported_pcb_power_w")
@@ -1827,7 +1941,16 @@ fn metric_placeholders_derive_from_upstream_metrics_and_pareto_metric_is_reporte
     let report = call(&root, json!({"operation":"design_export","design_id":id}));
     let report = report.data.unwrap();
     assert_eq!(report["pareto"].as_array().unwrap().len(), pareto.len());
+    assert!(
+        report["pareto"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|p| p["feasible"] == true)
+    );
     assert_eq!(report["pareto_metric"], "derived_velocity");
+    // Export carries every candidate with its metrics, not only the winner.
+    assert_eq!(report["candidates"], status["iterations"]);
     drop(worker);
 }
 

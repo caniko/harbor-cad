@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "name": "outdoor_enclosure_pilot",
-  "provenance": "Outdoor wall/pole-mounted electronics enclosure, pilot 50 units. Synthetic enclosure_fixture geometry (not a validated product design). Requirements, not physics: order quantity 50, a 10 K margin between the housing temperature extremes and the conservative route-material service limits, and at least 1 W of supported PCB dissipation. PCB power is swept (1-15 W): two linear solves per candidate (1 W and 15 W, power_sweep mode) give max_supported_pcb_power_w by superposition, bounded by the component limit on the hotter of board peak and internal air and by the housing service limit less the 10 K margin; the refine tier verifies it with a third solve at that power (0.5 K). Chain: spreadsheet variant -> conformal general-solid mesh (4 mm on both tiers) -> steady enclosure conduction (docs/enclosure-thermal.md). Walls span 3.5-6 mm: the fixture's 2 mm gasket groove is centred in the wall, and the planner refuses a wall below groove_width + 1.5 mm (two 0.75 mm rim lips; geometry_precondition). Environment is normative, not site weather: ETSI EN 300 019-1-4 class 4.1 hot design point (40 degC air, 1120 W/m2 solar, still-air film 2.2 W/(m2*K)) for the solves and its cold point (-33 degC) for the minimum service temperature (data/conditions.json, docs/design-conditions.md). The internal cavity film is the cited conservative low end (1.2 W/(m2*K)); cavity radiation stays off. Two conservative bounds, listed by design export: exterior radiation is the linearized lower bound (radiation = linearized_lower_bound: h_r = 4*eps*sigma*Ta^3 at the low-end sourced emissivity, surroundings at ambient, so sky cooling is ignored), and the pc-uv window deposits all incident solar irradiance into the cavity air (transparent_solar = deposit_incident_in_cavity). The board is orthotropic: 0.26 W/(m*K) through-plane and 8.1 W/(m*K) in-plane, the low ends of the cited ranges; the in-plane value holds only for boards with continuous copper planes, a board requirement that design export lists under requirements. The component limit (85 degC, upper end of the industrial temperature grade) and the board conductivities are cited conservative DEFAULTS, not product data. The single categorical route lists only compatible MATERIAL__PROCESS__FINISH triples; the finish sets the housing and lid optics. The lid window aperture is a design variable (window_width along the length, window_height along the width; 5 mm steps). Its lower bounds, 40 x 25 mm, are a PLACEHOLDER minimum viewing aperture: an operator-adjustable product requirement, not product data; replace them with the product's real minimum. The upper bounds, 145 x 115 mm, are geometric: the pane must sit inside the cavity opening with 10 mm clearance per side (window + 2*(wall + 10 mm) <= length or width), so at the smallest length (180 mm), the fixed width (150 mm) and the thickest wall (6 mm) no grid point reaches the planner's geometry_precondition refusal. The window carries no cost, but the cavity solar deposit scales with its sun-facing area. PA12 stays a candidate but cannot pass its 10 K cold margin (-40 degC limit vs -33 degC). Replace source_job with an authorized enclosure_fixture job.",
+  "provenance": "Outdoor wall/pole-mounted electronics enclosure, pilot 50 units. Goal: the largest lid window (objective: maximize window_area_m2, written as weight -1 on a minimized sum) that still supports 3 W of PCB dissipation with every margin held; unit cost is reported for every candidate but is not optimized. The Pareto set trades window area against max_supported_pcb_power_w over candidates meeting every other constraint, so it shows the largest window at each supported power even when no candidate reaches 3 W. Synthetic enclosure_fixture geometry (not a validated product design). Requirements, not physics: order quantity 50, a 10 K margin between the housing temperature extremes and the conservative route-material service limits, and at least 3 W of supported PCB dissipation. PCB power is swept (1-15 W): two linear solves per candidate (1 W and 15 W, power_sweep mode) give max_supported_pcb_power_w by superposition, bounded by the component limit on the hotter of board peak and internal air and by the housing service limit less the 10 K margin; the refine tier verifies it with a third solve at that power (0.5 K). Chain: spreadsheet variant -> conformal general-solid mesh (4 mm on both tiers) -> steady enclosure conduction (docs/enclosure-thermal.md). Walls span 3.5-6 mm: the fixture's 2 mm gasket groove is centred in the wall, and the planner refuses a wall below groove_width + 1.5 mm (two 0.75 mm rim lips; geometry_precondition). Environment is normative, not site weather: ETSI EN 300 019-1-4 class 4.1 hot design point (40 degC air, 1120 W/m2 solar, still-air film 2.2 W/(m2*K)) for the solves and its cold point (-33 degC) for the minimum service temperature (data/conditions.json, docs/design-conditions.md). The internal cavity film is the cited conservative low end (1.2 W/(m2*K)); cavity radiation stays off. Two conservative bounds, listed by design export: exterior radiation is the linearized lower bound (radiation = linearized_lower_bound: h_r = 4*eps*sigma*Ta^3 at the low-end sourced emissivity, surroundings at ambient, so sky cooling is ignored), and the pc-uv window deposits all incident solar irradiance into the cavity air (transparent_solar = deposit_incident_in_cavity). The board is orthotropic: 0.26 W/(m*K) through-plane and 8.1 W/(m*K) in-plane, the low ends of the cited ranges; the in-plane value holds only for boards with continuous copper planes, a board requirement that design export lists under requirements. The component limit (85 degC, upper end of the industrial temperature grade) and the board conductivities are cited conservative DEFAULTS, not product data. The single categorical route lists only compatible MATERIAL__PROCESS__FINISH triples; the finish sets the housing and lid optics. The lid window aperture is a design variable (window_width along the length, window_height along the width; 5 mm steps). Its lower bounds, 40 x 25 mm, are a PLACEHOLDER minimum viewing aperture: an operator-adjustable product requirement, not product data; replace them with the product's real minimum. The upper bounds, 145 x 115 mm, are geometric: the pane must sit inside the cavity opening with 10 mm clearance per side (window + 2*(wall + 10 mm) <= length or width), so at the smallest length (180 mm), the fixed width (150 mm) and the thickest wall (6 mm) no grid point reaches the planner's geometry_precondition refusal. window_area_m2 is the pane's plan-view area read back from the recomputed variant's window bounds (prescribed geometry, not simulated); the cavity solar deposit scales with the same sun-facing area, which is the trade-off against supported power. PA12 stays a candidate but cannot pass its 10 K cold margin (-40 degC limit vs -33 degC). Replace source_job with an authorized enclosure_fixture job.",
   "seed": 11,
   "space": {
     "continuous": [
@@ -72,8 +72,8 @@
     "kind": "minimize",
     "terms": [
       {
-        "metric": "unit_cost_high_usd",
-        "weight": 1.0
+        "metric": "window_area_m2",
+        "weight": -1.0
       }
     ]
   },
@@ -95,7 +95,7 @@
     {
       "metric": "max_supported_pcb_power_w",
       "op": "ge",
-      "limit": 1.0,
+      "limit": 3.0,
       "unit": "W",
       "safety_factor": null
     }
@@ -1135,6 +1135,55 @@
         "role": "variant",
         "artifact": "cad-variant-recompute.json",
         "pointer": "/after/housing/min_wall_m"
+      }
+    },
+    {
+      "metric": "window_xmin_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/window/bounds_m/0"
+      }
+    },
+    {
+      "metric": "window_xmax_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/window/bounds_m/1"
+      }
+    },
+    {
+      "metric": "window_ymin_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/window/bounds_m/2"
+      }
+    },
+    {
+      "metric": "window_ymax_m",
+      "unit": "m",
+      "source": {
+        "kind": "job",
+        "role": "variant",
+        "artifact": "cad-variant-recompute.json",
+        "pointer": "/after/window/bounds_m/3"
+      }
+    },
+    {
+      "metric": "window_area_m2",
+      "unit": "m2",
+      "source": {
+        "kind": "provider",
+        "name": "window_area_m2",
+        "params": []
       }
     },
     {

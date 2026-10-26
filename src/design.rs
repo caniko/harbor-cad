@@ -310,7 +310,8 @@ pub struct ExternalCandidate {
 pub trait MetricProvider: Sync {
     fn name(&self) -> &'static str;
     fn unit(&self) -> &'static str;
-    /// `calibrated` only when backed by calibrated data; otherwise `estimated`.
+    /// `calibrated` only when backed by calibrated data, `prescribed` for a
+    /// design dimension read back from the geometry; otherwise `estimated`.
     fn evidence(&self) -> &'static str;
     fn evaluate(&self, params: &Params, metrics: &BTreeMap<String, f64>) -> Result<Option<f64>>;
     /// Fidelity-aware evaluation (e.g. a refine-only verification); defaults
@@ -2478,8 +2479,8 @@ pub struct DesignStatus {
     pub incumbent: Option<u32>,
     pub feasible: Vec<u32>,
     /// Non-dominated in (minimize objective, maximize the second axis):
-    /// `pareto_metric` over feasible candidates, else the minimum constraint
-    /// margin.
+    /// `pareto_metric` over candidates satisfying every constraint on other
+    /// metrics, else the minimum constraint margin.
     pub pareto: Vec<u32>,
     pub pareto_metric: Option<String>,
     pub physical_validation: String,
@@ -2495,18 +2496,29 @@ pub struct ParetoPoint {
     pub objective: f64,
     /// `pareto_metric` value, or the minimum constraint margin without one.
     pub value: f64,
+    /// Every constraint holds, including any on `pareto_metric`.
+    pub feasible: bool,
 }
 
 /// Non-dominated (minimize objective, maximize the second axis) candidates.
-fn pareto_front(env: &DesignEnvelope, iterations: &[Iteration]) -> Vec<ParetoPoint> {
+/// With `pareto_metric`, a candidate qualifies when every constraint on any
+/// other metric is satisfied: a constraint on the Pareto axis itself would
+/// otherwise hide the trade-off it bounds (`feasible` tells them apart).
+pub fn pareto_front(env: &DesignEnvelope, iterations: &[Iteration]) -> Vec<ParetoPoint> {
     let points: Vec<ParetoPoint> = iterations
         .iter()
         .filter_map(|i| {
             let value = match &env.pareto_metric {
-                Some(metric) if i.standing == Standing::Feasible => {
+                Some(metric) => {
+                    let others = assess(env, &i.metrics).constraints.into_iter();
+                    if !others
+                        .filter(|c| &c.metric != metric)
+                        .all(|c| c.satisfied == Some(true))
+                    {
+                        return None;
+                    }
                     i.metrics.get(metric).copied().flatten()?
                 }
-                Some(_) => return None,
                 None => i.min_margin?,
             };
             Some(ParetoPoint {
@@ -2514,6 +2526,7 @@ fn pareto_front(env: &DesignEnvelope, iterations: &[Iteration]) -> Vec<ParetoPoi
                 fidelity: i.fidelity,
                 objective: i.objective?,
                 value,
+                feasible: i.standing == Standing::Feasible,
             })
         })
         .collect();
@@ -2691,6 +2704,9 @@ pub struct DesignReport {
     /// by the data entries of the winner's resolved sourced inputs; the
     /// winner's results hold only for a product that meets them.
     pub requirements: Vec<Requirement>,
+    /// Every evaluated candidate with its parameters, metrics (cost included)
+    /// and standing, as in `design status`.
+    pub candidates: Vec<Iteration>,
 }
 
 #[derive(Debug, PartialEq, Serialize, JsonSchema)]
@@ -2881,6 +2897,7 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
         winner,
         physical_validation: "unqualified".into(),
         synthetic_inputs: status.synthetic_inputs,
+        candidates: status.iterations,
         conservative_bounds: bounds,
         requirements,
     })
