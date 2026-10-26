@@ -87,7 +87,7 @@
   "budget": {
     "max_evaluations": 32,
     "max_wall_seconds": 172800,
-    "max_artifact_bytes": 30064771072
+    "max_artifact_bytes": 38654705664
   },
   "fidelity": {
     "screen": "screen"
@@ -138,7 +138,7 @@
             "provenance": "design-loop candidate of the synthetic enclosure_fixture Params sheet"
           }
         },
-        "max_artifact_bytes": 268435456
+        "max_artifact_bytes": 536870912
       },
       {
         "role": "mesh",

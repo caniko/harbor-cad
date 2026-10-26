@@ -101,8 +101,11 @@ When `after` has succeeded, the worker's design advance resolves the request
 and calls the same `dispatch` that the CLI and MCP planning calls use. Planning
 logic is not duplicated, and authority requirements are unchanged. The derived
 plan must pass the unchanged `ExecutionPlan::validate()` under the effective
-policy and stay within the template's approved `max_artifact_bytes`. It is
-then submitted through the ordinary `Submit` path, with `submission_binding`,
+policy and stay within the template's approved `max_artifact_bytes`. That
+allowance must cover the planner's conservative output estimate
+(`estimates::minimum`): a five-region sheet variant needs 464 MiB plus its
+copied document and regions, so the enclosure examples approve 512 MiB.
+It is then submitted through the ordinary `Submit` path, with `submission_binding`,
 staging and admission all unchanged. The envelope digest approves the request.
 The concrete plan is bound by an idempotency key over (design, envelope
 digest, candidate index, role, upstream job id), and the candidate row records

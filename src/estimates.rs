@@ -33,6 +33,25 @@ fn lattice_cells(case: &CaseSpec) -> Result<u64> {
     multiply(multiply(add(nx as u64, 4)?, add(n, 6)?)?, add(n, 4)?)
 }
 
+/// Output allowance every plan with a native stage starts from.
+pub const NATIVE_OUTPUT_BYTES: u64 = 16 * MIB;
+
+/// Variant output allowance beyond the copied original document and regions:
+/// bounded new FCStd/BREP/STL outputs, plus 64 MiB per sheet region after the first.
+pub fn variant_output_bytes(extra_regions: u64) -> Result<u64> {
+    add(192 * MIB, multiply(extra_regions, 64 * MIB)?)
+}
+
+/// General-solid mesh (or enclosure thermal) output allowance beyond the staged
+/// sources, from the requested element budget.
+pub fn solid_output_bytes(max_elements: u64, thermal: bool) -> Result<u64> {
+    if thermal {
+        add(64 * MIB, multiply(max_elements, 1024)?)
+    } else {
+        add(16 * MIB, multiply(max_elements, 256)?)
+    }
+}
+
 fn solid_elements(plan: &ExecutionPlan) -> Result<u64> {
     plan.cad_solids
         .as_ref()
@@ -54,7 +73,7 @@ pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
             StageOperation::ChannelReference | StageOperation::Bundle
         )
     });
-    let mut output = if native { 16 * MIB } else { MIB };
+    let mut output = if native { NATIVE_OUTPUT_BYTES } else { MIB };
     if let Some(variant) = crate::cad_variant::original(plan)? {
         // Original document/region copies plus bounded closed new FCStd, BREP
         // and STL outputs; native document compression ratios are not assumed.
@@ -66,7 +85,7 @@ pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
             output,
             add(
                 add(variant.document.bytes, variant.regions.bytes)?,
-                add(192 * MIB, multiply(extra, 64 * MIB)?)?,
+                variant_output_bytes(extra)?,
             )?,
         )?;
     }
@@ -176,12 +195,12 @@ pub fn minimum(plan: &ExecutionPlan) -> Result<MinimumResources> {
                 // Mesh, deck and nodal field bytes plus SPOOLES fill-in; per-element
                 // allowances are conservative bounds, not measured peaks.
                 let elements = solid_elements(plan)?;
-                output = add(output, add(64 * MIB, multiply(elements, 1024)?)?)?;
+                output = add(output, solid_output_bytes(elements, true)?)?;
                 add(2048 * MIB, multiply(elements, 16 * 1024)?)?
             }
             StageOperation::CadMesh if plan.cad_solids.is_some() => {
                 let elements = solid_elements(plan)?;
-                output = add(output, add(16 * MIB, multiply(elements, 256)?)?)?;
+                output = add(output, solid_output_bytes(elements, false)?)?;
                 add(1024 * MIB, multiply(elements, 8 * 1024)?)?
             }
             StageOperation::FemImported => {

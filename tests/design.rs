@@ -1318,6 +1318,71 @@ fn manufacturing_providers_reuse_w1_and_never_fabricate_missing_inputs() {
 }
 
 #[test]
+fn enclosure_examples_approve_at_least_the_planner_output_floor() {
+    use harbor_cad::estimates::{NATIVE_OUTPUT_BYTES, solid_output_bytes, variant_output_bytes};
+    for name in ["design-enclosure.json", "design-enclosure-demo.json"] {
+        let raw: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("examples")
+                    .join(name),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        let mut per_set = BTreeMap::new();
+        for (set, templates) in raw["templates"].as_object().unwrap() {
+            let templates = templates.as_array().unwrap();
+            let elements = |role: &serde_json::Value| {
+                let mesh = templates.iter().find(|t| t["role"] == *role).unwrap();
+                mesh["plan_request"]["request"]["mesh"]["max_elements"]
+                    .as_u64()
+                    .unwrap()
+            };
+            let mut total = 0;
+            for t in templates {
+                let request = &t["plan_request"]["request"];
+                // Source-independent part of the planner's estimates::minimum;
+                // the copied document/BREP bytes come on top of it.
+                let floor = NATIVE_OUTPUT_BYTES
+                    + match t["plan_request"]["operation"].as_str().unwrap() {
+                        "plan_cad_variant" => variant_output_bytes(
+                            request["regions"].as_array().unwrap().len() as u64 - 1,
+                        ),
+                        "plan_cad_solid_mesh" => solid_output_bytes(
+                            request["mesh"]["max_elements"].as_u64().unwrap(),
+                            false,
+                        ),
+                        "plan_enclosure_thermal" => {
+                            solid_output_bytes(elements(&request["mesh_job"]["$job"]), true)
+                        }
+                        other => panic!("{name}: unexpected chained operation {other}"),
+                    }
+                    .unwrap();
+                let approved = t["max_artifact_bytes"].as_u64().unwrap();
+                assert!(
+                    floor <= approved,
+                    "{name} {set}/{}: planner floor {floor} exceeds approved {approved}",
+                    t["role"]
+                );
+                total += approved;
+            }
+            per_set.insert(set.as_str(), total);
+        }
+        let (budget, fidelity) = (&raw["budget"], &raw["fidelity"]);
+        let evaluations = budget["max_evaluations"].as_u64().unwrap();
+        let top_k = fidelity["refine_top_k"].as_u64().unwrap_or(0);
+        let refine = fidelity["refine"].as_str().map_or(0, |set| per_set[set]);
+        let required =
+            per_set[fidelity["screen"].as_str().unwrap()] * (evaluations - top_k) + refine * top_k;
+        assert!(
+            required <= budget["max_artifact_bytes"].as_u64().unwrap(),
+            "{name}: budget below {required} bytes"
+        );
+    }
+}
+
+#[test]
 fn enclosure_and_calibration_examples_validate() {
     let read = |name: &str| -> DesignEnvelope {
         serde_json::from_str(
