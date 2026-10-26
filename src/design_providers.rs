@@ -13,6 +13,8 @@
 //! - `max_temperature_k`, optional `min_temperature_k`;
 //! - `max_von_mises_pa`, `stress_safety_factor`;
 //! - `component_max_temperature_k`, `pcb_max_temperature_k` (component margin);
+//! - `window_xmin_m`, `window_xmax_m`, `window_ymin_m`, `window_ymax_m` (window
+//!   pane bounds, `window_area_m2`, labelled prescribed);
 //! - power sweep (`max_supported_pcb_power_w`): `pcb_power_low_w`,
 //!   `pcb_power_high_w`, `housing_margin_required_k` and, per solve, the
 //!   board (`pcb_max_temperature_k`, `internal_air_temperature_k`) and housing
@@ -51,6 +53,7 @@ pub static ALL: &[&dyn MetricProvider] = &[
     &Manufacturing::StressMargin,
     &ComponentMargin,
     &PowerSweep,
+    &WindowArea,
 ];
 
 pub const MAX_SUPPORTED_PCB_POWER: &str = "max_supported_pcb_power_w";
@@ -206,6 +209,31 @@ impl MetricProvider for ComponentMargin {
         Ok(get("component_max_temperature_k")
             .zip(peak)
             .map(|(limit, peak)| limit - peak))
+    }
+}
+
+/// Plan-view area of an axis-aligned rectangular window pane from the
+/// recomputed variant's `window` bounds (`window_xmin_m` .. `window_ymax_m`):
+/// the prescribed aperture as built by the CAD recompute, not a simulation
+/// result. Unknown unless all four are known and the extents are positive.
+pub struct WindowArea;
+
+impl MetricProvider for WindowArea {
+    fn name(&self) -> &'static str {
+        "window_area_m2"
+    }
+    fn unit(&self) -> &'static str {
+        "m2"
+    }
+    fn evidence(&self) -> &'static str {
+        "prescribed"
+    }
+    fn evaluate(&self, _: &Params, metrics: &BTreeMap<String, f64>) -> Result<Option<f64>> {
+        let extent = |axis: &str| {
+            let get = |end: &str| metrics.get(&format!("window_{axis}{end}_m")).copied();
+            Some(get("max")? - get("min")?).filter(|e| *e > 0.)
+        };
+        Ok(extent("x").zip(extent("y")).map(|(x, y)| x * y))
     }
 }
 

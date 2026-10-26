@@ -80,7 +80,9 @@ shaded surface takes one label; the receipt's areas make this auditable.
   `solar.transparent_solar: "deposit_incident_in_cavity"`, a conservative
   bound (modelling assumption): the full irradiance incident on the pane's
   sun-facing exterior faces, G × max(0, n·s) × A, is added to the internal air
-  node. Nothing is reflected, absorbed in the pane or re-emitted outward, so
+  node. A is the meshed area of those faces, so the deposit follows the
+  variant's pane size (the pilot varies `window_width` and `window_height`).
+  Nothing is reflected, absorbed in the pane or re-emitted outward, so
   interior solar gain is an upper bound; the pane's own temperature is not
   bounded. It requires a cavity. The receipt's `applicability.transparent_solar`
   and the design export's `conservative_bounds` carry the

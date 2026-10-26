@@ -136,35 +136,54 @@ YS = [0, 0.004, 0.045, 0.051, 0.099, 0.105, 0.146, 0.15]
 ZS = [0, 0.004, 0.012, 0.014, 0.076, 0.08]
 
 
-def region(i, j, k, window):
-    """Cell region; None is the internal air cavity (no elements)."""
-    inner = 0 < i < len(XS) - 2 and 0 < j < len(YS) - 2
+CENTRE = (0.1, 0.075)
+PANE = (0.048, 0.048)  # default window: the centre cell of XS x YS
+PCB = ((0.07, 0.13), (0.045, 0.105))
+BOSSES = (((0.07, 0.076), (0.124, 0.13)), ((0.045, 0.051), (0.099, 0.105)))
+
+
+def region(x, y, k, xs, ys, pane):
+    """Region of the cell centred at (x, y) in layer k; None is the internal
+    air cavity (no elements). `pane` is the window (width, height) or None."""
+
+    def within(v, spans):
+        return any(lo < v < hi for lo, hi in spans)
+
     if k == len(ZS) - 2:
-        return "window" if window and i in (3,) and j in (3,) else "lid"
-    if not inner or k == 0:
+        inside = pane and all(
+            abs(v - c) < s / 2 for v, c, s in zip((x, y), CENTRE, pane)
+        )
+        return "window" if inside else "lid"
+    if not (xs[1] < x < xs[-2] and ys[1] < y < ys[-2]) or k == 0:
         return "housing"
-    if k == 1 and i in (2, 4) and j in (2, 4):
+    if k == 1 and within(x, BOSSES[0]) and within(y, BOSSES[1]):
         return "housing"  # 6 mm bosses under the board corners
-    if k == 2 and 2 <= i <= 4 and 2 <= j <= 4:
+    if k == 2 and within(x, PCB[:1]) and within(y, PCB[1:]):
         return "pcb"
     return None
 
 
-def analogue(window=True):
-    """Kuhn (conforming) tetrahedra on the rectilinear grid, cavity removed."""
+def analogue(window=True, xs=XS, ys=YS):
+    """Kuhn (conforming) tetrahedra on the rectilinear grid, cavity removed.
+
+    `window` is True (the 48 x 48 mm default pane), False or a (width,
+    height) pane in m centred on the lid; its edges must lie on grid lines.
+    """
+    pane = PANE if window is True else window or None
     ids = {
         c: n + 1
         for n, c in enumerate(
-            itertools.product(range(len(XS)), range(len(YS)), range(len(ZS)))
+            itertools.product(range(len(xs)), range(len(ys)), range(len(ZS)))
         )
     }
-    nodes = {n: [XS[c[0]], YS[c[1]], ZS[c[2]]] for c, n in ids.items()}
+    nodes = {n: [xs[c[0]], ys[c[1]], ZS[c[2]]] for c, n in ids.items()}
     elements, regions = {}, {}
     cells = itertools.product(
-        range(len(XS) - 1), range(len(YS) - 1), range(len(ZS) - 1)
+        range(len(xs) - 1), range(len(ys) - 1), range(len(ZS) - 1)
     )
     for i, j, k in cells:
-        name = region(i, j, k, window)
+        x, y = (xs[i] + xs[i + 1]) / 2, (ys[j] + ys[j + 1]) / 2
+        name = region(x, y, k, xs, ys, pane)
         if name is None:
             continue
         for order in itertools.permutations(range(3)):
@@ -179,7 +198,7 @@ def analogue(window=True):
             regions.setdefault(name, []).append(len(elements))
     used = {n for path in elements.values() for n in path}
     nodes = {n: xyz for n, xyz in nodes.items() if n in used}
-    bounds = [(XS[0], XS[-1]), (YS[0], YS[-1]), (ZS[0], ZS[-1])]
+    bounds = [(xs[0], xs[-1]), (ys[0], ys[-1]), (ZS[0], ZS[-1])]
 
     def label(points):
         outer = any(
@@ -424,6 +443,42 @@ def test_aluminium_candidate_max_supported_power_on_the_reference_solver_path(
     )
     assert report["manufacturability"] == []
     assert report["estimate"]["high"] is not None
+
+
+def test_supported_power_rises_as_the_window_shrinks():
+    """SYNTHETIC analogue geometry (not the fixture mesh), demonstration only.
+
+    The pilot's window_width/window_height are design variables: the cavity
+    solar deposit is the incident flux on the pane's sun-facing exterior face,
+    so it scales with the pane area, and the supported power rises
+    monotonically as the pane shrinks (the lid takes the freed area at its
+    finish absorptance). One shared grid holds every pane, so only the
+    window/lid assignment changes. Pilot options: linearized exterior
+    radiation bound, orthotropic board. The analogue is coarse and its board
+    peak is mesh-dependent (this grid gives about 2.4-2.7 W, the default grid
+    10.4-11.1 W), so only the trend and the deposit are asserted."""
+    values = sourced()
+    panes = [0.048, 0.036, 0.024]  # square panes, m
+
+    def lines(base, centre):
+        cuts = (centre + s * p / 2 for p in panes for s in (-1, 1))
+        return sorted({round(v, 9) for v in (*base, *cuts)})
+
+    xs, ys = lines(XS, CENTRE[0]), lines(YS, CENTRE[1])
+    options = {"radiation": enclosure.LINEARIZED, "orthotropic": True}
+    direction = envelope()["templates"]["screen"][2]["plan_request"]["request"]["spec"][
+        "solar"
+    ]["direction"]
+    supported = []
+    for pane in [*panes, None]:
+        window = (pane, pane) if pane else False
+        mesh = analogue(window=window, xs=xs, ys=ys)
+        powers, lo, hi, limits, low = sweep(mesh, values, window=bool(pane), **options)
+        deposit = low["energy_balance"]["solar_cavity_w"] if pane else 0.0
+        expected = values["solar_w_m2"] * direction[2] * (pane or 0.0) ** 2
+        assert deposit == pytest.approx(expected, rel=1e-9), pane
+        supported.append(supported_power(powers, lo, hi, limits))
+    assert all(a < b for a, b in itertools.pairwise(supported)), supported
 
 
 def test_cavity_radiation_postcondition_fails_on_the_analogue():

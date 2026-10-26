@@ -36,6 +36,35 @@ pub fn enclosure_rim_precondition(wall_m: Option<f64>, groove_width_m: Option<f6
     }
 }
 
+/// Clearance the enclosure fixture keeps on every side between the centred
+/// window pane and the cavity wall. A wider pane would rest on the housing
+/// rim and gasket (or cut through the lid skirt), which the fixture does not
+/// model as a window.
+pub const ENCLOSURE_WINDOW_MARGIN_M: f64 = 10e-3;
+
+/// Refuse an enclosure-fixture window that does not fit inside the cavity
+/// opening with `ENCLOSURE_WINDOW_MARGIN_M` per side: each of
+/// `[window_width, length]` and `[window_height, width]` needs
+/// window + 2 * (wall + margin) <= side (SI lengths; unknown values refuse).
+pub fn enclosure_window_precondition(
+    window: [Option<f64>; 2],
+    sides: [Option<f64>; 2],
+    wall_m: Option<f64>,
+) -> Result<()> {
+    let fits = |pane: Option<f64>, side: Option<f64>| match (pane, side, wall_m) {
+        (Some(pane), Some(side), Some(wall)) => {
+            pane > 0. && pane + 2. * (wall + ENCLOSURE_WINDOW_MARGIN_M) <= side + 1e-9
+        }
+        _ => false,
+    };
+    if fits(window[0], sides[0]) && fits(window[1], sides[1]) {
+        return Ok(());
+    }
+    Err(Error::GeometryPrecondition(format!(
+        "enclosure fixture window {window:?} m must fit inside the cavity opening of length/width {sides:?} m less wall {wall_m:?} m and {ENCLOSURE_WINDOW_MARGIN_M} m clearance per side"
+    )))
+}
+
 /// Either variant request; `schema_version` selects the strict decoder.
 #[derive(Clone, Debug, Serialize, JsonSchema)]
 #[serde(untagged)]
@@ -280,6 +309,11 @@ fn resolve(store: &Store, request: CadSheetVariantRequest) -> Result<CadSheetVar
                 .and_then(|r| r.value_si),
         };
         enclosure_rim_precondition(length("wall"), length("groove_width"))?;
+        enclosure_window_precondition(
+            [length("window_width"), length("window_height")],
+            [length("length"), length("width")],
+            length("wall"),
+        )?;
     }
     let document = crate::cad_variant::original_document(store, &id, &plan)?;
     let spec = CadSheetVariantSpec {

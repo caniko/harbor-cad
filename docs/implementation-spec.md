@@ -243,7 +243,8 @@ is the smallest crossing, clamped to the range, and is unknown when the low end
 already fails or a temperature does not rise with power. Superposition is
 allowed only for a linear model: `power_sweep` with T⁴ radiation is refused.
 The refine tier verifies the result with a third solve within 0.5 K, otherwise
-the metric is unknown. `pareto_metric` reports cost vs supported power. The
+the metric is unknown. The pilot maximizes window area subject to ≥ 3 W, and
+`pareto_metric` reports window area vs supported power. The
 85 °C industrial-grade limit and the FR-4/copper board conductivities are cited
 conservative defaults, not product data; replace them with the limiting part's
 datasheet and the real stack-up.

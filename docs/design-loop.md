@@ -38,7 +38,9 @@ with a changed envelope or profile is an idempotency conflict.
 - `space.continuous`: at most 8 `{name, low, high, step, unit}` on an integral
   step grid. `step` is the manufacturing grid and the search step floor.
 - `space.categorical`: at most 2 `{name, choices}` with 1–6 token choices.
-- `objective`: `minimize` a weighted sum of declared metrics.
+- `objective`: `minimize` a weighted sum of declared metrics. Weights are
+  finite and nonzero; a negative weight maximizes its metric (ranking and the
+  Pareto set only compare the sum).
 - `constraints`: `{metric, op: le|ge, limit, unit, safety_factor?}`; units
   must equal the metric's declared unit and safety factors (≥ 1) tighten.
 - `budget`: `max_evaluations` ≤ 32, `max_wall_seconds`, and
@@ -157,6 +159,12 @@ optionally `min_wall_m`. Quantity comes from a `quantity` metric (a parameter
 or a declared input). Any missing input, missing sourced data or incompatible
 route gives an unknown value.
 
+`window_area_m2` (m², `prescribed`) is (`window_xmax_m` − `window_xmin_m`) ×
+(`window_ymax_m` − `window_ymin_m`), read from the variant receipt's
+`after.window.bounds_m`: the plan-view area of an axis-aligned rectangular
+pane as the CAD recompute built it, not a simulation result. Missing bounds or
+a non-positive extent give an unknown value.
+
 `max_supported_pcb_power_w` (W, `estimated`) is the swept PCB dissipation a
 candidate supports at the hot point. With radiation off or linearized (its
 lower bound is a constant film) and constant films and solar, the steady
@@ -245,10 +253,15 @@ proposes the next candidate only when nothing is pending. A design ends as
 `design status` reports iterations, metrics, feasibility, incumbent, feasible
 set, a two-objective Pareto set and budget use. The Pareto set is objective
 vs minimum constraint margin, or, with `pareto_metric`, objective vs that
-metric (maximized) over feasible candidates. `design export` repeats it as
-`{index, fidelity, objective, value}` points. `design export` reports the
+metric (maximized) over candidates that satisfy every constraint on other
+metrics. A constraint on the Pareto metric itself does not remove a point, so
+the set still shows the trade-off when nothing meets that limit; each point's
+`feasible` says whether all constraints hold. `design export` repeats it as
+`{index, fidelity, objective, value, feasible}` points and lists every
+evaluated candidate (parameters, metrics, standing) under `candidates`.
+`design export` reports the
 winner, its child job IDs and labels each constraint `simulated`, `calibrated`/`estimated` (provider),
-`prescribed` (parameter or declared input), `measured` (correlation) or
+`prescribed` (parameter, declared input or the `window_area_m2` provider), `measured` (correlation) or
 `unknown`. Its `requirements` list names the product requirements (for
 example a board construction) that the data entries of the winner's resolved
 `sourced` inputs declare in an explicit `requirement` field (see
@@ -260,10 +273,18 @@ measurement path and test provenance.
 ## Enclosure and calibration examples
 
 `examples/design-enclosure.json` covers the outdoor enclosure pilot. Its
-continuous parameters are wall, fin count, fin height, length and height on
-manufacturing grids. The wall starts at 3.5 mm, the fixture's
+continuous parameters are wall, fin count, fin height, length, height and the
+lid window aperture (`window_width` along the length, `window_height` along
+the width, 5 mm steps) on manufacturing grids. The wall starts at 3.5 mm, the fixture's
 groove_width + 1.5 mm rim precondition (see [CAD variants](cad-variants.md)),
-so no evaluation is spent on a wall the planner refuses. Its single categorical `route` lists only compatible
+so no evaluation is spent on a wall the planner refuses. The window's lower
+bounds (40 × 25 mm) are a placeholder minimum viewing aperture, an
+operator-adjustable product requirement to replace with the product's real
+minimum. Its upper bounds (145 × 115 mm) come from the window precondition at
+the worst corner (180 mm length, 150 mm width, 6 mm wall), so no grid window
+is refused. The full geometric range stays in the screen because the
+objective rewards large panes: the cavity solar deposit scales with the same
+area, so the search trades it against supported power. Its single categorical `route` lists only compatible
 `MATERIAL__PROCESS__FINISH` triples (process and finish `compatible_materials`
 in `data/processes.json` and `data/finishes.json`; `tests/design.rs` checks
 each): white and RAL 7035 powder coat on CNC 6061-T6 and on laser/brake
@@ -281,11 +302,15 @@ tiers mesh at 4 mm: at 6 mm, isolated slivers on otherwise sound candidates
 fell below the 0.05 quality gate and passed at 4 mm. The 4 mm pilot meshes had
 64,000–81,000 elements, within the 200,000 `max_elements` budget the output
 allowances are sized from. The
-objective minimizes `unit_cost_high_usd` at a declared quantity of 50. The
-constraints are `temperature_margin_k ≥ 10 K` (housing at 1 W and the class
-4.1 cold point), `manufacturability_violations ≤ 0` and
-`max_supported_pcb_power_w ≥ 1 W`. `pareto_metric` reports cost vs supported
-power. PCB power is no longer an operator input. The swept range (1–15 W) and
+objective maximizes `window_area_m2` (weight −1): the plan-view area of the
+pane read back from the recomputed variant's `window` bounds, labelled
+`prescribed`. The constraints are `temperature_margin_k ≥ 10 K` (housing at
+1 W and the class 4.1 cold point), `manufacturability_violations ≤ 0` and
+`max_supported_pcb_power_w ≥ 3 W`. `unit_cost_high_usd` (quantity 50) is
+still computed and exported for every candidate but is not optimized.
+`pareto_metric` reports window area vs supported power: the largest pane at
+each supported power among candidates that hold every other constraint, even
+when none reaches 3 W. PCB power is no longer an operator input. The swept range (1–15 W) and
 the 10 K housing margin are declared requirements. The component limit
 (`electronics:component-limit-industrial.low`, 85 °C) and the orthotropic
 board conductivity (`electronics:pcb-fr4-copper-in-plane.low`, 8.1 W/(m·K),
@@ -324,6 +349,10 @@ it. Findings:
   10.42 W (opaque lid 11.10 W), bound by the PCB peak; the verification solve
   matches the chords within 0.04 K. The ablation is in
   [enclosure thermal](enclosure-thermal.md).
+- On one shared finer analogue grid, square panes of 48, 36 and 24 mm and an
+  opaque lid support 2.41, 2.54, 2.63 and 2.70 W: the cavity deposit equals
+  G × n·s × pane area, and the supported power rises as the pane shrinks. The coarse analogue's board peak is
+  mesh-dependent, so only the trend is asserted.
 - Without the credits (no radiation, isotropic 0.26 W/(m·K) board), the
   window case supports no swept power: 373.6 K internal air and a 358.8 K PCB
   peak at 1 W, above the 358.15 K limit; the opaque lid supports 2.04 W.
