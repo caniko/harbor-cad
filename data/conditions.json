@@ -458,6 +458,7 @@
       "id": "component-limit-industrial",
       "name": "Default component temperature limit: upper end of the industrial temperature grade (-40 to +85 degC); a conservative default, not a product limit",
       "dimension": "temperature",
+      "requirement": "component requirement: every part on the board must be rated to at least +85 degC (industrial grade or wider; check the limiting part's datasheet)",
       "value": {
         "availability": "known",
         "value": {
@@ -478,6 +479,7 @@
       "id": "pcb-fr4-copper-in-plane",
       "name": "Effective in-plane thermal conductivity of FR-4 boards with continuous copper layers",
       "dimension": "thermal_conductivity",
+      "requirement": "board requirement: the PCB must carry continuous copper planes (e.g. a four-layer board with two internal planes); without them the in-plane value falls to about 0.81 W/(m*K) and the isotropic through-plane low end (0.26 W/(m*K)) must be used instead",
       "value": {
         "availability": "known",
         "value": {
@@ -518,6 +520,7 @@
       "id": "pcb-surface-emissivity",
       "name": "Infrared emissivity of populated board surfaces: metal (coating-dependent) to plastic/solder mask; its low end is the conservative cavity-radiation value",
       "dimension": "dimensionless",
+      "requirement": "board requirement: populated board faces must not be dominated by polished bare metal (unplated shield cans, bare copper pours), whose emissivity can fall below the 0.15 low end",
       "value": {
         "availability": "known",
         "value": {

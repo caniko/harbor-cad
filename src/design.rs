@@ -2687,6 +2687,37 @@ pub struct DesignReport {
     /// requests (label `conservative_bound`); simulated results hold only
     /// under them.
     pub conservative_bounds: Vec<String>,
+    /// Product requirements (board construction, component rating) declared
+    /// by the data entries of the winner's resolved sourced inputs; the
+    /// winner's results hold only for a product that meets them.
+    pub requirements: Vec<Requirement>,
+}
+
+#[derive(Debug, PartialEq, Serialize, JsonSchema)]
+pub struct Requirement {
+    pub metric: String,
+    pub source: String,
+    pub requirement: String,
+}
+
+/// Requirements of the sourced inputs that resolved to a value in `metrics`.
+pub fn requirements(env: &DesignEnvelope, metrics: &Metrics) -> Result<Vec<Requirement>> {
+    let conditions = crate::conditions::Conditions::builtin()?;
+    Ok(env
+        .metric_sources
+        .iter()
+        .filter(|m| matches!(metrics.get(&m.metric), Some(Some(_))))
+        .filter_map(|m| match &m.source {
+            MetricSource::Sourced { key } => {
+                conditions.requirement(key).map(|requirement| Requirement {
+                    metric: m.metric.clone(),
+                    source: key.clone(),
+                    requirement: requirement.into(),
+                })
+            }
+            _ => None,
+        })
+        .collect())
 }
 
 /// `transparent_solar`, string `radiation` and `cavity_radiation` modes named anywhere in the
@@ -2734,6 +2765,10 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
     let env = &intent.envelope;
     let history = candidates(store, id)?;
     let bounds = conservative_bounds(env);
+    let requirements = match status.incumbent {
+        Some(index) => requirements(env, &history[index as usize].metrics)?,
+        None => vec![],
+    };
     let winner = match status.incumbent {
         None => None,
         Some(index) => {
@@ -2809,7 +2844,7 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
         evaluations: status.budget.evaluations,
         feasible: status.feasible.len() as u32,
         statement: format!(
-            "{}{}Design state {}: winner is the best feasible evaluated candidate under the approved envelope. Process success is not physical validation; simulated constraints carry only their child jobs' numerical scope, and unknown constraints never pass.",
+            "{}{}{}Design state {}: winner is the best feasible evaluated candidate under the approved envelope. Process success is not physical validation; simulated constraints carry only their child jobs' numerical scope, and unknown constraints never pass.",
             if status.synthetic_inputs.is_empty() {
                 String::new()
             } else {
@@ -2826,6 +2861,18 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
                     bounds.join("; ")
                 )
             },
+            if requirements.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    "REQUIREMENTS: the winner's results hold only for a product meeting {}. ",
+                    requirements
+                        .iter()
+                        .map(|r| format!("{} ({})", r.requirement, r.source))
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                )
+            },
             status.state
         ),
         pareto: pareto_front(env, &status.iterations),
@@ -2835,5 +2882,6 @@ pub fn export(store: &Store, id: &str) -> Result<DesignReport> {
         physical_validation: "unqualified".into(),
         synthetic_inputs: status.synthetic_inputs,
         conservative_bounds: bounds,
+        requirements,
     })
 }

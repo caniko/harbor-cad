@@ -113,6 +113,27 @@ fn electronics_defaults_are_cited_conservative_ends() {
     let emissivity = k("electronics:pcb-surface-emissivity.low");
     assert_eq!((emissivity.value, emissivity.unit), (0.15, "1"));
     assert!(emissivity.provenance.contains("a board requirement"));
+    // Requirements stated in provenance are explicit, typed data fields.
+    for (key, requirement) in [
+        (
+            "electronics:pcb-fr4-copper-in-plane.low",
+            Some("continuous copper planes"),
+        ),
+        ("electronics:pcb-surface-emissivity.low", Some("bare metal")),
+        (
+            "electronics:component-limit-industrial.low",
+            Some("+85 degC"),
+        ),
+        ("electronics:pcb-fr4-copper-through-plane.low", None),
+        ("condition:etsi-4-1.hot.ambient_temperature", None),
+        ("electronics:nope.low", None),
+    ] {
+        let found = c.requirement(key);
+        assert_eq!(found.is_some(), requirement.is_some(), "{key}");
+        if let (Some(found), Some(expected)) = (found, requirement) {
+            assert!(found.contains(expected), "{key}: {found}");
+        }
+    }
     for key in [
         "electronics:component-limit-industrial.mid",
         "electronics:nope.low",
@@ -205,6 +226,14 @@ fn strict_validation_refuses_uncited_and_inconsistent_data() {
         ),
         (
             conditions.replacen("\"value\": 0.26,", "\"value\": 0.001,", 1),
+            true,
+        ),
+        (
+            conditions.replacen(
+                "\"requirement\": \"component requirement: every part on the board must be rated to at least +85 degC (industrial grade or wider; check the limiting part's datasheet)\"",
+                "\"requirement\": \" \"",
+                1,
+            ),
             true,
         ),
         (
