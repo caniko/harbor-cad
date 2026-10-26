@@ -260,10 +260,17 @@ measurement path and test provenance.
 ## Enclosure and calibration examples
 
 `examples/design-enclosure.json` covers the outdoor enclosure pilot. Its
-continuous parameters are wall, fin count, fin height, length and height on
-manufacturing grids. The wall starts at 3.5 mm, the fixture's
+continuous parameters are wall, fin count, fin height, length, height and the
+lid window aperture (`window_width` along the length, `window_height` along
+the width, 5 mm steps) on manufacturing grids. The wall starts at 3.5 mm, the fixture's
 groove_width + 1.5 mm rim precondition (see [CAD variants](cad-variants.md)),
-so no evaluation is spent on a wall the planner refuses. Its single categorical `route` lists only compatible
+so no evaluation is spent on a wall the planner refuses. The window's lower
+bounds (40 × 25 mm) are a placeholder minimum viewing aperture, an
+operator-adjustable product requirement to replace with the product's real
+minimum. Its upper bounds (145 × 115 mm) come from the window precondition at
+the worst corner (180 mm length, 150 mm width, 6 mm wall), so no grid window
+is refused. The window has no cost term; it trades only against the cavity
+solar deposit, which scales with its area. Its single categorical `route` lists only compatible
 `MATERIAL__PROCESS__FINISH` triples (process and finish `compatible_materials`
 in `data/processes.json` and `data/finishes.json`; `tests/design.rs` checks
 each): white and RAL 7035 powder coat on CNC 6061-T6 and on laser/brake
@@ -324,6 +331,10 @@ it. Findings:
   10.42 W (opaque lid 11.10 W), bound by the PCB peak; the verification solve
   matches the chords within 0.04 K. The ablation is in
   [enclosure thermal](enclosure-thermal.md).
+- On one shared finer analogue grid, square panes of 48, 36 and 24 mm and an
+  opaque lid support 2.41, 2.54, 2.63 and 2.70 W: the cavity deposit equals
+  G × n·s × pane area, and the supported power rises as the pane shrinks. The coarse analogue's board peak is
+  mesh-dependent, so only the trend is asserted.
 - Without the credits (no radiation, isotropic 0.26 W/(m·K) board), the
   window case supports no swept power: 373.6 K internal air and a 358.8 K PCB
   peak at 1 W, above the 358.15 K limit; the opaque lid supports 2.04 W.

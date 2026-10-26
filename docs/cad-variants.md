@@ -135,4 +135,11 @@ lips that failed the 0.05 mesh quality gate (minimum 0.013–0.0495 at 6 mm) and
 the process minimum wall. A design loop records the refusal as a blocked child
 (`chained planning refused: geometry precondition: …`), so the candidate stays
 unknown and never reaches the mesher.
+
+The same planner refuses a window pane that does not sit inside the cavity
+opening with 10 mm clearance per side: window_width + 2 × (wall + 10 mm) must
+not exceed length, and window_height + 2 × (wall + 10 mm) must not exceed
+width (effective values as above; unknown values refuse). A wider pane would
+rest on the housing rim and gasket, or cut through the lid skirt, which the
+fixture does not model as a window.
 `examples/enclosure-variant.json` is a v2 request template for it.

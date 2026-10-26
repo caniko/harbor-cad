@@ -1459,11 +1459,14 @@ fn sheet_source_as(store: &Store, formulation: Option<&str>) -> String {
     // Persisted alias evidence only; no native spreadsheet was opened.
     let id = archived_source_with_geometry(store, descriptor(), formulation);
     let evidence = serde_json::json!({"schema_version":1,"sheets":[{"name":"Params","label":"Params","aliases":{
-        "length":{"cell":"B1","dimension":"length","value_si":0.02},
+        "length":{"cell":"B1","dimension":"length","value_si":0.2},
         "fin_count":{"cell":"B2","dimension":"dimensionless","value_si":8.0},
         "angle":{"cell":"B3","dimension":"other","value_si":null},
         "wall":{"cell":"B4","dimension":"length","value_si":0.004},
-        "groove_width":{"cell":"B5","dimension":"length","value_si":0.002}}}]});
+        "groove_width":{"cell":"B5","dimension":"length","value_si":0.002},
+        "width":{"cell":"B6","dimension":"length","value_si":0.15},
+        "window_width":{"cell":"B7","dimension":"length","value_si":0.06},
+        "window_height":{"cell":"B8","dimension":"length","value_si":0.04}}}]});
     let root = store.job_dir(&id).unwrap();
     let record = commit_artifact(
         &root,
@@ -1649,9 +1652,19 @@ fn enclosure_fixture_variant_refuses_rim_lips_below_the_geometry_precondition() 
     // groove_width 2 mm (sheet value): 3.5 mm keeps two 0.75 mm lips.
     edit(&fixture, serde_json::json!({"wall": mm(3.5)})).unwrap();
     edit(&fixture, serde_json::json!({})).unwrap();
+    // Window 145 x 115 mm at length 180, width 150, wall 6 mm keeps 10 mm
+    // clearance per side (the pilot envelope's extreme corner).
+    let corner = |ww: f64, wh: f64| {
+        serde_json::json!({"wall": mm(6.), "length": mm(180.),
+            "window_width": mm(ww), "window_height": mm(wh)})
+    };
+    edit(&fixture, corner(145., 115.)).unwrap();
     for parameters in [
         serde_json::json!({"wall": mm(3.0)}),
         serde_json::json!({"wall": mm(3.5), "groove_width": mm(2.5)}),
+        corner(150., 115.),
+        corner(145., 120.),
+        serde_json::json!({"window_width": mm(190.)}),
     ] {
         let error = edit(&fixture, parameters.clone()).unwrap_err();
         assert!(
@@ -1669,6 +1682,12 @@ fn enclosure_fixture_variant_refuses_rim_lips_below_the_geometry_precondition() 
     use harbor_cad::cad_sheet_variant::enclosure_rim_precondition;
     assert!(enclosure_rim_precondition(None, Some(0.002)).is_err());
     assert!(enclosure_rim_precondition(Some(0.0035), None).is_err());
+    use harbor_cad::cad_sheet_variant::enclosure_window_precondition;
+    let sides = [Some(0.2), Some(0.15)];
+    enclosure_window_precondition([Some(0.06), Some(0.04)], sides, Some(0.004)).unwrap();
+    assert!(enclosure_window_precondition([None, Some(0.04)], sides, Some(0.004)).is_err());
+    assert!(enclosure_window_precondition([Some(0.06), Some(0.04)], sides, None).is_err());
+    assert!(enclosure_window_precondition([Some(0.), Some(0.04)], sides, Some(0.004)).is_err());
 }
 
 #[test]

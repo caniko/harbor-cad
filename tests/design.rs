@@ -1384,7 +1384,7 @@ fn enclosure_examples_approve_at_least_the_planner_output_floor() {
 }
 
 #[test]
-fn enclosure_examples_keep_the_rim_precondition_and_screen_at_the_refine_mesh_size() {
+fn enclosure_examples_keep_the_geometry_preconditions_and_screen_at_the_refine_mesh_size() {
     use harbor_cad::cad_sheet_variant::enclosure_rim_precondition;
     // adapters/enclosure_fixture.py: groove_width 2 mm, centred in the wall.
     const GROOVE_WIDTH_M: f64 = 0.002;
@@ -1398,22 +1398,44 @@ fn enclosure_examples_keep_the_rim_precondition_and_screen_at_the_refine_mesh_si
             .unwrap(),
         )
         .unwrap();
-        let wall = raw["space"]["continuous"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|p| p["name"] == "wall")
-            .unwrap();
-        assert_eq!(wall["unit"], "mm");
-        let (low, step) = (
-            wall["low"].as_f64().unwrap(),
-            wall["step"].as_f64().unwrap(),
-        );
+        let param = |name: &str| {
+            raw["space"]["continuous"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|p| p["name"] == name)
+                .map(|p| {
+                    assert_eq!(p["unit"], "mm", "{name}");
+                    let mm = |k: &str| p[k].as_f64().unwrap() * 1e-3;
+                    (mm("low"), mm("high"), mm("step"))
+                })
+        };
+        let (low, _, step) = param("wall").unwrap();
+        // The pilot's window is a design variable: at its worst corner
+        // (shortest length, fixed 150 mm width, thickest wall) the largest
+        // grid window still fits, and one more step does not (bounds derived
+        // from the fixture geometry).
+        if let (Some(ww), Some(wh)) = (param("window_width"), param("window_height")) {
+            use harbor_cad::cad_sheet_variant::enclosure_window_precondition;
+            const WIDTH_M: f64 = 0.15;
+            let (length, wall) = (param("length").unwrap().0, param("wall").unwrap().1);
+            let fits = |w: f64, h: f64| {
+                enclosure_window_precondition(
+                    [Some(w), Some(h)],
+                    [Some(length), Some(WIDTH_M)],
+                    Some(wall),
+                )
+                .is_ok()
+            };
+            assert!(fits(ww.1, wh.1) && fits(ww.0, wh.0), "{name}");
+            assert!(
+                !fits(ww.1 + ww.2, wh.1) && !fits(ww.1, wh.1 + wh.2),
+                "{name}"
+            );
+        }
         // No grid wall is refused by the planner, and the bound is tight.
-        enclosure_rim_precondition(Some(low * 1e-3), Some(GROOVE_WIDTH_M)).unwrap();
-        assert!(
-            enclosure_rim_precondition(Some((low - step) * 1e-3), Some(GROOVE_WIDTH_M)).is_err()
-        );
+        enclosure_rim_precondition(Some(low), Some(GROOVE_WIDTH_M)).unwrap();
+        assert!(enclosure_rim_precondition(Some(low - step), Some(GROOVE_WIDTH_M)).is_err());
         // Sub-mm features meshed at 6 mm gave isolated slivers below the 0.05
         // quality gate that pass at 4 mm, so screen meshes at the refine size.
         for templates in raw["templates"].as_object().unwrap().values() {
