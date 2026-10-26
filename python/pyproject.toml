@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling==1.29.0"]
+requires = ["hatchling>=1.29.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Narrow MCP profiles for the local harbor-cad Rust worker"
 requires-python = ">=3.12,<3.14"
 license = "GPL-3.0-or-later"
-dependencies = ["mcp==2.3.0", "jsonschema==4.26.0"]
+dependencies = ["mcp>=2.2.0,<3", "jsonschema>=4.26.0,<5"]
 
 [project.scripts]
 harbor-cad-mcp = "harbor_cad_mcp.server:main"
