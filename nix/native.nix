@@ -26,7 +26,14 @@
   # runtime). The unwrapped interpreter avoids the Qt wrapper's QT_* paths.
   # ponytail: stock build carries Qt/MPI; switch to a nixpkgs headless variant
   # once one exists.
-  visualization = adapter "harbor-cad-render" "${pkgs.paraview}/bin/.pvpython-wrapped" (pkgs.replaceVars ../adapters/paraview_bridge.py {
+  pvpython = lib.getExe' pkgs.paraview ".pvpython-wrapped";
+  # Clean-env import proves the unwrapped binary and the EGL window class exist.
+  paraview-egl-import = pkgs.runCommand "harbor-cad-paraview-egl-import" {} ''
+    mkdir home
+    env -i HOME=$PWD/home ${pvpython} -c 'from vtkmodules.vtkRenderingOpenGL2 import vtkEGLRenderWindow; from paraview import simple'
+    touch $out
+  '';
+  visualization = adapter "harbor-cad-render" pvpython (pkgs.replaceVars ../adapters/paraview_bridge.py {
     libegl = "${pkgs.libglvnd}/lib/libEGL.so.1";
   });
   media = adapter "harbor-cad-video" "${pkgs.python313}/bin/python3" (pkgs.replaceVars ../adapters/video_bridge.py {
@@ -43,7 +50,7 @@
       cad = "${cad}/bin/harbor-cad-import";
       cad_closure = "${cadClosure}/store-paths";
       # CPU references need only CAD and flow; rendering/media remain separately
-      # selected closures, avoiding a mandatory ParaView build for this slice.
+      # selected closures, keeping ParaView out of this slice's closure.
       render =
         if backend == "cpu"
         then null
@@ -56,7 +63,7 @@
       openlb_backend = backend;
     });
 in {
-  inherit cad visualization media openlb-cpu openlb-cuda openlb-hip;
+  inherit cad visualization paraview-egl-import media openlb-cpu openlb-cuda openlb-hip;
   cad-mesh-fixtures = cadFixtures;
   runtime-cad-only = pkgs.writeText "harbor-cad-cad-runtime.json" (builtins.toJSON {
     bwrap = "${pkgs.bubblewrap}/bin/bwrap";
