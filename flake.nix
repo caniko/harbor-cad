@@ -271,6 +271,7 @@
     };
     checks.${system} = {
       rust = cli;
+      inherit (native) paraview-egl-import;
       policy = pkgs.runCommand "harbor-cad-policy" {} ''
         test '${toString pkgs.config.allowUnfree}' = ""
         test '${toString cudaPkgs.config.allowUnfree}' = ""
