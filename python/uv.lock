@@ -164,8 +164,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "jsonschema", specifier = "==4.26.0" },
-    { name = "mcp", specifier = "==2.3.0" },
+    { name = "jsonschema", specifier = ">=4.26.0,<5" },
+    { name = "mcp", specifier = ">=2.2.0,<3" },
 ]
 
 [package.metadata.requires-dev]
