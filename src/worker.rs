@@ -1529,7 +1529,16 @@ fn disk_bytes(root: &Path, reject_unsafe: bool) -> Result<u64> {
             ));
         }
         let mut total = 0u64;
-        for entry in fs::read_dir(root)? {
+        // The tree may be a running native stage's: adapters write `*.partial`
+        // files and rename them, so an entry (or a subdirectory) can vanish
+        // between listing and stat. A vanished entry holds no bytes now; the
+        // root itself must exist.
+        let gone = |e: &std::io::Error| e.kind() == std::io::ErrorKind::NotFound;
+        let listing = match fs::read_dir(root) {
+            Err(e) if depth > 0 && gone(&e) => return Ok(0),
+            listing => listing?,
+        };
+        for entry in listing {
             let entry = entry?;
             *entries += 1;
             if *entries > 131072 {
@@ -1537,7 +1546,10 @@ fn disk_bytes(root: &Path, reject_unsafe: bool) -> Result<u64> {
                     "bounded disk inventory entries exhausted".into(),
                 ));
             }
-            let m = fs::symlink_metadata(entry.path())?;
+            let m = match fs::symlink_metadata(entry.path()) {
+                Err(e) if gone(&e) => continue,
+                m => m?,
+            };
             if reject_unsafe && !m.is_dir() && !m.is_file() {
                 return Err(invalid("native output symlink/special entry rejected"));
             }
@@ -3046,6 +3058,47 @@ mod tests {
             disk_bytes(&raw, false).unwrap(),
             4 + fs::symlink_metadata(raw.join("escape")).unwrap().len()
         );
+    }
+
+    #[test]
+    fn disk_inventory_tolerates_entries_renamed_or_removed_while_it_walks() {
+        // A native adapter's atomic `.partial` -> final renames (and removed
+        // scratch directories) raced the polling budget walk into ENOENT.
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().to_path_buf();
+        for i in 0..64 {
+            fs::write(root.join(format!("stable{i}")), b"x").unwrap();
+        }
+        let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let churn = {
+            let (root, stop) = (root.clone(), stop.clone());
+            std::thread::spawn(move || {
+                let mut i = 0u64;
+                while !stop.load(std::sync::atomic::Ordering::Relaxed) {
+                    let partial = root.join(format!("out{i}.json.partial"));
+                    fs::write(&partial, b"{}").unwrap();
+                    fs::rename(&partial, root.join(format!("out{i}.json"))).unwrap();
+                    fs::remove_file(root.join(format!("out{i}.json"))).unwrap();
+                    let scratch = root.join(format!("scratch{i}"));
+                    fs::create_dir(&scratch).unwrap();
+                    fs::write(scratch.join("f"), b"y").unwrap();
+                    fs::remove_dir_all(&scratch).unwrap();
+                    i += 1;
+                }
+            })
+        };
+        let started = std::time::Instant::now();
+        let mut walks = 0;
+        while started.elapsed() < std::time::Duration::from_millis(500) {
+            let bytes = disk_bytes(&root, true).unwrap();
+            assert!(bytes >= 64, "{bytes}");
+            walks += 1;
+        }
+        stop.store(true, std::sync::atomic::Ordering::Relaxed);
+        churn.join().unwrap();
+        assert!(walks > 0);
+        // The root itself must still exist.
+        assert!(disk_bytes(&root.join("missing"), true).is_err());
     }
 
     #[test]
