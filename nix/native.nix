@@ -22,43 +22,18 @@
   '';
   cadClosure = pkgs.closureInfo {rootPaths = [cad];};
   cadFixtures = adapter "harbor-cad-cad-mesh-fixtures" "${freecad}/bin/FreeCADCmd --safe-mode" ../adapters/qualification_cad_boxes.py;
-  # Internal VTK comes from the exact ParaView source archive, avoiding an ABI mix.
-  paraview = pkgs.stdenv.mkDerivation {
-    pname = "harbor-cad-paraview-egl";
-    inherit (pkgs.paraview) version src;
-    nativeBuildInputs = [pkgs.cmake pkgs.ninja];
-    buildInputs = [pkgs.python313 pkgs.mesa pkgs.libGL pkgs.libglvnd pkgs.zlib];
-    cmakeFlags = [
-      # Bundled VTK rejects absolute GNUInstallDirs from the Nix CMake hook.
-      # Match the relative destinations in the pinned Nixpkgs ParaView recipe.
-      "-DCMAKE_INSTALL_BINDIR=bin"
-      "-DCMAKE_INSTALL_LIBDIR=lib"
-      "-DCMAKE_INSTALL_INCLUDEDIR=include"
-      "-DCMAKE_INSTALL_DOCDIR=share/paraview/doc"
-      "-DPARAVIEW_USE_QT=OFF"
-      "-DPARAVIEW_USE_MPI=OFF"
-      "-DPARAVIEW_USE_PYTHON=ON"
-      "-DPARAVIEW_USE_EXTERNAL_VTK=OFF"
-      "-DPARAVIEW_VERSIONED_INSTALL=OFF"
-      "-DPARAVIEW_ENABLE_WEB=OFF"
-      "-DPARAVIEW_ENABLE_CATALYST=OFF"
-      "-DPARAVIEW_BUILD_TESTING=OFF"
-      "-DBUILD_TESTING=OFF"
-      "-DVTK_BUILD_TESTING=OFF"
-      "-DVTK_USE_X=OFF"
-      "-DVTK_OPENGL_HAS_EGL=ON"
-      "-DVTK_DEFAULT_RENDER_WINDOW_OFFSCREEN=ON"
-      "-DVTK_SMP_IMPLEMENTATION_TYPE=Sequential"
-      "-DVTK_USE_EXTERNAL=OFF"
-    ];
-    enableParallelBuilding = true;
-    doInstallCheck = true;
-    installCheckPhase = ''
-      env -i HOME=$TMPDIR $out/bin/pvpython -c 'from paraview import simple; from vtkmodules.vtkRenderingOpenGL2 import vtkEGLRenderWindow; assert vtkEGLRenderWindow.__name__ == "vtkEGLRenderWindow"'
-    '';
-    meta.license = lib.licenses.bsd3;
-  };
-  visualization = adapter "harbor-cad-render" "${paraview}/bin/pvpython" (pkgs.replaceVars ../adapters/paraview_bridge.py {
+  # Stock Hydra-built ParaView with external VTK (EGL and X windows selected at
+  # runtime). The unwrapped interpreter avoids the Qt wrapper's QT_* paths.
+  # ponytail: stock build carries Qt/MPI; switch to a nixpkgs headless variant
+  # once one exists.
+  pvpython = lib.getExe' pkgs.paraview ".pvpython-wrapped";
+  # Clean-env import proves the unwrapped binary and the EGL window class exist.
+  paraview-egl-import = pkgs.runCommand "harbor-cad-paraview-egl-import" {} ''
+    mkdir home
+    env -i HOME=$PWD/home ${pvpython} -c 'from vtkmodules.vtkRenderingOpenGL2 import vtkEGLRenderWindow; from paraview import simple'
+    touch $out
+  '';
+  visualization = adapter "harbor-cad-render" pvpython (pkgs.replaceVars ../adapters/paraview_bridge.py {
     libegl = "${pkgs.libglvnd}/lib/libEGL.so.1";
   });
   media = adapter "harbor-cad-video" "${pkgs.python313}/bin/python3" (pkgs.replaceVars ../adapters/video_bridge.py {
@@ -75,7 +50,7 @@
       cad = "${cad}/bin/harbor-cad-import";
       cad_closure = "${cadClosure}/store-paths";
       # CPU references need only CAD and flow; rendering/media remain separately
-      # selected closures, avoiding a mandatory ParaView build for this slice.
+      # selected closures, keeping ParaView out of this slice's closure.
       render =
         if backend == "cpu"
         then null
@@ -88,7 +63,7 @@
       openlb_backend = backend;
     });
 in {
-  inherit cad visualization media paraview openlb-cpu openlb-cuda openlb-hip;
+  inherit cad visualization paraview-egl-import media openlb-cpu openlb-cuda openlb-hip;
   cad-mesh-fixtures = cadFixtures;
   runtime-cad-only = pkgs.writeText "harbor-cad-cad-runtime.json" (builtins.toJSON {
     bwrap = "${pkgs.bubblewrap}/bin/bwrap";
