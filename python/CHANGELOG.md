@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Accept Python 3.14 (`requires-python = ">=3.12,<3.15"`); the suite passes on 3.12 and 3.14.
+
 ## 0.1.0 - 2026-10-26
 
 - First tagged release, distributed under GPL-3.0-or-later (see `LICENSE`).
