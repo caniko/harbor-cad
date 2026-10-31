@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 - 2026-10-31
 
 - Accept Python 3.14 (`requires-python = ">=3.12,<3.15"`); the suite passes on 3.12 and 3.14.
 
