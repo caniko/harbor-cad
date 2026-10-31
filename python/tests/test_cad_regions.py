@@ -48,6 +48,15 @@ def inspect(monkeypatch, tmp_path, regions, objects):
     replace = Path.replace
     stat = Path.stat
     read_bytes = Path.read_bytes
+    is_file = Path.is_file
+    # Python 3.14 pathlib no longer routes is_file() through Path.stat().
+    monkeypatch.setattr(
+        Path,
+        "is_file",
+        lambda path: is_file(
+            tmp_path / path.name if str(path).startswith("/work/") else path
+        ),
+    )
     monkeypatch.setattr(
         Path,
         "stat",
