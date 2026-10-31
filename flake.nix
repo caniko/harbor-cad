@@ -114,7 +114,7 @@
       src = source;
       strictDeps = true;
       pname = "harbor-cad";
-      version = "0.1.0";
+      version = "0.1.1";
       CARGO_BUILD_JOBS = "2";
       HARBOR_CAD_SYSTEMCTL = "${pkgs.systemd}/bin/systemctl";
       HARBOR_CAD_SYSTEMD_RUN = "${pkgs.systemd}/bin/systemd-run";
