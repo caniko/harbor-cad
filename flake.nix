@@ -178,9 +178,9 @@
       inherit (inputs) nix-cache-pin;
       inherit pkgs;
       consumerAttr = "legacyPackages.${system}";
-      packages = ["freecad" "rocmPackages.clr" "rocmPackages.rocthrust" "rocmPackages.rocprim"];
+      packages = ["freecad" "paraview" "rocmPackages.clr" "rocmPackages.rocthrust" "rocmPackages.rocprim"];
       from = {
-        inherit (native) paraview openlb-cpu openlb-hip;
+        inherit (native) openlb-cpu openlb-hip;
         inherit (filters) kokkos-hip vtk-hip filter-hip;
         inherit (fem) gmsh;
         thermal-calculix = thermal.calculix;
@@ -271,6 +271,7 @@
     };
     checks.${system} = {
       rust = cli;
+      inherit (native) paraview-egl-import;
       policy = pkgs.runCommand "harbor-cad-policy" {} ''
         test '${toString pkgs.config.allowUnfree}' = ""
         test '${toString cudaPkgs.config.allowUnfree}' = ""

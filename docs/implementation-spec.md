@@ -40,7 +40,7 @@ Reuse `caniko/harbor-rs` toolchain/Crane/Cargo/cache helpers, `caniko/harbor-py`
 
 **Isolation:** FreeCAD, ParaView, Mitsuba and MCP use individually compatible interpreters/runtimes. Launch exact packaged executables with controlled environments; no global Python, loader or Qt-path injection. Test imports and execution outside development shells.
 
-**Locks:** commit `flake.lock`, `Cargo.lock`, `uv.lock`; record native source/patch hashes, compilers and Python/CUDA/MPI/BLAS/integer ABIs. Pin ParaView/VTK/Viskores and Mitsuba/Dr.Jit as compatible sets; retain CalculiX's compatible modified PaStiX stack. Declare GPU architectures; no build-time hardware discovery, undeclared downloads, unqualified fast-math, or hidden `-march=native`.
+**Locks:** commit `flake.lock`, `Cargo.lock`, `uv.lock`; record native source/patch hashes, compilers and Python/CUDA/MPI/BLAS/integer ABIs. Pin ParaView/VTK/Viskores and Mitsuba/Dr.Jit as compatible sets (ParaView: stock Nixpkgs, cache-pinned; see the dependency manifest); retain CalculiX's compatible modified PaStiX stack. Declare GPU architectures; no build-time hardware discovery, undeclared downloads, unqualified fast-math, or hidden `-march=native`.
 
 **Audit-sensitive defaults:** explicitly set effective `allowUnfree = false` plus narrowly approved GPU dependencies. Do not inherit Harbor profiles that obstruct Unix sockets, namespaces, JIT memory or devices. Do not substitute a RADV/Vulkan helper for CUDA/EGL/media routing or a system-service helper for a user service. Verify effective settings at the chosen pins. [R02–R03]
 

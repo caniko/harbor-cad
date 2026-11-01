@@ -209,13 +209,15 @@
   "paraview": {
     "version": "6.0.1",
     "source_hash": "sha256-XlasevXpJbPP0/q4JHCTPLq8fo/ah+FK9k+ZXWBk6wY=",
-    "source_definition": "Nixpkgs pkgs/by-name/pa/paraview/package.nix at the declared revision",
-    "vtk_abi": "Bundled VTK from the exact ParaView source archive; external VTK explicitly disabled",
-    "python_abi": "Separate Python 3.13 pvpython, Qt/MPI disabled",
+    "source_definition": "Stock Nixpkgs pkgs/by-name/pa/paraview/package.nix at the declared revision, used unmodified (Hydra-built binary)",
+    "vtk_abi": "External Nixpkgs vtk-full 9.5.2 (upstream-supported ParaView 6.0.1 + VTK 9.5.2 set); vtkEGLRenderWindow and vtkXOpenGLRenderWindow both built, EGL selected at runtime via VTK_DEFAULT_OPENGL_WINDOW",
+    "python_abi": "pvpython on the vtk-full Python ABI; the adapter runs bin/.pvpython-wrapped so the Qt wrapper injects no QT_* paths",
+    "interim": "The stock build still includes Qt and MPI; replace with a Nixpkgs headless (Qt/MPI-off) variant once one lands",
+    "cache_pin": "paraview is a mkCachePin package: nixpkgs may only move to revisions whose stock ParaView binary is already cached",
     "license": "BSD-3-Clause (Nixpkgs metadata)",
-    "build": "passed ordinary Canix gates with relative GNUInstallDirs; bundled ParaView/VTK and separate Python ABI realized without hardware discovery",
+    "build": "no local ParaView/VTK compilation; the stock binary is substituted",
     "egl_runtime": "packaged selected-device EGL surface rendering of retained CPU OpenLB fields passed on Radeon RX 7900 XTX; live display/DRM identity, requested camera, fixed scale and 0/10/20 s labels verified",
-    "evidence": "docs/evidence/egl-device.json; docs/evidence/egl-fields.json",
+    "evidence": "docs/evidence/egl-device.json; docs/evidence/egl-fields.json (recorded with the former bundled-VTK build; rerun required against the stock package)",
     "viskores_filter": "independent compatible VTK/Viskores/Kokkos-HIP allowlist and worker passed at exact revision 358fd57f7c0a9933aafe64db63af69de7b7c91ce; separate from ParaView EGL; docs/evidence/numerical-filter-hip.json"
   },
   "ffmpeg": {
