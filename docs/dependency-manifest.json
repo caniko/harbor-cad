@@ -211,7 +211,7 @@
     "source_hash": "sha256-XlasevXpJbPP0/q4JHCTPLq8fo/ah+FK9k+ZXWBk6wY=",
     "source_definition": "Stock Nixpkgs pkgs/by-name/pa/paraview/package.nix at the declared revision, used unmodified (Hydra-built binary)",
     "vtk_abi": "External Nixpkgs vtk-full 9.5.2 (upstream-supported ParaView 6.0.1 + VTK 9.5.2 set); vtkEGLRenderWindow and vtkXOpenGLRenderWindow both built, EGL selected at runtime via VTK_DEFAULT_OPENGL_WINDOW",
-    "python_abi": "pvpython on the vtk-full Python ABI; the adapter runs bin/.pvpython-wrapped so the Qt wrapper injects no QT_* paths",
+    "python_abi": "pvpython on Python 3.14 (vtk-full 9.5.2 ABI); the adapter runs bin/.pvpython-wrapped so the Qt wrapper injects no QT_* paths",
     "interim": "The stock build still includes Qt and MPI; replace with a Nixpkgs headless (Qt/MPI-off) variant once one lands",
     "cache_pin": "paraview is a mkCachePin package: nixpkgs may only move to revisions whose stock ParaView binary is already cached",
     "license": "BSD-3-Clause (Nixpkgs metadata)",
