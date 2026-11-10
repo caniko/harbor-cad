@@ -67,6 +67,7 @@ policies still await a real run.
 
 ## Place in the fleet
 
-Harbor-CAD is an inline component of the `harbor` build-infrastructure
-superproject that canix pins, and is managed as a project by canix's paperclip
-graphics organisation. Canix does not pin this repository directly.
+Harbor-CAD is a gitlinked component (`components/cad`) of the `harbor`
+build-infrastructure superproject that canix pins, and is managed as a project
+by canix's paperclip graphics organisation. Canix does not pin this repository
+directly.
