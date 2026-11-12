@@ -363,6 +363,162 @@ fn feasibility_first_ranking_never_passes_unknown_metrics() {
 }
 
 #[test]
+fn maximin_robustness_ranks_the_weakest_scaled_margin_and_refuses_invalid_terms() {
+    // Unequal trade-offs: the weighted sum (0.1*height + acceleration)
+    // prefers the low, near-boundary point; the weakest scaled margin prefers
+    // the balanced point.
+    let mut env = example().unwrap();
+    let constraint = |metric: &str, op: ConstraintOp, limit: f64, unit: &str| Constraint {
+        metric: metric.into(),
+        op,
+        limit,
+        unit: unit.into(),
+        safety_factor: None,
+    };
+    let term = |metric: &str, weight: f64| ObjectiveTerm {
+        metric: metric.into(),
+        weight,
+    };
+    env.constraints = vec![
+        constraint("height", ConstraintOp::Le, 8., "mm"),
+        constraint("acceleration", ConstraintOp::Ge, 0.2, "m/s2"),
+        // Hard eligibility, deliberately unselected: its margin never enters
+        // the robustness score.
+        constraint("mean_velocity", ConstraintOp::Ge, 0.1, "m/s"),
+    ];
+    env.objective = Objective {
+        kind: ObjectiveKind::MaximizeMinMargin,
+        terms: vec![term("height", 0.5), term("acceleration", 1.)],
+    };
+    prepare(&env, Some("ci")).expect("valid maximin envelope");
+
+    let metrics = |h: Option<f64>, a: Option<f64>, u: Option<f64>| -> Metrics {
+        BTreeMap::from([
+            ("height".to_string(), h),
+            ("acceleration".to_string(), a),
+            ("mean_velocity".to_string(), u),
+        ])
+    };
+    let balanced = assess(&env, &metrics(Some(6.), Some(0.3), Some(0.2)));
+    let cheap = assess(&env, &metrics(Some(4.), Some(0.22), Some(0.2)));
+    assert_eq!(balanced.standing, Standing::Feasible);
+    assert_eq!(cheap.standing, Standing::Feasible);
+    // Balanced: min(0.5*2/8, 0.1/0.2) = 0.125 -> -0.125.
+    // Cheap:    min(0.5*4/8, 0.02/0.2) = 0.1 -> -0.1.
+    assert!((balanced.objective.unwrap() + 0.125).abs() < 1e-12);
+    assert!((cheap.objective.unwrap() + 0.1).abs() < 1e-12);
+
+    // The unchanged minimize objective prefers the cheap point.
+    let mut sum = env.clone();
+    sum.objective = Objective {
+        kind: ObjectiveKind::Minimize,
+        terms: vec![term("height", 0.1), term("acceleration", 1.)],
+    };
+    assert!(
+        assess(&sum, &metrics(Some(4.), Some(0.22), Some(0.2))).objective
+            < assess(&sum, &metrics(Some(6.), Some(0.3), Some(0.2))).objective
+    );
+
+    let hard_fail = assess(&env, &metrics(Some(4.), Some(0.5), Some(0.05)));
+    assert_eq!(hard_fail.standing, Standing::Infeasible);
+    assert!(
+        (hard_fail.objective.unwrap() + 0.25).abs() < 1e-12,
+        "the unselected eligibility margin never flattens the score"
+    );
+    let unknown = assess(&env, &metrics(Some(4.), None, Some(0.2)));
+    assert_eq!(unknown.standing, Standing::Unknown);
+    assert!(
+        unknown.objective.is_none(),
+        "missing selected metric stays unknown"
+    );
+    for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        assert_eq!(
+            assess(&env, &metrics(Some(4.), Some(value), Some(0.2))).standing,
+            Standing::Unknown
+        );
+    }
+    let mut overflow = env.clone();
+    overflow.objective.terms[1].weight = f64::MAX;
+    prepare(&overflow, Some("ci")).expect("finite weight accepted");
+    let overflowed = assess(&overflow, &metrics(Some(4.), Some(2.), Some(0.2)));
+    assert_eq!(overflowed.standing, Standing::Unknown);
+    assert!(
+        overflowed.objective.is_none(),
+        "overflow is not a usable margin"
+    );
+    let mut ranked = vec![(0, unknown), (1, hard_fail), (2, cheap), (3, balanced)];
+    rank(&mut ranked);
+    assert_eq!(
+        ranked.iter().map(|(i, _)| *i).collect::<Vec<_>>(),
+        [3, 2, 1, 0]
+    );
+
+    // Safety factors tighten both a le and a ge limit.
+    let mut safe = env.clone();
+    safe.constraints[0].safety_factor = Some(2.);
+    assert!((safe.constraints[0].effective_limit() - 4.).abs() < 1e-12);
+    assert_eq!(
+        assess(&safe, &metrics(Some(4.5), Some(0.3), Some(0.2))).standing,
+        Standing::Infeasible
+    );
+    safe.constraints[1].safety_factor = Some(2.);
+    assert!((safe.constraints[1].effective_limit() - 0.4).abs() < 1e-12);
+    assert_eq!(
+        assess(&safe, &metrics(Some(4.), Some(0.3), Some(0.2))).standing,
+        Standing::Infeasible
+    );
+
+    // The plain weighted-sum objective is unchanged.
+    let plain = example().unwrap();
+    assert!(matches!(plain.objective.kind, ObjectiveKind::Minimize));
+    assert!(
+        (assess(&plain, &metrics(Some(8.), Some(0.5), Some(0.2)))
+            .objective
+            .unwrap()
+            - 1.3)
+            .abs()
+            < 1e-12
+    );
+
+    let refuse = |f: &dyn Fn(&mut DesignEnvelope), why: &str| {
+        let mut bad = env.clone();
+        f(&mut bad);
+        assert!(prepare(&bad, Some("ci")).is_err(), "{why} accepted");
+    };
+    refuse(
+        &|e| e.constraints.retain(|c| c.metric != "height"),
+        "term without a constraint",
+    );
+    refuse(
+        &|e| {
+            let duplicate = e.constraints[0].clone();
+            e.constraints.push(duplicate);
+        },
+        "ambiguous constraint metric",
+    );
+    refuse(
+        &|e| {
+            let duplicate = e.objective.terms[0].clone();
+            e.objective.terms.push(duplicate);
+        },
+        "duplicate selected constraint",
+    );
+    refuse(
+        &|e| e.objective.terms[0].metric = "bogus".into(),
+        "undeclared term metric",
+    );
+    refuse(
+        &|e| e.objective.terms[0].weight = -1.,
+        "negative maximin weight",
+    );
+    refuse(&|e| e.objective.terms[0].weight = 0., "zero weight");
+    refuse(
+        &|e| e.objective.terms[0].weight = f64::NAN,
+        "non-finite weight",
+    );
+}
+
+#[test]
 fn pattern_search_converges_on_analytic_quadratic_within_budget() {
     // Unconstrained smooth bowl with a known on-grid minimum at (13.5 mm, 0.21).
     let f = |p: &Params, _: Level| {

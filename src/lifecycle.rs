@@ -11,6 +11,10 @@ pub struct NativeProcess {
     child: Option<Child>,
 }
 impl NativeProcess {
+    pub fn take_stdout(&mut self) -> Option<std::process::ChildStdout> {
+        self.child.as_mut()?.stdout.take()
+    }
+
     pub fn spawn(mut command: Command) -> Result<Self> {
         command.process_group(0);
         Ok(Self {

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "provenance": "Synthetic documentation example; not product measurements or an approved envelope.",
+  "terms": [
+    {"metric": "wall", "weight": 0.5},
+    {"metric": "clearance", "weight": 0.5}
+  ],
+  "constraints": [
+    {"metric": "wall", "op": "ge", "limit": 1.5, "unit": "mm"},
+    {"metric": "clearance", "op": "ge", "limit": 8.0, "unit": "mm"}
+  ],
+  "gate_names": ["manufacturing_ok"],
+  "candidates": [
+    {"name": "balanced", "metrics": {"wall": 1.8, "clearance": 9.6}, "gates": {"manufacturing_ok": true}},
+    {"name": "thin_clearance", "metrics": {"wall": 2.1, "clearance": 8.8}, "gates": {"manufacturing_ok": true}},
+    {"name": "rejected", "metrics": {"wall": 2.4, "clearance": 12.0}, "gates": {"manufacturing_ok": false}},
+    {"name": "unknown", "metrics": {"wall": 1.8, "clearance": null}, "gates": {"manufacturing_ok": true}}
+  ],
+  "ledger": {
+    "axes": {"wall": [1.5, 2.4], "clearance": [8.0, 12.0]},
+    "baseline": {"wall": 1.8, "clearance": 9.6},
+    "search": [],
+    "fidelity_reruns": 2,
+    "repeats": 0,
+    "max_evaluations": 8,
+    "max_wall_seconds": 900,
+    "max_artifact_bytes": 134217728,
+    "estimated_bytes_per_evaluation": null
+  }
+}

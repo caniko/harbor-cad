@@ -28,7 +28,7 @@ pub const MAX_CHOICES: usize = 6;
 pub const MAX_EVALUATIONS: u32 = 32;
 pub const MAX_REFINE: u32 = 3;
 const MAX_CHILDREN: usize = 5;
-const MAX_METRICS: usize = 8;
+pub(crate) const MAX_METRICS: usize = 8;
 const MAX_METRIC_SOURCES: usize = 48;
 /// Planning operations a chained template may request. Each is resolved by the
 /// worker's own dispatch, exactly as the CLI/MCP planning call would be.
@@ -53,8 +53,8 @@ fn chain_allowed(op: &Operation) -> bool {
             | Operation::PlanEnclosureThermal { .. }
     )
 }
-const MAX_WALL_SECONDS: u64 = 7 * 24 * 3600;
-const MAX_TOTAL_ARTIFACT_BYTES: u64 = 64 * 1024 * 1024 * 1024;
+pub(crate) const MAX_WALL_SECONDS: u64 = 7 * 24 * 3600;
+pub(crate) const MAX_TOTAL_ARTIFACT_BYTES: u64 = 64 * 1024 * 1024 * 1024;
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -103,6 +103,9 @@ pub struct DesignSpace {
 #[serde(rename_all = "snake_case")]
 pub enum ObjectiveKind {
     Minimize,
+    /// Maximize the smallest weighted signed constraint margin; reported as
+    /// its negative so the existing ascending minimize ranking applies.
+    MaximizeMinMargin,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -158,6 +161,14 @@ impl Constraint {
             ConstraintOp::Ge => (value - limit) / scale,
         }
     }
+}
+
+/// The single declared constraint a maximin term selects; `None` when the
+/// metric is missing from `constraints` or declared more than once.
+fn selected_constraint<'a>(constraints: &'a [Constraint], metric: &str) -> Option<&'a Constraint> {
+    let mut matches = constraints.iter().filter(|c| c.metric == metric);
+    let constraint = matches.next()?;
+    matches.next().is_none().then_some(constraint)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -1081,27 +1092,14 @@ pub fn prepare(env: &DesignEnvelope, policy: Option<&str>) -> Result<PreparedDes
             )));
         }
     }
-    if env.objective.terms.is_empty()
-        || env.objective.terms.len() > MAX_METRICS
-        || env.objective.terms.iter().any(|t| {
-            !metrics.contains(t.metric.as_str()) || !t.weight.is_finite() || t.weight == 0.
-        })
-    {
-        return Err(invalid(
-            "1..8 objective terms over declared metrics with finite nonzero weights required",
-        ));
-    }
-    if env.constraints.len() > MAX_METRICS
-        || env.constraints.iter().any(|c| {
-            env.metric(&c.metric).is_none_or(|m| m.unit != c.unit)
-                || !c.limit.is_finite()
-                || c.safety_factor.is_some_and(|f| !f.is_finite() || f < 1.)
-        })
-    {
-        return Err(invalid(
-            "at most 8 constraints over declared same-unit metrics with finite limits and safety factors >= 1",
-        ));
-    }
+    validate_scoring(
+        &env.objective,
+        &env.constraints,
+        &env.metric_sources
+            .iter()
+            .map(|m| (m.metric.as_str(), m.unit.as_str()))
+            .collect(),
+    )?;
     if env
         .pareto_metric
         .as_ref()
@@ -1320,8 +1318,67 @@ pub struct Assessment {
 
 pub type Metrics = BTreeMap<String, Option<f64>>;
 
+/// Shared validation for envelope execution and read-only supplied-number screens.
+pub(crate) fn validate_scoring(
+    objective: &Objective,
+    constraints: &[Constraint],
+    units: &BTreeMap<&str, &str>,
+) -> Result<()> {
+    if objective.terms.is_empty()
+        || objective.terms.len() > MAX_METRICS
+        || objective.terms.iter().any(|t| {
+            !units.contains_key(t.metric.as_str()) || !t.weight.is_finite() || t.weight == 0.
+        })
+    {
+        return Err(invalid(
+            "1..8 objective terms over declared metrics with finite nonzero weights required",
+        ));
+    }
+    if matches!(objective.kind, ObjectiveKind::MaximizeMinMargin) {
+        let mut selected = BTreeSet::new();
+        for term in &objective.terms {
+            if term.weight <= 0. {
+                return Err(invalid(
+                    "maximize_min_margin terms require positive finite weights",
+                ));
+            }
+            if selected_constraint(constraints, &term.metric).is_none() {
+                return Err(invalid(
+                    "maximize_min_margin terms must each select exactly one declared constraint metric",
+                ));
+            }
+            if !selected.insert(term.metric.as_str()) {
+                return Err(invalid(
+                    "maximize_min_margin terms must not select the same constraint twice",
+                ));
+            }
+        }
+    }
+    if constraints.len() > MAX_METRICS
+        || constraints.iter().any(|c| {
+            units.get(c.metric.as_str()).copied() != Some(c.unit.as_str())
+                || !c.limit.is_finite()
+                || !c.effective_limit().is_finite()
+                || c.safety_factor.is_some_and(|f| !f.is_finite() || f < 1.)
+        })
+    {
+        return Err(invalid(
+            "at most 8 constraints over declared same-unit metrics with finite effective limits and safety factors >= 1",
+        ));
+    }
+    Ok(())
+}
+
 /// Feasibility-first assessment; a missing metric never passes a constraint.
 pub fn assess(env: &DesignEnvelope, metrics: &Metrics) -> Assessment {
+    assess_scoring(&env.objective, &env.constraints, metrics)
+}
+
+pub(crate) fn assess_scoring(
+    objective_spec: &Objective,
+    declared_constraints: &[Constraint],
+    metrics: &Metrics,
+) -> Assessment {
     let value = |name: &str| {
         metrics
             .get(name)
@@ -1329,12 +1386,11 @@ pub fn assess(env: &DesignEnvelope, metrics: &Metrics) -> Assessment {
             .flatten()
             .filter(|v| v.is_finite())
     };
-    let constraints: Vec<_> = env
-        .constraints
+    let constraints: Vec<_> = declared_constraints
         .iter()
         .map(|c| {
             let v = value(&c.metric);
-            let margin = v.map(|v| c.margin(v));
+            let margin = v.map(|v| c.margin(v)).filter(|margin| margin.is_finite());
             ConstraintAssessment {
                 metric: c.metric.clone(),
                 value: v,
@@ -1343,12 +1399,27 @@ pub fn assess(env: &DesignEnvelope, metrics: &Metrics) -> Assessment {
             }
         })
         .collect();
-    let objective = env
-        .objective
-        .terms
-        .iter()
-        .map(|t| value(&t.metric).map(|v| t.weight * v))
-        .sum::<Option<f64>>();
+    let objective = match objective_spec.kind {
+        ObjectiveKind::Minimize => objective_spec
+            .terms
+            .iter()
+            .map(|t| value(&t.metric).map(|v| t.weight * v))
+            .sum::<Option<f64>>(),
+        // The smallest weighted margin, negated for ascending minimization;
+        // one missing selected metric keeps the whole score unknown.
+        ObjectiveKind::MaximizeMinMargin => objective_spec
+            .terms
+            .iter()
+            .map(|t| {
+                selected_constraint(declared_constraints, &t.metric)
+                    .and_then(|c| value(&c.metric).map(|v| t.weight * c.margin(v)))
+                    .filter(|margin| margin.is_finite())
+            })
+            .collect::<Option<Vec<_>>>()
+            .and_then(|margins| margins.into_iter().min_by(f64::total_cmp))
+            .map(|margin| -margin),
+    }
+    .filter(|score| score.is_finite());
     let violation = constraints
         .iter()
         .filter_map(|c| c.margin)

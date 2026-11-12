@@ -16,10 +16,73 @@ harbor-cad design submit envelope.json --approve DIGEST --idempotency-key KEY
 harbor-cad design propose DESIGN_ID candidate.json
 harbor-cad design status DESIGN_ID
 harbor-cad design export DESIGN_ID
+harbor-cad design screen FILE                    # supplied-number maximin; no worker
+harbor-cad design screen FILE --markdown         # same computed report, rendered
+harbor-cad cad audit FILE                        # archive/XML inventory only
 ```
 
 MCP profiles `simulation` and `all` expose `design_plan`, `design_submit`,
 `design_propose`, `design_status` and `design_export` over the same operations.
+The screen and audit commands are CLI-only.
+
+## Read-only references
+
+### Supplied-metric screening
+
+`harbor-cad design screen FILE [--markdown]` scores supplied numbers only. It
+is a reference, not an execution gate: `qualified`, `envelope_validated` and
+`worker_executed` are always false, the scope is
+`supplied-metric-reference-only` and physical validation is `unqualified`. It
+does not validate an envelope, contact a worker, approve a plan or mutate
+product data. `examples/design-screen.json` is a synthetic four-candidate
+input, not product data.
+
+Schema 1 takes `provenance`, maximin `terms`, declared `constraints`, boolean
+`gate_names` (an empty list if unused), named `candidates` and a `ledger`. It calls the shared
+maximin scorer: each term selects a distinct declared constraint metric with a
+finite positive weight, the reported objective is the negative smallest
+weighted normalized signed margin, and constraints left out of `terms` still
+decide feasibility. A failed constraint, a missing or non-finite selected
+metric, or a false or unknown gate leaves that candidate without a score.
+Infeasible and unknown rows have no selectable objective.
+
+`nominal_winners` compares displayed values at 12 decimal places. That is a
+display tie only; raw engine scores and hard-feasibility comparisons keep full
+precision and are never re-ranked by the rendering. `--markdown` renders the
+already-computed report directly, so its numbers are the report's numbers, not
+a second calculation. `input_digest` is the SHA-256 of the canonical typed
+request, not of the raw file bytes and not an approval.
+
+The ledger counts `2^axes` distinct corners, one additional baseline only when
+it is not already a corner, distinct search points, fidelity reruns and
+repeats. Search points must not duplicate corners, the baseline or each other;
+deliberate reruns go in `repeats`. `total` must fit the proposed
+`max_evaluations`; `budget_spare` is room within that proposed cap, while
+`hard_cap_headroom` is the engine's 32-evaluation cap above it.
+`estimated_artifact_bytes` is the per-evaluation estimate times the whole
+proposed `max_evaluations`; a null estimate reports unknown and makes no plan
+demand. The estimate is compared with the supplied `max_artifact_bytes`; no
+body-size cap is supplied, so the report cannot bound a printable body.
+
+### Archive/XML inventory
+
+`harbor-cad cad audit FILE` reads an FCStd archive as a zip and its
+`Document.xml` as XML only. It uses bounded `unzip -p` extraction and
+`roxmltree`; it opens no native document, runs no macro, loads no geometry
+kernel and proves neither geometry nor parametric history
+(`native_opened`, `geometry_qualified` and `parametric_qualified` are false).
+The inventory lists typed `Objects/Object` declarations and the XML digest.
+
+Bounds are 512 MiB for the archive, 64 MiB for `Document.xml` and 10 s for the
+extractor. A Git LFS pointer short-circuits to `status: lfs_pointer` without
+XML parsing. DTDs are refused; the root must be `Document` with exactly one
+`Objects` declaration and at least one typed object. Any other archive, XML or
+extractor failure is an error, never a partial inventory.
+
+The before/after source hash catches a file that changes during the read, but
+it does not defeat a swap-and-restore (ABA) race and is not an adversarial
+atomic snapshot. The source must remain externally stable for the audit; the
+inventory is a point-in-time observation of that stable file.
 
 ## Approval model
 
@@ -38,9 +101,15 @@ with a changed envelope or profile is an idempotency conflict.
 - `space.continuous`: at most 8 `{name, low, high, step, unit}` on an integral
   step grid. `step` is the manufacturing grid and the search step floor.
 - `space.categorical`: at most 2 `{name, choices}` with 1–6 token choices.
-- `objective`: `minimize` a weighted sum of declared metrics. Weights are
-  finite and nonzero; a negative weight maximizes its metric (ranking and the
-  Pareto set only compare the sum).
+- `objective`: `minimize` a weighted sum of declared metrics (finite nonzero
+  weights; a negative weight maximizes its metric), or `maximize_min_margin`
+  over declared constraints. Each maximin term `{metric, weight}` must select
+  exactly one declared constraint metric with a finite positive weight. Its
+  reported objective is the negative of the smallest weight-scaled normalized
+  signed margin, so the existing ascending minimize ranking prefers the
+  largest weakest margin. Hard constraints left out of `terms` still decide
+  feasibility but never enter that score; a missing or non-finite selected
+  metric keeps the objective and standing unknown.
 - `constraints`: `{metric, op: le|ge, limit, unit, safety_factor?}`; units
   must equal the metric's declared unit and safety factors (≥ 1) tighten.
 - `budget`: `max_evaluations` ≤ 32, `max_wall_seconds`, and
@@ -217,8 +286,10 @@ regenerates the same sequence, and no point is proposed twice
 searches do not all converge ends `budget_exhausted` rather than `completed`.
 
 Ranking is feasibility-first: feasible candidates by objective, infeasible by
-total normalized violation, unknown last. The incumbent is the best feasible
-refined candidate, else the best feasible screened one.
+total normalized violation, unknown last. A `maximize_min_margin` objective is
+stored negated, so the ascending objective still puts the largest weakest
+margin first. The incumbent is the best feasible refined candidate, else the
+best feasible screened one.
 
 Measured on the CI example (optimum on a curved `mean_velocity ≥ 0.1`
 boundary), seeds 0–39, 32 evaluations, gap of the incumbent to the
