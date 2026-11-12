@@ -264,8 +264,14 @@ the export statement starts with `SYNTHETIC`.
 
 ## Limits
 
-This recipe is not qualified. The native Gmsh/CalculiX worker gate waits on the
-security hold, and no CalculiX run has been observed. It does not cover
+This recipe is not qualified. The exact-package Gmsh/CalculiX worker gate has
+not run. On 2026-11-05, the direct `verify_enclosure_thermal_cpu.py --ccx`
+gate passed all four analytical cases at two refinements with installed
+CalculiX 2.23 and source `3e4451d`. Exact adapter/solver hashes and the retained
+report are recorded in the sibling Intercom repository at
+`hardware/mechanical/manufacturing/cnc_hillclimb/native-reference.json`.
+That check does not qualify CAD import, Gmsh, worker containment or a product.
+The recipe does not cover
 transients, internal convection, view-factor radiation (the cavity bound uses
 the two-surface enclosure model), sky temperature
 (the linearized bound only ignores sky cooling, which is conservative),
