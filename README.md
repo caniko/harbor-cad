@@ -14,6 +14,15 @@ host scope in the [acceptance ledger](docs/acceptance-ledger.md). Discovery does
 not qualify a changed runtime automatically.
 Process success is never a physical-validation claim.
 
+The reusable [decision-first CAD robustness skill](.opencode/skills/cad-robustness-loop/SKILL.md)
+guides requirement interviews, source-safe derivatives, bounded searches and
+qualification. OpenCode discovers it in this checkout. Other projects can link
+their `.agents/skills/cad-robustness-loop` to this directory (keep the checkout
+available), or configure an absolute `skills` source pointing at this checkout's
+`.opencode/skills`. Relative config sources resolve from the active working
+directory, not the config file; see [OpenCode V2 skills](https://opencode.ai/v2/docs/skills).
+Product decisions stay in the consuming repository, not in the generic skill.
+
 ## Run the implemented reference workflow
 
 ```sh
