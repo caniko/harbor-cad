@@ -1,5 +1,6 @@
 import ctypes as c
 import importlib.util
+import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -64,6 +65,100 @@ def test_actual_egl_display_must_resolve_to_selected_render_node(
     else:
         with pytest.raises(RuntimeError):
             module.egl_context_device("/dev/dri/renderD128")
+
+
+@pytest.mark.parametrize(
+    "window_class,index,capabilities,accepted",
+    [
+        (
+            "vtkEGLRenderWindow",
+            3,
+            "OpenGL renderer string: AMD Radeon RX 7900 XTX (radeonsi, navi31)",
+            True,
+        ),
+        # Stock ParaView builds the X window too; selecting EGL is the contract.
+        ("vtkXOpenGLRenderWindow", 3, "OpenGL renderer string: navi31", False),
+        ("vtkEGLRenderWindow", 4, "OpenGL renderer string: navi31", False),
+        ("vtkEGLRenderWindow", 3, "OpenGL renderer string: llvmpipe (LLVM 20)", False),
+        ("vtkEGLRenderWindow", 3, "Renderer: softpipe", False),
+        ("vtkEGLRenderWindow", 3, "Renderer: SWRAST", False),
+        ("vtkEGLRenderWindow", 3, "Software Rasterizer", False),
+    ],
+)
+def test_render_window_must_be_the_selected_egl_device_without_software(
+    window_class, index, capabilities, accepted
+):
+    module = bridge()
+    window = SimpleNamespace(
+        GetClassName=lambda: window_class,
+        GetDeviceIndex=lambda: index,
+        ReportCapabilities=lambda: capabilities,
+    )
+    if accepted:
+        assert module.require_egl_window(window, 3) == capabilities
+    else:
+        with pytest.raises(RuntimeError):
+            module.require_egl_window(window, 3)
+
+
+@pytest.mark.parametrize(
+    "nodes,matched,index",
+    [
+        (["renderD128"], "renderD128", 0),
+        (["renderD128", "renderD129"], "renderD129", 1),
+        (["renderD128"], "renderD129", None),
+        (["renderD129", "renderD129"], "renderD129", None),
+        (["renderD128", None], "renderD128", 0),
+    ],
+)
+def test_selected_render_node_maps_to_exactly_one_egl_device(
+    monkeypatch, tmp_path, nodes, matched, index
+):
+    module = bridge()
+    nodes = [tmp_path / node if node else None for node in nodes]
+
+    def query(capacity, devices, count):
+        if not capacity:
+            count._obj.value = len(nodes)
+            return 1
+        assert capacity == len(nodes)
+        for i, _node in enumerate(nodes):
+            devices[i] = 100 + i
+        return 1
+
+    def node_name(device, _attribute):
+        node = nodes[device - 100]
+        return os.fsencode(node) if node else None
+
+    functions = {
+        b"eglQueryDevicesEXT": query,
+        b"eglQueryDeviceStringEXT": node_name,
+    }
+    monkeypatch.setattr(module, "egl_library", lambda: SimpleNamespace())
+    monkeypatch.setattr(module, "egl_proc", lambda _egl, name, *_: functions[name])
+    if index is None:
+        with pytest.raises(RuntimeError):
+            module.egl_device(str(tmp_path / matched))
+    else:
+        assert module.egl_device(str(tmp_path / matched)) == index
+
+
+@pytest.mark.parametrize("count", [0, 33])
+def test_egl_enumeration_is_bounded(monkeypatch, count):
+    module = bridge()
+
+    def query(_capacity, _devices, out):
+        out._obj.value = count
+        return 1
+
+    functions = {
+        b"eglQueryDevicesEXT": query,
+        b"eglQueryDeviceStringEXT": lambda *_: b"/dev/dri/renderD128",
+    }
+    monkeypatch.setattr(module, "egl_library", lambda: SimpleNamespace())
+    monkeypatch.setattr(module, "egl_proc", lambda _egl, name, *_: functions[name])
+    with pytest.raises(RuntimeError):
+        module.egl_device("/dev/dri/renderD128")
 
 
 @pytest.mark.parametrize(

@@ -8,6 +8,10 @@ import sys
 from pathlib import Path
 
 POLICY = "harbor-cad-render-drm-single-node-v1"
+# Stock ParaView builds both the X and EGL windows; the adapter must still get
+# the selected-device EGL window, never a software rasterizer.
+RENDER_WINDOW = "vtkEGLRenderWindow"
+SOFTWARE_MARKERS = ("llvmpipe", "softpipe", "swrast", "software rasterizer")
 
 
 def drm_sandbox(pci, dev=Path("/dev")):
@@ -77,6 +81,16 @@ def egl_device(render_node):
     return matches[0]
 
 
+def require_egl_window(window, index):
+    """Refuse a non-EGL class, a different device index or a software rasterizer."""
+    capabilities = window.ReportCapabilities()
+    if window.GetClassName() != RENDER_WINDOW or window.GetDeviceIndex() != index:
+        raise RuntimeError("observed EGL context device differs from selected device")
+    if any(x in capabilities.lower() for x in SOFTWARE_MARKERS):
+        raise RuntimeError("software graphics fallback rejected")
+    return capabilities
+
+
 def egl_context_device(render_node):
     """Verify the initialized display, rather than VTK's requested device index."""
     egl = egl_library()
@@ -142,7 +156,7 @@ def main():
     # display is still checked against the node after every render.
     index = egl_device(node)
     os.environ["VTK_EGL_DEVICE_INDEX"] = str(index)
-    os.environ["VTK_DEFAULT_OPENGL_WINDOW"] = "vtkEGLRenderWindow"
+    os.environ["VTK_DEFAULT_OPENGL_WINDOW"] = RENDER_WINDOW
     from paraview import simple as pv
 
     # The pinned simple.Render resets the camera on its first call by default.
@@ -186,19 +200,7 @@ def main():
         source.UpdatePipeline(view.ViewTime)
         pv.Render(view)
         window = view.GetClientSideObject().GetRenderWindow()
-        capabilities = window.ReportCapabilities()
-        if (
-            window.GetClassName() != "vtkEGLRenderWindow"
-            or window.GetDeviceIndex() != index
-        ):
-            raise RuntimeError(
-                "observed EGL context device differs from selected device"
-            )
-        if any(
-            x in capabilities.lower()
-            for x in ["llvmpipe", "softpipe", "swrast", "software rasterizer"]
-        ):
-            raise RuntimeError("software graphics fallback rejected")
+        capabilities = require_egl_window(window, index)
         window.MakeCurrent()
         observed_node = egl_context_device(node)
         filename = f"frame{i:04d}.png"
