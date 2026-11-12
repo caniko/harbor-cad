@@ -1,0 +1,17 @@
+{
+  "description": "Main saves each response to its capture file, then injects the next user_message into the same model session. The runner sees only prompt.md until main sends a turn.",
+  "turns": [
+    {
+      "turn": 2,
+      "after_capture": "turn-1.md",
+      "capture": "turn-2.md",
+      "user_message": "Approved: four 2-minute video/audio calls spread across the 75-minute outage, with the camera off otherwise. What is the next decision?"
+    },
+    {
+      "turn": 3,
+      "after_capture": "turn-2.md",
+      "capture": "turn-3.md",
+      "user_message": "Approved: one unroofed urban site, not marine. Numerical weather exposure still requires an agreed standard and a site survey. Stop interviewing and summarize what is approved and what remains open. Do not write files."
+    }
+  ]
+}

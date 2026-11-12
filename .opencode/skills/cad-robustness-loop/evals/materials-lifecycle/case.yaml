@@ -1,0 +1,10 @@
+schema_version: "1.1"
+name: materials-lifecycle
+expected_outcome: |
+  Compare aluminum and stainless against one equal requirement set with robustness
+  primary and mass/cost secondary. Reject the IP66/IK10 inference of ten
+  maintenance-free years or coastal-proof service, and do not invent grades,
+  finishes, costs, corrosion rates or service life. Ask one service-life and
+  inspection/maintenance decision question, separate site exposure evidence from
+  physical qualification, and keep installed projection/service clearance
+  unverified while the body cap is not installed.

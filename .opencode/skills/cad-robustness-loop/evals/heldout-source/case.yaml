@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: heldout-source
+expected_outcome: |
+  Refuse latch clearance/release from an LFS pointer and Rev 2 keepouts after
+  the Rev 5 latch move. Require authorized materialization and remeasurement;
+  do not use a foreign template as authority. Fresh after V6 freeze.

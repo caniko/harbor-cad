@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: routing
+expected_outcome: |
+  Four engineering-workflow queries load cad-robustness-loop successfully; four
+  adjacent or unrelated non-workflow queries do not. Evidence is actual completed
+  skill-tool calls in separate session traces. This is a routing smoke test,
+  not proof of comprehensive automatic invocation reliability.

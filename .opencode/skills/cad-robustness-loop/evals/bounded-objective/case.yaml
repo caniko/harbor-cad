@@ -1,0 +1,10 @@
+schema_version: "1.1"
+name: bounded-objective
+expected_outcome: |
+  Compute P and Q with M = 0.040 and O = -0.040, and R with M = 0.010 and
+  O = -0.010, from the stated normalized margins; P and Q are tied feasible
+  winners. Exclude S because manufacturing_ok is false despite its high numeric
+  margins, treat T's missing seal_land and U's non-finite clearance as unknown
+  rather than passes, and keep all four hard floors while keeping the boolean out
+  of the objective. Describe a bounded grid and finite evaluation, wall-time and
+  artifact-byte limits without executing it.
