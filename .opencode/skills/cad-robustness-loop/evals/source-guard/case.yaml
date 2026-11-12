@@ -1,0 +1,8 @@
+schema_version: "1.1"
+name: source-guard
+expected_outcome: |
+  Parse the ZIP/XML without native imports or LFS materialization, detect static
+  shapes despite the spreadsheet, stale keepouts and the specification conflict,
+  preserve every input and pre-existing target, and create only a bounded audit.
+context:
+  scaffold_script: scaffold.sh

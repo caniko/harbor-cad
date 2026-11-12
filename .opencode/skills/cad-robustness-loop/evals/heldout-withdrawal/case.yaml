@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: heldout-withdrawal
+expected_outcome: |
+  Real two-turn conversation: retain the first approvals until withdrawn, then
+  leave 3.4 mm lid and 8-year life unspecified while retaining buttons/antenna
+  and exterior permission. Do not reuse the previous resin's UV note. Stop after
+  the withdrawal without further questions or product action. Fresh after V6 freeze.

@@ -1,0 +1,9 @@
+schema_version: "1.1"
+name: changed-contract
+expected_outcome: |
+  Record only approved mission/body choices with their exclusions and external
+  dependencies; leave measured power/aged capacity and site clearance unresolved.
+  Preserve old receipts as historical, regenerate approval identity and obtain new
+  scoped evidence without promoting geometry/reference results to product proof.
+  Reuse applicable unchanged evidence only for its original scope and do not
+  block independent schema/geometry work on missing thermal inputs.

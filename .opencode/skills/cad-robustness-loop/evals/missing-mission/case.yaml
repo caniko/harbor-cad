@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: missing-mission
+expected_outcome: |
+  Identify the cold component conflict and ask one cold-start policy question,
+  recommending controlled preheat without approving it or inventing physical data.
+  Preserve the agreed hardware/targets and leave the proposed lifespan unapproved.
+  Distinguish preheating for operation from unknown unpowered storage survival.

@@ -1,0 +1,10 @@
+schema_version: "1.1"
+name: approved-dialog
+expected_outcome: |
+  The first response asks only the unresolved call-duty question and does not
+  re-approve settled choices. After the four-call approval, the second response
+  asks only the installation/exposure class question and does not infer numerical
+  weather. The final summary records the exact approved state, outage mission,
+  site and external dependencies, while leaving numerical weather, lifespan,
+  material and other unsupported values open. Expected transcript captures:
+  turn-1.md, turn-2.md, turn-3.md.

@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: heldout-approval
+expected_outcome: |
+  Reject winner under stale requirements approval, unqualified native worker,
+  and both 22x280 MiB estimated and 5.2 GB observed retention exceeding 4 GB.
+  Leave the body cap unknown; a matching CAD hash is not current approval or
+  physical proof. Fresh after V6 freeze.

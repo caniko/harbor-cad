@@ -1,0 +1,8 @@
+schema_version: "1.1"
+name: failed-stock
+expected_outcome: |
+  Preserve the approved stock floor and source; propose a bounded seal-route
+  redesign with a new matching gasket, actual corner/support/keepout checks and
+  weakest normalized margin ranking, without claiming physical qualification.
+  Explicitly require a matching gasket/interface revision or revalidation, with
+  compression/tolerance acceptance still pending supplier data.

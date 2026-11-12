@@ -1,0 +1,10 @@
+[
+  {"id": "enclosure-redesign", "query": "Plan a robustness-first redesign of an outdoor access-panel enclosure. Keep its electronics, preserve the original CAD, and help decide the missing requirements before we optimize.", "should_trigger": true},
+  {"id": "weakest-margin", "query": "I want a bounded harbor-cad hill climb that improves the weakest engineering margin without relaxing hard constraints. How should we set it up?", "should_trigger": true},
+  {"id": "cold-start-decisions", "query": "Our outdoor sensor housing has a cold-start conflict and no agreed battery-outage mission. Help me settle one engineering decision at a time before changing the CAD.", "should_trigger": true},
+  {"id": "source-safe-campaign", "query": "The FCStd is mostly static imported shapes and the keepout measurements belong to another revision. Plan a source-safe geometry campaign and its qualification boundaries.", "should_trigger": true},
+  {"id": "plain-statistic", "query": "What is the arithmetic mean of 2, 4 and 9? Give only the number.", "should_trigger": false},
+  {"id": "ui-layout", "query": "Suggest a clearer layout for a website login form: email, password and a submit button. Do not discuss hardware or CAD.", "should_trigger": false},
+  {"id": "plain-export", "query": "Explain a basic CAD STEP-to-STL export for a decorative model. I only need a file-format conversion, not engineering decisions, redesign or optimization.", "should_trigger": false},
+  {"id": "rust-explanation", "query": "Explain the difference between Rust Option and Result in two sentences. No codebase changes.", "should_trigger": false}
+]
