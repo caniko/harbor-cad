@@ -312,6 +312,8 @@ enum Job {
 }
 #[derive(Subcommand)]
 enum Cad {
+    /// Read-only FCStd archive/XML inventory; never opens native CAD or fetches LFS.
+    Audit { file: PathBuf },
     /// Verify original CAD triangles and explicit region optical properties without solving.
     PrepareSpectralScene { request: PathBuf },
     /// Independently approve direct-only original-CAD spectral power and dose.
@@ -683,6 +685,7 @@ fn run(cli: Cli) -> Result<()> {
             request: Box::new(read(&request)?),
         },
         Commands::Cad { command } => match command {
+            Cad::Audit { file } => return print(&harbor_cad::cad_audit::audit(&file)?),
             Cad::PrepareSpectralScene { request } => Operation::PrepareCadSpectralScene {
                 request: Box::new(read(&request)?),
             },

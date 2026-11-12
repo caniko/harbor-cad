@@ -116,6 +116,8 @@
       pname = "harbor-cad";
       version = "0.1.1";
       CARGO_BUILD_JOBS = "2";
+      nativeCheckInputs = [pkgs.python313];
+      HARBOR_CAD_UNZIP = "${pkgs.unzip}/bin/unzip";
       HARBOR_CAD_SYSTEMCTL = "${pkgs.systemd}/bin/systemctl";
       HARBOR_CAD_SYSTEMD_RUN = "${pkgs.systemd}/bin/systemd-run";
       HARBOR_CAD_NIX_STORE = "${pkgs.nix}/bin/nix-store";

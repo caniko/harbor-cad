@@ -9,6 +9,7 @@ mod atmospheric_transport_receipt;
 mod atmospheric_transport_tests;
 pub mod authority;
 pub mod cad;
+pub mod cad_audit;
 pub mod cad_mesh;
 pub mod cad_sheet_variant;
 pub mod cad_source;

@@ -2809,6 +2809,8 @@ pub fn schemas() -> serde_json::Value {
         serde_json::json!(schemars::schema_for!(crate::design_screen::Request));
     schemas["DesignScreenReport"] =
         serde_json::json!(schemars::schema_for!(crate::design_screen::Report));
+    schemas["CadArchiveInventory"] =
+        serde_json::json!(schemars::schema_for!(crate::cad_audit::Inventory));
     schemas["CadSheetVariantRequest"] = serde_json::json!(schemars::schema_for!(
         crate::cad_sheet_variant::CadSheetVariantRequest
     ));
