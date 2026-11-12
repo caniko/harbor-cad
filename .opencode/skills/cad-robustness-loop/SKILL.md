@@ -186,7 +186,10 @@ unknown; two proposed requirement values do not establish a two-dimensional box.
   select meaningful normalized margins, not boolean pass counts. In harbor-cad,
   `maximize_min_margin` reports `-min(weight * Constraint::margin(value))`:
   lower score is better; weights are finite/positive and each term selects
-  exactly one constraint. Unselected hard constraints still govern feasibility.
+  exactly one constraint. That margin is already normalized: it divides by the
+  constraint's own `|limit|` scale, `le` as `(limit - value)/|limit|` and `ge` as
+  `(value - limit)/|limit|`. Use it as reported; never divide by the limit, band
+  or weight a second time. Unselected hard constraints still govern feasibility.
   Missing/nonfinite/overflowed selected data remains unknown. Show bottlenecks
   and ties rather than claiming extra stock always improves the objective.
 - For supplied-number maximin references, use `harbor-cad design screen FILE`

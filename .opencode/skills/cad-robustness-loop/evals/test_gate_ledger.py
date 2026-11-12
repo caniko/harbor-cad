@@ -78,6 +78,11 @@ class GateLedger(unittest.TestCase):
         self.assertIn("one ask per turn", self.flat)
         self.assertIn("one reading to confirm", self.flat)
 
+    def test_margin_is_already_normalized(self):
+        # The engine divides by |limit|; a second normalization was claimed twice.
+        self.assertIn("already normalized", self.flat)
+        self.assertIn("never divide by the limit", self.flat)
+
 
 if __name__ == "__main__":
     unittest.main()
