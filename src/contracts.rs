@@ -2805,6 +2805,10 @@ pub fn schemas() -> serde_json::Value {
         serde_json::json!(schemars::schema_for!(crate::design::ExternalCandidate));
     schemas["DesignStatus"] = serde_json::json!(schemars::schema_for!(crate::design::DesignStatus));
     schemas["DesignReport"] = serde_json::json!(schemars::schema_for!(crate::design::DesignReport));
+    schemas["DesignScreenRequest"] =
+        serde_json::json!(schemars::schema_for!(crate::design_screen::Request));
+    schemas["DesignScreenReport"] =
+        serde_json::json!(schemars::schema_for!(crate::design_screen::Report));
     schemas["CadSheetVariantRequest"] = serde_json::json!(schemars::schema_for!(
         crate::cad_sheet_variant::CadSheetVariantRequest
     ));

@@ -435,6 +435,13 @@ enum Artifact {
 enum Design {
     /// Print the CI-runnable analytical example envelope with a known optimum.
     Init,
+    /// Read-only maximin reference over supplied metrics and a checked box ledger; no worker or approval.
+    Screen {
+        file: PathBuf,
+        /// Render the computed report directly, without hand-calculated annotations.
+        #[arg(long)]
+        markdown: bool,
+    },
     /// Validate an envelope and its strict template substitution; no worker.
     Validate {
         file: PathBuf,
@@ -844,6 +851,15 @@ fn run(cli: Cli) -> Result<()> {
         }
         Commands::Design { command } => match command {
             Design::Init => return print(&harbor_cad::design::example()?),
+            Design::Screen { file, markdown } => {
+                let report = harbor_cad::design_screen::screen(&read(&file)?)?;
+                if markdown {
+                    std::io::stdout()
+                        .write_all(harbor_cad::design_screen::markdown(&report).as_bytes())?;
+                    return Ok(());
+                }
+                return print(&report);
+            }
             Design::Validate { file } => {
                 return print(&harbor_cad::design::prepare(&read(&file)?, None)?);
             }

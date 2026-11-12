@@ -31,6 +31,7 @@ mod cooling_vtk;
 pub mod correlation;
 pub mod design;
 pub mod design_providers;
+pub mod design_screen;
 pub mod devices;
 pub mod enclosure_thermal;
 pub mod estimates;
