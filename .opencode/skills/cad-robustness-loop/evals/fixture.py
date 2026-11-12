@@ -24,6 +24,38 @@ def digest(value):
     return hashlib.sha256(value).hexdigest()
 
 
+class Unavailable(Exception):
+    """The configured CLI cannot run this case."""
+
+
+def native_cli():
+    """The one CLI the checker and its regression test both use."""
+    return Path(
+        os.environ.get(
+            "HARBOR_CAD_TEST_CLI",
+            str(Path(__file__).resolve().parents[4] / "target/debug/harbor-cad"),
+        )
+    )
+
+
+def design_screen_cli():
+    """Return the configured CLI, or raise Unavailable without `design screen`."""
+    cli = native_cli()
+    try:
+        probe = subprocess.run(
+            [str(cli), "design", "screen", "--help"], capture_output=True, timeout=10
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        raise Unavailable(f"{cli} is not runnable: {error}") from error
+    if probe.returncode != 0:
+        raise Unavailable(
+            f"{cli} has no `design screen`; this case needs an engine build that "
+            "provides it. Committed harbor-cad source does not (SKILL.md, engine "
+            "prerequisite)"
+        )
+    return cli
+
+
 def unique(pairs):
     result = dict(pairs)
     assert len(result) == len(pairs), "duplicate JSON field"
@@ -234,10 +266,7 @@ def check(case, root, output):
             "change-record.json",
         }
     elif case == "bounded-objective":
-        cli = os.environ.get(
-            "HARBOR_CAD_TEST_CLI",
-            str(Path(__file__).resolve().parents[4] / "target/debug/harbor-cad"),
-        )
+        cli = str(design_screen_cli())
         command = [cli, "design", "screen", str(root / "screen.json")]
         expected_report = subprocess.run(
             command, check=True, capture_output=True, timeout=10
@@ -279,7 +308,13 @@ def main():
             with (root / filename).open("xb") as stream:
                 stream.write(data)
     elif action == "check" and len(rest) == 1:
-        check(case, root, Path(rest[0]))
+        try:
+            check(case, root, Path(rest[0]))
+        except Unavailable as error:
+            print(
+                json.dumps({"case": case, "passed": False, "unavailable": str(error)})
+            )
+            raise SystemExit(3)
     else:
         raise ValueError(__doc__)
 

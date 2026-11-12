@@ -105,9 +105,10 @@ class FixtureCheck(unittest.TestCase):
             for name, data in fixture.inputs("bounded-objective").items():
                 (root / name).write_bytes(data)
             output.mkdir()
-            cli = str(
-                Path(fixture.__file__).resolve().parents[4] / "target/debug/harbor-cad"
-            )
+            try:
+                cli = str(fixture.design_screen_cli())
+            except fixture.Unavailable as error:
+                self.skipTest(str(error))
             command = [cli, "design", "screen", str(root / "screen.json")]
             report = subprocess.run(
                 command, check=True, capture_output=True, timeout=10

@@ -53,6 +53,13 @@ keeps its contiguous ID set (eight G0 checks, so a truncated gate fails), and th
 supersession and one-ask rules stay stated. Dropping G0.7/G0.8 fails three tests.
 Passing it does not show a sweep passes.
 
+`HARBOR_CAD_TEST_CLI` selects the engine both the checker and `test_fixture.py`
+use; there is no second hardcoded path. `bounded-objective` needs an engine build
+that provides `design screen`, which committed harbor-cad source does not: it
+probes `design screen --help` and the test skips, and the checker prints
+`"passed": false` with the reason and exits 3. Record the CLI path and build
+identity with any artifact receipt; a skipped case is unavailable, never a pass.
+
 The evidence verifier checks 24 task reads, exact assertions/counts, four real
 dialogue histories and identity manifests. Its current
 `runner_read_boundary_clean: false` is a recorded failure, not verification error.

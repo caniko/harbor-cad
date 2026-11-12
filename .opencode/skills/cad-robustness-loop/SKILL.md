@@ -186,10 +186,16 @@ unknown; two proposed requirement values do not establish a two-dimensional box.
   select meaningful normalized margins, not boolean pass counts. In harbor-cad,
   `maximize_min_margin` reports `-min(weight * Constraint::margin(value))`:
   lower score is better; weights are finite/positive and each term selects
-  exactly one constraint. That margin is already normalized: it divides by the
-  constraint's own `|limit|` scale, `le` as `(limit - value)/|limit|` and `ge` as
-  `(value - limit)/|limit|`. Use it as reported; never divide by the limit, band
-  or weight a second time. Unselected hard constraints still govern feasibility.
+  exactly one constraint. That margin is already normalized. The engine is:
+  `let limit = self.effective_limit(); let scale = if self.limit == 0. { 1. } else
+  { self.limit.abs() };` then `ConstraintOp::Le => (limit - value) / scale` and
+  `ConstraintOp::Ge => (value - limit) / scale`. `effective_limit()` tightens the
+  declared limit by `safety_factor` (default 1): `le` with a non-negative limit,
+  or `ge` with a negative one, divides by the factor; the other two cases
+  multiply. So the numerator is the safety-adjusted limit and the scale is the
+  raw limit's magnitude, or 1 when the raw limit is zero. Use the margin as
+  reported; never divide by the limit, band or weight a second time. Unselected
+  hard constraints still govern feasibility.
   Missing/nonfinite/overflowed selected data remains unknown. Show bottlenecks
   and ties rather than claiming extra stock always improves the objective.
 - For supplied-number maximin references, use `harbor-cad design screen FILE`
@@ -202,6 +208,15 @@ unknown; two proposed requirement values do not establish a two-dimensional box.
   The report is reference-only: supplied metrics/units and estimates are not
   measured physics, envelope approval or worker qualification. If tools are
   forbidden or unavailable, leave unsupported figures symbolic/unknown instead.
+- Engine prerequisite — check before you cite a capability. Committed harbor-cad
+  source provides `Constraint::margin`, `safety_factor`, `max_evaluations` and
+  `refine_top_k`, but not `ObjectiveKind::MaximizeMinMargin`, `design screen` or
+  `cad audit`: those live only in an uncommitted workspace build. Probe the CLI
+  you were handed (`harbor-cad design screen --help`, `harbor-cad cad audit
+  --help`) and record which build answered. If a capability is absent, report it
+  unavailable with that prerequisite and say it is pending upstream; quote the
+  objective and margin definitions as intended semantics, never as a receipt from
+  an engine you could not run.
 - Bound evaluations, time, threads, memory and retained bytes. Validate the
   envelope and effective-worker preflight before separately authorized execution.
   In harbor-cad, `max_evaluations` is at most **32 total**, including refinements;

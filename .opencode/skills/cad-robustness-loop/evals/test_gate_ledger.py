@@ -83,6 +83,11 @@ class GateLedger(unittest.TestCase):
         self.assertIn("already normalized", self.flat)
         self.assertIn("never divide by the limit", self.flat)
 
+    def test_engine_prerequisite_is_declared(self):
+        # design screen / maximize_min_margin / cad audit are not committed engine.
+        self.assertIn("Engine prerequisite", self.flat)
+        self.assertIn("pending upstream", self.flat)
+
 
 if __name__ == "__main__":
     unittest.main()
