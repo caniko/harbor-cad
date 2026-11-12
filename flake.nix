@@ -297,6 +297,9 @@
         cp -r ${self}/examples ./examples
         cp -r ${self}/data ./data
         cp -r ${self}/src ./src
+        # Declaration-level tests read these from the checkout root.
+        cp -r ${self}/nix ./nix
+        cp ${./flake.nix} flake.nix
         cp ${./flake.lock} flake.lock
         cp ${./Cargo.lock} Cargo.lock
         ${testEnv}/bin/python -m pytest -q python/tests
