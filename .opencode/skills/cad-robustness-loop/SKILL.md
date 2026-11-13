@@ -18,6 +18,8 @@ decision/check, including independent work; brevity removes speculation, not ste
 
 - Read repository instructions, status, relevant working/staged diffs and HEAD.
   Preserve unrelated work. Find existing contracts, generators and checks first.
+  A task that names its own authorized paths and tools narrows this list; inside
+  one, read, list and search only what it names.
 - Reconcile normative requirements with the retained assembly: component choices,
   functional interfaces, installation, allowed redesign and original preservation.
   An older specification is not evidence that the current CAD implements it.
@@ -26,7 +28,10 @@ decision/check, including independent work; brevity removes speculation, not ste
   For a FreeCAD/Document.xml archive, prefer the read-only
   `harbor-cad cad audit FILE` inventory, not regex. It uses bounded archive
   extraction and a real XML parser; it cannot audit STEP/IGES/BREP files. For
-  those, use a verified format-compatible path or report the unavailable gate.
+  those, use a verified format-compatible path or report the unavailable gate:
+  a format-compatible auditor still needs a real model, so a header-only STEP
+  part is unauditable even by a future archive auditor. Those are separate
+  prerequisites; one upgrade does not supply both.
   Retain the actual receipt and its scope, rather
   than claiming a parser from a visual count. `parametric_qualified: false` means
   unqualified, not proof that every dependency is absent. If this command is
@@ -83,6 +88,9 @@ answers across turns, record only what they approve, and stop interviewing when
 asked to summarize or implement the agreed subset.
 When interviewing, ask a direct question that elicits the missing value or choice.
 An instruction to approve an unfilled requirement template is not that question.
+Consequences you can derive — resulting loads, ratings, which checks change —
+belong in the explanation, conditionally; asking the operator to approve them is
+a second decision, not part of the one ask.
 Ask for missing service outcomes, not speculative implementation preferences.
 Once service/readiness and duty are approved, move to the next unresolved
 requirement; do not reopen them by proposing lower-power degraded standby.
@@ -104,15 +112,18 @@ conflict rather than silently converting redesign freedom into a component swap.
    calls/active duty, standby, heater energy and allowed energy credits. Identify
    required external network/access-control power. Distinguish battery-only cold
    start and continuous-use runtime from the accepted intermittent mission.
-3. Installation/exposure and life: site class, roof, sun, rain, snow/ice,
-   blockage/recovery, corrosion, service interval and replaceable parts.
-4. Manufacturing boundaries: body dimensions versus hood/stand-off/installed
+3. Installation/exposure class: site class, roof, sun, rain, snow/ice,
+   blockage/recovery. Ask this class alone; service life and maintenance are the
+   next decision, not part of this question.
+4. Service life and maintenance: life target, inspection/replacement interval,
+   replaceable parts and corrosion route.
+5. Manufacturing boundaries: body dimensions versus hood/stand-off/installed
    projection and service clearances; mass, quantities, cost, process and finish.
    Compare material routes against identical requirements before approving grades.
    If installed fit is unmeasured, name a bounded survey: assembled projection
    including hood/stand-off, doorway/door swing and service access, compared to
    the applicable limits. Merely recording "clearance unknown" is not that step.
-5. Protective architecture and qualification allocation: thermal paths/heaters,
+6. Protective architecture and qualification allocation: thermal paths/heaters,
    seals/retention/drainage, prototype measurements, supplier and lab evidence.
 
 Ingress/impact ratings do not imply corrosion, icing, UV, maintenance-free life
@@ -159,11 +170,14 @@ required check with its name in a future evaluation budget.
 | G1 — mating interface | G1.1 new matching gasket or explicit reuse revalidation; G1.2 both sides' seating; G1.3 continuous support; G1.4 compression stops. Compression, fill and tolerance acceptance stay unknown without supplier/material data. |
 | Q0 — qualification | Q0.1 packaged-worker chain; Q0.2 assembled physical tests. Record each as unrun separately; sampled stock and nominal bearing prove neither. |
 
-A gate is the whole set. Listing four of the eight G0 checks is an incomplete gate,
-not a summary, and the omitted checks count as missing evidence. Report each gate
-you rely on as its full ID set with one status: proposed/not run, run with receipt,
-or unavailable with its exact prerequisite. Seal support stays a native G0
-geometry check even when a mating-interface G1 check also covers support.
+A gate is the whole set and nothing more. Listing four of the eight G0 checks is
+an incomplete gate, not a summary, and the omitted checks count as missing
+evidence; an appended G0.9 or renamed ID is a different, invalid set. Report each
+gate you rely on as its full ID set with one status: proposed/not run, run with
+receipt, or unavailable with its exact prerequisite. Name a gate by that defined
+set, never by an adjective that redefines it (Q0 is not a numerical reference).
+Seal support stays a native G0 geometry check even when a mating-interface G1
+check also covers support.
 
 Preserve the reported metric and units until D0 establishes its meaning. Do not
 rename a failed sample as another dimension, infer its datum, treat a threshold
@@ -178,9 +192,11 @@ approval and a new contract/approval identity. Keep manufacturing steps explicit
 D0 applies to a reported failure, not every new task. It may reuse an identical
 baseline evaluation; do not invent a mandatory extra run or minimum budget from
 the checklist. Compute counts from the actual proposed coordinates and work.
-An acceptance threshold is not automatically a design coordinate. Without a
-declared candidate set/ranges, the corner count and minimum campaign demand are
-unknown; two proposed requirement values do not establish a two-dimensional box.
+An acceptance threshold is not automatically a design coordinate, and a range or
+cap is not one either: a wider span adds no corner, only distinct stated values
+and added dimensions do. Without a declared candidate set/ranges, the corner count
+and minimum campaign demand are unknown; two proposed requirement values do not
+establish a two-dimensional box.
 
 - Separate hard feasibility from the objective. For robustness-first searches,
   select meaningful normalized margins, not boolean pass counts. In harbor-cad,
@@ -194,10 +210,20 @@ unknown; two proposed requirement values do not establish a two-dimensional box.
   or `ge` with a negative one, divides by the factor; the other two cases
   multiply. So the numerator is the safety-adjusted limit and the scale is the
   raw limit's magnitude, or 1 when the raw limit is zero. Use the margin as
-  reported; never divide by the limit, band or weight a second time. Unselected
-  hard constraints still govern feasibility.
+  reported; never divide by the limit, band or weight a second time, and never
+  restate this relation as a simplified ratio such as `x/L`. Recomputing
+  a supplied margin to check it changes neither the number nor the applied
+  normalization, so report a re-division as not applied: status fields describe
+  the result you emit, not the diagnostic work behind it.
+  Unselected hard constraints still govern feasibility.
   Missing/nonfinite/overflowed selected data remains unknown. Show bottlenecks
   and ties rather than claiming extra stock always improves the objective.
+  A lowered floor changes admissibility first. If that limit is not one of the
+  scored constraints, surviving candidates keep their scores and only the
+  feasible set moves; if it is scored, its own normalized margin changes under
+  the definition above and must come from a recomputation or the supplied
+  column, never be assumed unchanged. Either way a lower floor does not make the
+  ranking meaningless: a counterfactual column can still fork the order.
 - For supplied-number maximin references, use `harbor-cad design screen FILE`
   and `--markdown` to emit the same computed report as JSON and text. See
   `../../../examples/design-screen.json` and `DesignScreenRequest` in
@@ -211,14 +237,23 @@ unknown; two proposed requirement values do not establish a two-dimensional box.
 - Engine prerequisite — check before you cite a capability. Committed harbor-cad
   source provides `Constraint::margin`, `safety_factor`, `max_evaluations` and
   `refine_top_k`, but not `ObjectiveKind::MaximizeMinMargin`, `design screen` or
-  `cad audit`: those live only in an uncommitted workspace build. Probe the CLI
-  you were handed (`harbor-cad design screen --help`, `harbor-cad cad audit
-  --help`) and record which build answered. If a capability is absent, report it
-  unavailable with that prerequisite and say it is pending upstream; quote the
-  objective and margin definitions as intended semantics, never as a receipt from
-  an engine you could not run.
+  `cad audit`: those live only in an uncommitted workspace build. Probe only the
+  CLI you were handed, with help/version/schema subcommands, and retain the exact
+  argv, exit status and raw output. When only that probing is authorized, never
+  run a non-help subcommand, infer a capability from a root menu, or list/glob
+  `/nix`, `/usr`, `/opt`, `$HOME` or a profile path to find an interpreter or
+  another binary: a denied, empty or filename-only search is still a boundary
+  violation, while importing a runtime library or invoking an installed command
+  by name is not a search.
+  If a capability is absent, report it unavailable with its own prerequisite —
+  build, model and format limits separately — and say it is pending upstream;
+  never as a receipt from an engine you could not run.
 - Bound evaluations, time, threads, memory and retained bytes. Validate the
   envelope and effective-worker preflight before separately authorized execution.
+  An approved envelope, a regenerated identity or a passed preflight never
+  authorizes the run: name the separate run authorization as its own gate, bound
+  to those exact identities, and never present execution as the step that follows
+  approval directly.
   In harbor-cad, `max_evaluations` is at most **32 total**, including refinements;
   a larger parameter grid must be sampled within that cap, not exhaustively
   promised. Fidelity reruns use `refine_top_k <= 3`; ordinary search neighbours
@@ -269,9 +304,15 @@ and manually copying it into JSON is not verification. Reuse existing native
 tools; [record-provenance.md](references/record-provenance.md) is a tested
 `sha256sum`/`jq` pattern, not another helper or approval mechanism.
 Honor the requested file/tool boundary throughout, not only in the final output
-directory: stream calculations directly into authorized files, inspect stdout
-or use process substitution, and do not make scratch/schema copies or use
-unrelated browser/UI tools. Later cleanup does not undo an unauthorized write.
+directory. The task's tool allowlist is exhaustive: a tool you happen to have but
+the task did not list is forbidden, including one that would edit the requested
+artifact. Read, list and search only inside the stage's authorized paths; a
+parent path, sibling stage, repository history, docs tree or grader is outside
+it, and a missing path is not permission to try another. Stream calculations
+directly into authorized files, inspect stdout or use process substitution;
+create a scratch file only when the task explicitly authorizes it, and then only
+inside the authorized outputs path; otherwise write nothing but the requested
+outputs. Later cleanup does not undo an unauthorized write.
 Recheck affected gates, not every unrelated test: unchanged source-bound geometry
 or analytical evidence can retain its original claim. A mission-only edit needs
 a new contract/approval identity, not an invented need to rerun unchanged CAD.
@@ -285,7 +326,8 @@ recorded prior value and its identity, name the one field the new value binds, a
 recheck only that field. If no prior value was recorded, write "prior value not
 recorded", keep the old evidence inside its original scope, and compare source and
 approval identities before any rerun. Unchanged source bytes remain unchanged
-evidence.
+evidence. When the task fixes keys, IDs or literals, emit exactly those: no extra
+entries, renamed IDs or paraphrased required wording.
 
 Report briefly: approved decisions; changed derivative; checks and their scope;
 current bottleneck; missing inputs/open decisions; next executable gate.
@@ -293,6 +335,23 @@ Leave a small runnable regression for changed non-trivial logic.
 State only what a supplied input, a named gate or an executed receipt supports.
 Every extra diagnosis, comparison, normalization or absence claim is graded like an
 assertion, and absence from this conversation is not absence from the repository.
+
+- Make no empirical or statistical claim — non-separation, significance, a
+  population or lifetime inference, or a ranking of measured groups — without its
+  design: sample sizes, uncertainty and how the groups were compared.
+  Within-group scatter or overlap establishes neither a null/non-separated result
+  nor such a ranking, and a real difference can still be resolved when that
+  scatter exceeds a between-group one. Say what the evidence does not establish
+  and what measurement would. A deterministic comparison from supplied values or
+  an executed scorer — score order, weakest margin, pass/fail against a stated
+  limit — needs only those inputs.
+- Quote every identity — hash, digest, receipt, revision — in full from the tool
+  output; never abbreviate, ellipsize or retype a suffix.
+- Invent no input, sample, example or result: use supplied values, an executed
+  tool's output, or a standard unit/definition conversion applied unchanged; do
+  not fabricate an input or paraphrase a formula.
+- Claim "only"/"all"/exhaustive only from a tool output that enumerated the whole
+  set; an observed subset is not an inventory.
 
 ## harbor-cad references
 
@@ -302,3 +361,7 @@ supported native edits and sampled-wall limits. Consult
 `../../../docs/qualification.md` and the applicable recipe documentation before
 claiming execution or physics coverage. These paths are relative to this skill
 in its owning checkout; resolve the real path when loaded through a symlink.
+In a staged task the authorized tree is the stage root plus the paths the task
+names — its own `inputs/`, `fixture/`, `bin/` or outputs. Do not walk `../` for
+these documents or any other path, and treat an unnamed path as outside the
+contract rather than reading something else.

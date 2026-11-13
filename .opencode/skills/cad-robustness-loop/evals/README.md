@@ -50,8 +50,9 @@ python3 -B .opencode/skills/cad-robustness-loop-workspace/iteration-13/verify-ev
 
 `test_gate_ledger.py` guards the instruction set, not model behavior: every gate
 keeps its contiguous ID set (eight G0 checks, so a truncated gate fails), and the
-supersession and one-ask rules stay stated. Dropping G0.7/G0.8 fails three tests.
-Passing it does not show a sweep passes.
+supersession, one-ask, lowered-floor, capability-probe, separate-run-authorization,
+claim-design, full-identity and stage-boundary rules stay stated. Dropping
+G0.7/G0.8 fails three tests. Passing it does not show a sweep passes.
 
 `HARBOR_CAD_TEST_CLI` selects the engine both the checker and `test_fixture.py`
 use; there is no second hardcoded path. `bounded-objective` needs an engine build
