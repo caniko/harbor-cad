@@ -218,9 +218,12 @@ establish a two-dimensional box.
   Unselected hard constraints still govern feasibility.
   Missing/nonfinite/overflowed selected data remains unknown. Show bottlenecks
   and ties rather than claiming extra stock always improves the objective.
-  A lowered floor changes admissibility, not the scale: surviving candidates keep
-  their scores, the counterfactual can still fork the order, and a lower floor
-  does not make the ranking meaningless.
+  A lowered floor changes admissibility first. If that limit is not one of the
+  scored constraints, surviving candidates keep their scores and only the
+  feasible set moves; if it is scored, its own normalized margin changes under
+  the definition above and must come from a recomputation or the supplied
+  column, never be assumed unchanged. Either way a lower floor does not make the
+  ranking meaningless: a counterfactual column can still fork the order.
 - For supplied-number maximin references, use `harbor-cad design screen FILE`
   and `--markdown` to emit the same computed report as JSON and text. See
   `../../../examples/design-screen.json` and `DesignScreenRequest` in
@@ -307,8 +310,9 @@ artifact. Read, list and search only inside the stage's authorized paths; a
 parent path, sibling stage, repository history, docs tree or grader is outside
 it, and a missing path is not permission to try another. Stream calculations
 directly into authorized files, inspect stdout or use process substitution;
-create scratch only under the authorized outputs path and prefer none. Later
-cleanup does not undo an unauthorized write.
+create a scratch file only when the task explicitly authorizes it, and then only
+inside the authorized outputs path; otherwise write nothing but the requested
+outputs. Later cleanup does not undo an unauthorized write.
 Recheck affected gates, not every unrelated test: unchanged source-bound geometry
 or analytical evidence can retain its original claim. A mission-only edit needs
 a new contract/approval identity, not an invented need to rerun unchanged CAD.
@@ -332,15 +336,20 @@ State only what a supplied input, a named gate or an executed receipt supports.
 Every extra diagnosis, comparison, normalization or absence claim is graded like an
 assertion, and absence from this conversation is not absence from the repository.
 
-- Make no comparative or statistical claim without its design: sample sizes,
-  uncertainty and how the groups were compared. Within-group scatter or overlap
-  establishes neither a null/non-separated result nor a ranking, and a real
-  difference can still be resolved when that scatter exceeds a between-group one.
-  Say what the evidence does not establish and what measurement would.
+- Make no empirical or statistical claim — non-separation, significance, a
+  population or lifetime inference, or a ranking of measured groups — without its
+  design: sample sizes, uncertainty and how the groups were compared.
+  Within-group scatter or overlap establishes neither a null/non-separated result
+  nor such a ranking, and a real difference can still be resolved when that
+  scatter exceeds a between-group one. Say what the evidence does not establish
+  and what measurement would. A deterministic comparison from supplied values or
+  an executed scorer — score order, weakest margin, pass/fail against a stated
+  limit — needs only those inputs.
 - Quote every identity — hash, digest, receipt, revision — in full from the tool
   output; never abbreviate, ellipsize or retype a suffix.
-- Invent no example or number: keep a relation symbolic unless the inputs supply
-  the values and the applied formula.
+- Invent no input, sample, example or result: use supplied values, an executed
+  tool's output, or a standard unit/definition conversion applied unchanged; do
+  not fabricate an input or paraphrase a formula.
 - Claim "only"/"all"/exhaustive only from a tool output that enumerated the whole
   set; an observed subset is not an inventory.
 
@@ -352,6 +361,7 @@ supported native edits and sampled-wall limits. Consult
 `../../../docs/qualification.md` and the applicable recipe documentation before
 claiming execution or physics coverage. These paths are relative to this skill
 in its owning checkout; resolve the real path when loaded through a symlink.
-In a staged task only `task.md`, `SKILL.md`, `inputs/` and the requested outputs
-exist: do not walk `../` looking for these documents, and treat their absence as
-outside the contract rather than reading something else.
+In a staged task the authorized tree is the stage root plus the paths the task
+names — its own `inputs/`, `fixture/`, `bin/` or outputs. Do not walk `../` for
+these documents or any other path, and treat an unnamed path as outside the
+contract rather than reading something else.

@@ -97,6 +97,7 @@ class GateLedger(unittest.TestCase):
 
     def test_lowered_floor_still_ranks(self):
         self.assertIn("A lowered floor changes admissibility", self.flat)
+        self.assertIn("must come from a recomputation or the supplied", self.flat)
         self.assertIn("does not make the ranking meaningless", self.flat)
 
     def test_a_wider_range_adds_no_corner(self):
@@ -124,9 +125,9 @@ class GateLedger(unittest.TestCase):
 
     def test_comparative_claims_need_their_design(self):
         # service-cap-delta: scatter alone read as a null/non-separated result.
-        self.assertIn(
-            "Make no comparative or statistical claim without its design", self.flat
-        )
+        # The scope stops at deterministic scorer comparisons (bounded-objective).
+        self.assertIn("Make no empirical or statistical claim", self.flat)
+        self.assertIn("A deterministic comparison from supplied values", self.flat)
         self.assertIn("an observed subset is not an inventory", self.flat)
 
     def test_identities_are_quoted_in_full(self):
@@ -134,7 +135,10 @@ class GateLedger(unittest.TestCase):
         self.assertIn("never abbreviate, ellipsize or retype a suffix", self.flat)
 
     def test_no_invented_example_numbers_or_gate_names(self):
-        self.assertIn("Invent no example or number", self.flat)
+        self.assertIn("Invent no input, sample, example or result", self.flat)
+        self.assertIn(
+            "standard unit/definition conversion applied unchanged", self.flat
+        )
         self.assertIn("never by an adjective that redefines it", self.flat)
         self.assertIn("emit exactly those: no extra entries", self.flat)
 
@@ -143,8 +147,11 @@ class GateLedger(unittest.TestCase):
         self.assertIn("tool allowlist is exhaustive", self.flat)
         self.assertIn("a missing path is not permission to try another", self.flat)
         self.assertIn(
-            "create scratch only under the authorized outputs path", self.flat
+            "create a scratch file only when the task explicitly authorizes it",
+            self.flat,
         )
+        self.assertIn("write nothing but the requested outputs", self.flat)
+        self.assertIn("stage root plus the paths the task names", self.flat)
 
     def test_engine_prerequisite_is_declared(self):
         # design screen / maximize_min_margin / cad audit are not committed engine.
