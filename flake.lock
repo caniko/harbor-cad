@@ -33,20 +33,37 @@
         "type": "github"
       }
     },
+    "harbor-meta": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794482389,
+        "narHash": "sha256-Q1ZVqkgyUfXX5ykYqMfUBbXQuryRqH3z79wFTQgt3F0=",
+        "owner": "caniko",
+        "repo": "harbor-meta",
+        "rev": "b494b56e8174557b27956108d3ed7dd0e6425d0b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "caniko",
+        "repo": "harbor-meta",
+        "rev": "b494b56e8174557b27956108d3ed7dd0e6425d0b",
+        "type": "github"
+      }
+    },
     "harbor-py": {
       "flake": false,
       "locked": {
-        "lastModified": 1790835422,
-        "narHash": "sha256-sfCqdCyAupqNK0WNJPqbhUbZUNFkYwdRs+MtEg2PGuo=",
+        "lastModified": 1794175648,
+        "narHash": "sha256-UmTNjstn15DNNEmGb+zFTp63IQ/s9RqsEUBlKPWTh0E=",
         "owner": "caniko",
         "repo": "harbor-py",
-        "rev": "dab2acaf106eab7f94084ed8d02747c495f31737",
+        "rev": "4d9f2bad84bd375b1d02ec83ef3270e172f2ff5b",
         "type": "github"
       },
       "original": {
         "owner": "caniko",
         "repo": "harbor-py",
-        "rev": "dab2acaf106eab7f94084ed8d02747c495f31737",
+        "rev": "4d9f2bad84bd375b1d02ec83ef3270e172f2ff5b",
         "type": "github"
       }
     },
@@ -170,6 +187,7 @@
       "inputs": {
         "crane": "crane",
         "fleetix": "fleetix",
+        "harbor-meta": "harbor-meta",
         "harbor-py": "harbor-py",
         "harbor-rs": "harbor-rs",
         "nix-cache-pin": "nix-cache-pin",

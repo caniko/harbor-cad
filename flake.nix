@@ -2,6 +2,10 @@
   description = "Local-first scientific CAD worker, isolated adapters and explicit qualification";
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/8edc0c72e3a38faf5434e40d1f19431125fe4b30";
+    harbor-meta = {
+      url = "github:caniko/harbor-meta/b494b56e8174557b27956108d3ed7dd0e6425d0b";
+      flake = false;
+    };
     harbor-rs = {
       url = "github:caniko/harbor-rs/29073b5141de6244f1d41f567827d87948be91fa";
       flake = false;
@@ -11,7 +15,7 @@
       flake = false;
     };
     harbor-py = {
-      url = "github:caniko/harbor-py/dab2acaf106eab7f94084ed8d02747c495f31737";
+      url = "github:caniko/harbor-py/4d9f2bad84bd375b1d02ec83ef3270e172f2ff5b";
       flake = false;
     };
     fleetix = {
@@ -161,19 +165,18 @@
     retainedCooling = import ./nix/retained-cooling.nix {inherit pkgs inputs cudaPkgs;};
     spectral = import ./nix/spectral.nix {inherit pkgs;};
     atmosphere = import ./nix/atmosphere.nix {inherit pkgs;};
-    format = inputs.treefmt-nix.lib.evalModule pkgs {
-      projectRootFile = "flake.nix";
-      # Mirrors harbor's root: templates and byte-sensitive fixtures keep their
-      # source policy; simit owns workflow serialization.
-      settings.excludes = ["**/templates/**" "**/tests/fixtures/**" "**/checks/fixtures/**" ".github/workflows/*.yaml"];
-      programs.rustfmt = {
-        enable = true;
-        package = toolchain.rustToolchain;
-        edition = "2024";
+    treefmtArgs = {
+      harbor-meta.treefmtModules = {
+        nix = "${inputs.harbor-meta}/nix/treefmt/nix.nix";
+        toml = "${inputs.harbor-meta}/nix/treefmt/toml.nix";
       };
-      programs.alejandra.enable = true;
-      programs.ruff-format.enable = true;
+      harbor-rs.treefmtModules.rust = "${inputs.harbor-rs}/nix/treefmt/rust.nix";
+      harbor-py.treefmtModules.python = "${inputs.harbor-py}/nix/treefmt/python.nix";
+      rustfmtPackage = toolchain.rustToolchain;
     };
+    format = inputs.treefmt-nix.lib.evalModule pkgs (import ./nix/treefmt.nix {
+      inherit (treefmtArgs) harbor-meta harbor-rs harbor-py rustfmtPackage;
+    });
     # nixpkgs only moves to revisions whose upstream binaries for these
     # packages and the custom derivations' nixpkgs inputs are already cached.
     cachePin = rust.mkCachePin {
@@ -272,6 +275,7 @@
       };
     };
     checks.${system} = {
+      formatting = format.config.build.check self;
       rust = cli;
       inherit (native) paraview-egl-import;
       policy = pkgs.runCommand "harbor-cad-policy" {} ''

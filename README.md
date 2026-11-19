@@ -93,7 +93,7 @@ execution or resource estimate; Catalyst/Conduit/VTKHDF remain optional and defe
 cargo test --locked --jobs 2
 cargo clippy --locked --all-targets --jobs 2 -- -D warnings
 HARBOR_CAD_TEST_BINARY="$PWD/target/debug/harbor-cad" uv run --locked --project python pytest -q python/tests
-treefmt --config-file treefmt.toml
+nix develop -c treefmt --ci
 ```
 
 `python-test-environment` exposes the same locked Python/pytest/Ruff environment
