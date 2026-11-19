@@ -27,20 +27,6 @@ def main():
     if os.environ.get("GITHUB_ACTIONS") == "true":
         run(uv, "python", "install", "--no-config", "--no-bin", "3.13.15")
     run(uv, "sync", "--locked", "--project", "python", UV_PYTHON_DOWNLOADS="never")
-    run("cargo", "fmt", "--all", "--", "--check")
-    run(
-        uv,
-        "run",
-        "--locked",
-        "--project",
-        "python",
-        "ruff",
-        "format",
-        "--check",
-        "python",
-        "adapters",
-        "scripts",
-    )
     run(
         uv,
         "run",

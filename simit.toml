@@ -1,7 +1,6 @@
 [ci]
 platform = "github"
 provider = "actions"
-runtime = "cargo"
 runner = "ubuntu-24.04"
 check_command = "python3 scripts/check_cpu.py"
 extra_setup = [
@@ -10,3 +9,9 @@ extra_setup = [
 ]
 extra_env = { CARGO_BUILD_JOBS = "2", UV_BIN = ".ci-bootstrap/bin/uv", UV_PYTHON = "3.13.15" }
 all_features = false
+nix_builds = [".#checks.x86_64-linux.formatting"]
+
+[ci.nix_build]
+timeout_minutes = 20
+max_jobs = 2
+cores = 4
