@@ -22,12 +22,12 @@ Unsourced values stay `missing`.
 The classes come from ETSI EN 300 019-1-4 V2.2.1 (2014-04), clause 5.1 Table 1
 (free PDF from etsi.org). Non-weatherprotected locations:
 
-| Class | Low air | High air | Low RH | Solar | Air movement | IEC 60721-3-4 basis |
-|---|---|---|---|---|---|---|
-| `etsi-4-1` (4.1, most of Europe) | -33 °C | +40 °C | 15 % | 1120 W/m² | 50 m/s | 4K2/… |
-| `etsi-4-1e` (4.1E, extended) | -45 °C | +45 °C | 8 % | 1120 W/m² | 50 m/s | none (clause 4.2 note) |
-| `etsi-4-2l` (4.2L, extremely cold) | -65 °C | +35 °C | 20 % | 1120 W/m² | 50 m/s | 4K4L/… |
-| `etsi-4-2h` (4.2H, extremely warm dry) | -20 °C | +55 °C | 4 % | 1120 W/m² | 50 m/s | 4K4H/… |
+| Class                                  | Low air | High air | Low RH | Solar     | Air movement | IEC 60721-3-4 basis    |
+| -------------------------------------- | ------- | -------- | ------ | --------- | ------------ | ---------------------- |
+| `etsi-4-1` (4.1, most of Europe)       | -33 °C  | +40 °C   | 15 %   | 1120 W/m² | 50 m/s       | 4K2/…                  |
+| `etsi-4-1e` (4.1E, extended)           | -45 °C  | +45 °C   | 8 %    | 1120 W/m² | 50 m/s       | none (clause 4.2 note) |
+| `etsi-4-2l` (4.2L, extremely cold)     | -65 °C  | +35 °C   | 20 %   | 1120 W/m² | 50 m/s       | 4K4L/…                 |
+| `etsi-4-2h` (4.2H, extremely warm dry) | -20 °C  | +55 °C   | 4 %    | 1120 W/m² | 50 m/s       | 4K4H/…                 |
 
 High relative humidity is 100 % for every class. The 1120 W/m² solar value
 matches IEC 60068-2-5:2018 test Sa, which uses an AM1.5 spectrum over
@@ -66,12 +66,12 @@ Section `electronics` holds cited conservative defaults. They are not product
 data: replace them with the limiting part's datasheet and the real stack-up
 once those are known. Read them as `electronics:<id>.<low|high>`.
 
-| Id | Range | Design value | Source |
-|---|---|---|---|
-| `component-limit-industrial` | 85 °C | `.low` = 358.15 K | Microchip AN3539 ("standard industrial range of -40 °C to +85 °C"); Microchip dsPIC33A AEC-Q100 Grade 3 (-40 to +85 °C) |
-| `pcb-fr4-copper-in-plane` | 8.1–17.4 W/(m·K) | `.low` = 8.1 W/(m·K) (orthotropic board) | Graebner, Electronics Cooling 1995 (measured 8.1–15.9); Electronics Cooling 1998 (4-layer example 17.4) |
-| `pcb-fr4-copper-through-plane` | 0.26–0.81 W/(m·K) | `.low` = 0.26 W/(m·K) | Electronics Cooling 1998 (series rule 0.26); Graebner 1995 (measured 0.64–0.81) |
-| `pcb-surface-emissivity` | 0.15–0.9 | `.low` = 0.15 (cavity radiation) | FLIR support note on PCB thermography (plastic 0.9, metal about 0.15, coating-dependent) |
+| Id                             | Range             | Design value                             | Source                                                                                                                  |
+| ------------------------------ | ----------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `component-limit-industrial`   | 85 °C             | `.low` = 358.15 K                        | Microchip AN3539 ("standard industrial range of -40 °C to +85 °C"); Microchip dsPIC33A AEC-Q100 Grade 3 (-40 to +85 °C) |
+| `pcb-fr4-copper-in-plane`      | 8.1–17.4 W/(m·K)  | `.low` = 8.1 W/(m·K) (orthotropic board) | Graebner, Electronics Cooling 1995 (measured 8.1–15.9); Electronics Cooling 1998 (4-layer example 17.4)                 |
+| `pcb-fr4-copper-through-plane` | 0.26–0.81 W/(m·K) | `.low` = 0.26 W/(m·K)                    | Electronics Cooling 1998 (series rule 0.26); Graebner 1995 (measured 0.64–0.81)                                         |
+| `pcb-surface-emissivity`       | 0.15–0.9          | `.low` = 0.15 (cavity radiation)         | FLIR support note on PCB thermography (plastic 0.9, metal about 0.15, coating-dependent)                                |
 
 The 85 °C grade is an ambient operating range, and grade codes are
 manufacturer-specific. Applying the limit to the hotter of the board peak and
@@ -98,10 +98,10 @@ the board emissivity and the component limit (every part rated to at least
 `design_point(class, Point::Hot | Point::Cold)` returns SI values with their
 citation trail:
 
-| Point | Ambient | Solar | Film |
-|---|---|---|---|
-| Hot | high end of the high air temperature | peak class solar (1120 W/m²) | low end of `natural-still-air` (2.2) |
-| Cold | low end of the low air temperature | 0 (night) | high end of the class `wind_film` (188) |
+| Point | Ambient                              | Solar                        | Film                                    |
+| ----- | ------------------------------------ | ---------------------------- | --------------------------------------- |
+| Hot   | high end of the high air temperature | peak class solar (1120 W/m²) | low end of `natural-still-air` (2.2)    |
+| Cold  | low end of the low air temperature   | 0 (night)                    | high end of the class `wind_film` (188) |
 
 For class 4.1, the hot point is 313.15 K, 1120 W/m² and 2.2 W/(m²·K). The cold
 point is 240.15 K, 0 W/m² and 188 W/(m²·K).
@@ -128,17 +128,17 @@ conservative bound is the only route (see [enclosure thermal](enclosure-thermal.
 and `finish:<id>.emissivity` (low end) return the conservative ends;
 `film:<id>.<low|high>` returns the named end of any film.
 
-| Finish | α_s | ε | Source | Compatible |
-|---|---|---|---|---|
-| `powder-coat-white` (RAL 9016) | 0.20–0.22 | 0.82–0.92 | IGP TSR figure; NASA white paints for ε | Al, ss304 |
-| `powder-coat-light-grey` (RAL 7035) | 0.43–0.47 | 0.82–0.94 | IGP TSR figure; NASA paints for ε | Al, ss304 |
-| `powder-coat-dark-grey` (RAL 7016) | 0.91–0.92 | 0.82–0.94 | IGP TSR table | Al, ss304 |
-| `powder-coat-black` (RAL 9005) | 0.94–0.96 | 0.84–0.94 | IGP TSR figure; NASA black paints | Al, ss304 |
-| `anodize-clear` | 0.27–0.35 | 0.76–0.84 | NASA RP-1121 | Al |
-| `anodize-black` | 0.65–0.88 | 0.82–0.88 | NASA RP-1121 | Al |
-| `pigment-black-polymer` | 0.93–0.96 | 0.85–0.92 | NASA RP-1121 black plastics | PA12, ASA, PU |
-| `pigment-white-polymer` | missing | missing | no polymer-specific source | PA12, ASA, PU |
-| `bare` | material | material | — | all opaque |
+| Finish                              | α_s       | ε         | Source                                  | Compatible    |
+| ----------------------------------- | --------- | --------- | --------------------------------------- | ------------- |
+| `powder-coat-white` (RAL 9016)      | 0.20–0.22 | 0.82–0.92 | IGP TSR figure; NASA white paints for ε | Al, ss304     |
+| `powder-coat-light-grey` (RAL 7035) | 0.43–0.47 | 0.82–0.94 | IGP TSR figure; NASA paints for ε       | Al, ss304     |
+| `powder-coat-dark-grey` (RAL 7016)  | 0.91–0.92 | 0.82–0.94 | IGP TSR table                           | Al, ss304     |
+| `powder-coat-black` (RAL 9005)      | 0.94–0.96 | 0.84–0.94 | IGP TSR figure; NASA black paints       | Al, ss304     |
+| `anodize-clear`                     | 0.27–0.35 | 0.76–0.84 | NASA RP-1121                            | Al            |
+| `anodize-black`                     | 0.65–0.88 | 0.82–0.88 | NASA RP-1121                            | Al            |
+| `pigment-black-polymer`             | 0.93–0.96 | 0.85–0.92 | NASA RP-1121 black plastics             | PA12, ASA, PU |
+| `pigment-white-polymer`             | missing   | missing   | no polymer-specific source              | PA12, ASA, PU |
+| `bare`                              | material  | material  | —                                       | all opaque    |
 
 The powder-coat absorptances are α = 1 − TSR, from IGP-HWFclassic 59
 measurements (ASTM G197-14, AM1.5, on EN AW-5005). The figure values are read

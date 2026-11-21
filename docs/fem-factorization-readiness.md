@@ -11,11 +11,11 @@ substitute for the candidate ILP64 stack.
 
 These are inspected candidates, **not selected runtime dependencies**:
 
-| Component | Immutable source / observation | Consequence |
-|---|---|---|
-| PaStiX4CalculiX | [`d6b493bc431ecf860b3578a2ee6a25f392eb44be`](https://github.com/Dhondtguido/PaStiX4CalculiX/tree/d6b493bc431ecf860b3578a2ee6a25f392eb44be), CMake version 6.0.1 | Retain this modified stack; a generic current PaStiX package is not a verified replacement. |
-| Patched PaRSEC | `pastix-6.0.1` resolves to `b580d208094e6cb4106e41d5eeec84f304a090b8` in the [repository required by PaStiX](https://bitbucket.org/mfaverge/parsec/) | Tag/source availability does not establish CalculiX compatibility. |
-| CalculiX 2.23 | [Official installation instructions](https://www.dhondt.de/ccx_2.23.README.INSTALL), lines 77–126 in the retained snapshot | Modified PaStiX requires an eight-byte-integer stack and the separate `Makefile_i8`/`-DPASTIX` build. The current LP64 BLAS/SPOOLES build cannot be relabelled. |
+| Component       | Immutable source / observation                                                                                                                                  | Consequence                                                                                                                                                     |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PaStiX4CalculiX | [`d6b493bc431ecf860b3578a2ee6a25f392eb44be`](https://github.com/Dhondtguido/PaStiX4CalculiX/tree/d6b493bc431ecf860b3578a2ee6a25f392eb44be), CMake version 6.0.1 | Retain this modified stack; a generic current PaStiX package is not a verified replacement.                                                                     |
+| Patched PaRSEC  | `pastix-6.0.1` resolves to `b580d208094e6cb4106e41d5eeec84f304a090b8` in the [repository required by PaStiX](https://bitbucket.org/mfaverge/parsec/)            | Tag/source availability does not establish CalculiX compatibility.                                                                                              |
+| CalculiX 2.23   | [Official installation instructions](https://www.dhondt.de/ccx_2.23.README.INSTALL), lines 77–126 in the retained snapshot                                      | Modified PaStiX requires an eight-byte-integer stack and the separate `Makefile_i8`/`-DPASTIX` build. The current LP64 BLAS/SPOOLES build cannot be relabelled. |
 
 The pinned PaStiX [CMake source](https://github.com/Dhondtguido/PaStiX4CalculiX/blob/d6b493bc431ecf860b3578a2ee6a25f392eb44be/CMakeLists.txt#L48-L51)
 unconditionally adds `-march=native` and site-specific CUDA include paths. Its

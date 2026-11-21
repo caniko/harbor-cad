@@ -97,15 +97,15 @@ Use whole-device flow/thermal models and local gap/wetting submodels. Estimate a
 
 ## 5. Engineering recipes and boundaries
 
-| Recipe | Implement and verify | Never infer automatically |
-|---|---|---|
-| Cold soak → restart | Transient thermal history, power, interfaces; component temperatures and heater energy | Electronic boot reliability |
-| Thermal expansion / seals | Preload, contact/gasket data, temperature transfer; displacement and residual compression | Sealing with missing cold-material data |
-| Wind / local water | Wall-mounted airflow; qualified wetting/retention; mass balance and refinement | Whole-device waterproofness from splash images |
-| Snow | Prescribed coverage, insulation and blocked openings | Snow deposition or adhesion |
-| Retained water → freeze | Conservative state transfer; phase fractions, temperature, energy balance | Expansion pressure, fracture or freeze–thaw lifetime |
-| Solar / UV | Angular direct/diffuse inputs, surface irradiance and time-integrated dose | Material lifetime without calibration |
-| Enclosure steady thermal | Conformal Gmsh mesh of registered closed solids; CalculiX steady conduction with declared power, film, optional solar/radiation and a lumped internal-air node; recomputed energy balance | Transients, internal convection, condensation, contact resistance or product thermal acceptance |
+| Recipe                    | Implement and verify                                                                                                                                                                      | Never infer automatically                                                                       |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Cold soak → restart       | Transient thermal history, power, interfaces; component temperatures and heater energy                                                                                                    | Electronic boot reliability                                                                     |
+| Thermal expansion / seals | Preload, contact/gasket data, temperature transfer; displacement and residual compression                                                                                                 | Sealing with missing cold-material data                                                         |
+| Wind / local water        | Wall-mounted airflow; qualified wetting/retention; mass balance and refinement                                                                                                            | Whole-device waterproofness from splash images                                                  |
+| Snow                      | Prescribed coverage, insulation and blocked openings                                                                                                                                      | Snow deposition or adhesion                                                                     |
+| Retained water → freeze   | Conservative state transfer; phase fractions, temperature, energy balance                                                                                                                 | Expansion pressure, fracture or freeze–thaw lifetime                                            |
+| Solar / UV                | Angular direct/diffuse inputs, surface irradiance and time-integrated dose                                                                                                                | Material lifetime without calibration                                                           |
+| Enclosure steady thermal  | Conformal Gmsh mesh of registered closed solids; CalculiX steady conduction with declared power, film, optional solar/radiation and a lumped internal-air node; recomputed energy balance | Transients, internal convection, condensation, contact resistance or product thermal acceptance |
 
 Start with one-way transfers. Record source/destination regions, units, orientation, interpolation and conservation losses. **Velocity alone does not supply a convection coefficient:** use documented measurements/correlations or validated thermal-flow data with heat flux and wall/reference temperatures; reject ill-conditioned conversions.
 

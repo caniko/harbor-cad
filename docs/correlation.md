@@ -30,13 +30,24 @@ traversing and symlinked paths refuse. The report retains the CSV SHA-256.
 ## Request
 
 ```json
-{"schema_version":1,"job_id":"<uuid>","measurement_csv":"chamber/run7.csv",
- "dimension":"temperature","thermal_stage":0,
- "probe_map":{"tc1":{"association":"node","node_id":12}},
- "time_offset_s":-30.0,"time_window":[60.0,3600.0],
- "tolerance":{"abs":{"value":1.0,"unit":"delta_degC"},"rel":0.0},
- "provenance":{"test_id":"CC-007","rig":"chamber A","sensor_type":"type T thermocouple",
-   "sensor_accuracy":{"value":0.5,"unit":"K"},"date":"2026-10-01"}}
+{
+  "schema_version": 1,
+  "job_id": "<uuid>",
+  "measurement_csv": "chamber/run7.csv",
+  "dimension": "temperature",
+  "thermal_stage": 0,
+  "probe_map": { "tc1": { "association": "node", "node_id": 12 } },
+  "time_offset_s": -30.0,
+  "time_window": [60.0, 3600.0],
+  "tolerance": { "abs": { "value": 1.0, "unit": "delta_degC" }, "rel": 0.0 },
+  "provenance": {
+    "test_id": "CC-007",
+    "rig": "chamber A",
+    "sensor_type": "type T thermocouple",
+    "sensor_accuracy": { "value": 0.5, "unit": "K" },
+    "date": "2026-10-01"
+  }
+}
 ```
 
 `thermal_stage` follows the `sample-thermal` rule: required for a coupled

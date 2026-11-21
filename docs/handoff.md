@@ -21,13 +21,13 @@ privileged and push nothing without the operator's authorization.
 
 ## Revisions
 
-| Item | State |
-| --- | --- |
-| Harbor-CAD | `caniko/harbor-cad`, branch `trunk`; also the harbor superproject's `components/cad` submodule |
-| Trunk | `7741f2c`: PR #1 (the pilot design loop, 39 commits + `28ed12c`, which fixes the pinned 1.94 Clippy lints) and PR #2 (the harbor superproject sync, Python workspace moved to `python/`) |
-| Last Nix-packaged source | `96563f4` (2026-10-20); nothing since has been built with Nix |
-| harbor-rs | `29073b5` provides `lib.mkCachePin` (nix-cache-pin `0.3.0` = `a69647e`), CI green |
-| Harbor-CAD pins | nixpkgs `73e728dd…` (URL rev); toolchain `rust-toolchain.toml` 1.94.0 |
+| Item                     | State                                                                                                                                                                                    |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Harbor-CAD               | `caniko/harbor-cad`, branch `trunk`; also the harbor superproject's `components/cad` submodule                                                                                           |
+| Trunk                    | `7741f2c`: PR #1 (the pilot design loop, 39 commits + `28ed12c`, which fixes the pinned 1.94 Clippy lints) and PR #2 (the harbor superproject sync, Python workspace moved to `python/`) |
+| Last Nix-packaged source | `96563f4` (2026-10-20); nothing since has been built with Nix                                                                                                                            |
+| harbor-rs                | `29073b5` provides `lib.mkCachePin` (nix-cache-pin `0.3.0` = `a69647e`), CI green                                                                                                        |
+| Harbor-CAD pins          | nixpkgs `73e728dd…` (URL rev); toolchain `rust-toolchain.toml` 1.94.0                                                                                                                    |
 
 Hosted CI runs Clippy from the pinned 1.94 toolchain. Local gates on a newer
 nightly once missed 9 lints, so land every change through a PR with CI, or
@@ -86,12 +86,12 @@ All of this is on trunk; the docs are in `docs/`.
 Reference-solver ablation for the aluminium/white candidate. These are
 **pure-Python reference solver results on a simplified analogue, not CalculiX**:
 
-| Credit | With window | Opaque lid |
-| --- | --- | --- |
-| none | none (air 373.6 K at 1 W) | 2.04 W |
-| linearized radiation | 10.11 W | 10.77 W |
-| orthotropic board | none | 2.08 W |
-| both (pilot) | 10.42 W | 11.10 W |
+| Credit               | With window               | Opaque lid |
+| -------------------- | ------------------------- | ---------- |
+| none                 | none (air 373.6 K at 1 W) | 2.04 W     |
+| linearized radiation | 10.11 W                   | 10.77 W    |
+| orthotropic board    | none                      | 2.08 W     |
+| both (pilot)         | 10.42 W                   | 11.10 W    |
 
 Latest source gate on `7741f2c` (`scripts/check_cpu.py`, ambient toolchain):
 288 Rust and 300 Python tests passed, with formatting, Ruff and Clippy clean.

@@ -11,10 +11,10 @@ FEM receipt without a temperature.
 Both plans carry one exclusive field, `cad_solids` (`src/enclosure_thermal.rs`);
 the box path (`cad_source`, `imported_fem`) is unchanged.
 
-| Request | Operation (CLI / chain) | Plan |
-|---|---|---|
-| `{source_job, regions, mesh}` | `cad solid-mesh` / `plan_cad_solid_mesh` | v7, stage `mesh` (`cad_mesh`) |
-| `{mesh_job, spec}` | `enclosure-thermal` / `plan_enclosure_thermal` | v8, stage `fem-imported` (`fem_imported`) |
+| Request                       | Operation (CLI / chain)                        | Plan                                      |
+| ----------------------------- | ---------------------------------------------- | ----------------------------------------- |
+| `{source_job, regions, mesh}` | `cad solid-mesh` / `plan_cad_solid_mesh`       | v7, stage `mesh` (`cad_mesh`)             |
+| `{mesh_job, spec}`            | `enclosure-thermal` / `plan_enclosure_thermal` | v8, stage `fem-imported` (`fem_imported`) |
 
 `regions` is a sorted list of 1–8 registered region names of an authorized CAD
 job (original or v2 sheet variant). `mesh` is explicit:
@@ -119,7 +119,7 @@ shaded surface takes one label; the receipt's areas make this auditable.
     node does. Because the board is convex and fully enclosed, the view factor
     board → walls is 1.
   - Coefficient: the two-surface grey diffuse enclosure gives
-    ε_eff = 1/(1/ε_b + (A_b/A_w)(1/ε_w − 1)). It uses low-end *interior*
+    ε_eff = 1/(1/ε_b + (A_b/A_w)(1/ε_w − 1)). It uses low-end _interior_
     emissivities. ε_w is the minimum over the wall regions, and a finished
     library material takes the lower of finish and bare material, because
     interiors may be uncoated (aluminium + white powder coat: 0.03). Without a
@@ -135,7 +135,7 @@ shaded surface takes one label; the receipt's areas make this auditable.
     2·h_cr and wall faces at 2·h_cr·A_b/A_w. Equal total conductances put the
     node at (T̄_b + T̄_w)/2, so it carries h_cr·A_b·(T̄_b − T̄_w). The term is
     linear, so superposition stays exact.
-  - Postcondition: the pair inequality needs T_i ≥ T_j ≥ Ta for *every* pair.
+  - Postcondition: the pair inequality needs T_i ≥ T_j ≥ Ta for _every_ pair.
     FE surfaces are not isothermal, so the receipt checks the extremes: the
     minimum board-surface node must be ≥ the maximum wall node, and the
     minimum wall node ≥ Ta. Nodes are corners plus C3D10 midsides, the
@@ -232,12 +232,12 @@ With the radiation off or linearized, the chords hold within 0.1 K, and with
 T⁴ radiation they do not. Supported power of the aluminium/white-powder-coat
 candidate (verified by a third solve within 0.5 K; the PCB peak binds):
 
-| Credit | With window | Opaque lid |
-|---|---|---|
-| none (isotropic 0.26, no radiation) | none (air 373.6 K at 1 W) | 2.04 W |
-| linearized radiation | 10.11 W | 10.77 W |
-| orthotropic board | none | 2.08 W |
-| both (pilot) | 10.42 W | 11.10 W |
+| Credit                              | With window               | Opaque lid |
+| ----------------------------------- | ------------------------- | ---------- |
+| none (isotropic 0.26, no radiation) | none (air 373.6 K at 1 W) | 2.04 W     |
+| linearized radiation                | 10.11 W                   | 10.77 W    |
+| orthotropic board                   | none                      | 2.08 W     |
+| both (pilot)                        | 10.42 W                   | 11.10 W    |
 
 The window cavity deposit and the 1.2 W/(m²·K) cavity film stay. The
 analogue's uniform board source and coarse board mesh leave little for
@@ -247,11 +247,11 @@ The pilot leaves `cavity_radiation` off. On the analogue with both credits
 on, the strict postcondition fails (minimum board-surface node against
 maximum wall node, reference solver):
 
-| Case | Board surface min | Wall max |
-|---|---|---|
-| window, 1 W | 325.28 K | 325.81 K |
-| window, 15 W | 345.97 K | 351.34 K |
-| opaque lid, 1 W | 323.27 K | 323.96 K |
+| Case            | Board surface min | Wall max |
+| --------------- | ----------------- | -------- |
+| window, 1 W     | 325.28 K          | 325.81 K |
+| window, 15 W    | 345.97 K          | 351.34 K |
+| opaque lid, 1 W | 323.27 K          | 323.96 K |
 
 Every credited solve is refused, so enabling it would turn 10.42 W / 11.10 W
 into unknown. At 15 W the wall maximum is a boss node in contact with the

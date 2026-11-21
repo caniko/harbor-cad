@@ -42,27 +42,27 @@ Tasks and checks are in [todo.md](todo.md).
 
 ## Workstreams (source level, done)
 
-| ID | Delivered on trunk | Docs |
-|---|---|---|
-| W1 | Sourced material/process library; estimate-only cost, manufacturability, service margins | [materials-and-cost](../docs/materials-and-cost.md) |
-| W2 | Spreadsheet-alias CAD variants; synthetic `enclosure_fixture` seed | [cad-variants](../docs/cad-variants.md) |
-| W3 | Bounded approval-bound design loop over ordinary jobs; 5 MCP tools | [design-loop](../docs/design-loop.md) |
-| W4 | Measured CSV vs thermal-history correlation | [correlation](../docs/correlation.md) |
-| W5 | harbor-rs `lib.mkCachePin` (PR #20 merged); consumer wiring landed as harbor-cad PR #5 (`8d1cf6c`) | Phase 3 |
-| W7 | Wetting HIP path implemented, unqualified; typed CPU-only refusals; render/compute routing | [gpu-backends](../docs/gpu-backends.md) |
-| W8 | Chained templates, W1 providers, calibration envelopes | [design-loop](../docs/design-loop.md) |
-| W9 | General-solid Gmsh mesh; steady enclosure conduction (CalculiX deck) | [enclosure-thermal](../docs/enclosure-thermal.md) |
-| W10 | Docs close-out of W1–W9 (`7034bdf`) | spec §10, ledger 2026-10-23 |
-| W11 | ETSI EN 300 019-1-4 classes, film ranges, finishes, `sourced` metrics (`7d2f4f2`, `8f7942e`) | [design-conditions](../docs/design-conditions.md) |
-| W11b | Window solar bound, compatible triples, sourced cavity film, hotter-of-board/air margin (`be77e98`, `357ffc8`) | [enclosure-thermal](../docs/enclosure-thermal.md) |
-| W12 | MCP `cad_plan_solid_mesh`, `enclosure_thermal_plan` (69 → 71); render/media single-node DRM policies (`cb97aec`, `549a3de`) | [gpu-backends](../docs/gpu-backends.md) |
-| W13a | KFD multi-GPU exclusion receipt gate, `verify_kfd_exclusion.py` (`9e085e9`), not run | [host-authority](../docs/host-authority.md) |
-| W13b | Canix `5df6b230d`: opt-in `igpu-amdgpu` boot entry, local and not activated | Phase 4 |
-| W14 | PCB power sweep by superposition, `max_supported_pcb_power_w`, cost vs power Pareto (`278e06b`..`cb60eee`) | [design-loop](../docs/design-loop.md) |
-| W15 | Linearized exterior radiation and orthotropic board lower bounds (`e277489`, `c8a66b5`) | [enclosure-thermal](../docs/enclosure-thermal.md) |
-| W16 | Multi-start pattern search with constraint edge-following (`9b7187d`, `204c11d`) | [design-loop](../docs/design-loop.md) |
-| W17 | Cavity radiation lower bound behind a strict postcondition; off in the pilot (`29639fc`, `f738aed`) | [enclosure-thermal](../docs/enclosure-thermal.md) |
-| W18 | This docs refresh: spec §10, ledger 2026-10-24, plan, handoff | — |
+| ID   | Delivered on trunk                                                                                                          | Docs                                                |
+| ---- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| W1   | Sourced material/process library; estimate-only cost, manufacturability, service margins                                    | [materials-and-cost](../docs/materials-and-cost.md) |
+| W2   | Spreadsheet-alias CAD variants; synthetic `enclosure_fixture` seed                                                          | [cad-variants](../docs/cad-variants.md)             |
+| W3   | Bounded approval-bound design loop over ordinary jobs; 5 MCP tools                                                          | [design-loop](../docs/design-loop.md)               |
+| W4   | Measured CSV vs thermal-history correlation                                                                                 | [correlation](../docs/correlation.md)               |
+| W5   | harbor-rs `lib.mkCachePin` (PR #20 merged); consumer wiring landed as harbor-cad PR #5 (`8d1cf6c`)                          | Phase 3                                             |
+| W7   | Wetting HIP path implemented, unqualified; typed CPU-only refusals; render/compute routing                                  | [gpu-backends](../docs/gpu-backends.md)             |
+| W8   | Chained templates, W1 providers, calibration envelopes                                                                      | [design-loop](../docs/design-loop.md)               |
+| W9   | General-solid Gmsh mesh; steady enclosure conduction (CalculiX deck)                                                        | [enclosure-thermal](../docs/enclosure-thermal.md)   |
+| W10  | Docs close-out of W1–W9 (`7034bdf`)                                                                                         | spec §10, ledger 2026-10-23                         |
+| W11  | ETSI EN 300 019-1-4 classes, film ranges, finishes, `sourced` metrics (`7d2f4f2`, `8f7942e`)                                | [design-conditions](../docs/design-conditions.md)   |
+| W11b | Window solar bound, compatible triples, sourced cavity film, hotter-of-board/air margin (`be77e98`, `357ffc8`)              | [enclosure-thermal](../docs/enclosure-thermal.md)   |
+| W12  | MCP `cad_plan_solid_mesh`, `enclosure_thermal_plan` (69 → 71); render/media single-node DRM policies (`cb97aec`, `549a3de`) | [gpu-backends](../docs/gpu-backends.md)             |
+| W13a | KFD multi-GPU exclusion receipt gate, `verify_kfd_exclusion.py` (`9e085e9`), not run                                        | [host-authority](../docs/host-authority.md)         |
+| W13b | Canix `5df6b230d`: opt-in `igpu-amdgpu` boot entry, local and not activated                                                 | Phase 4                                             |
+| W14  | PCB power sweep by superposition, `max_supported_pcb_power_w`, cost vs power Pareto (`278e06b`..`cb60eee`)                  | [design-loop](../docs/design-loop.md)               |
+| W15  | Linearized exterior radiation and orthotropic board lower bounds (`e277489`, `c8a66b5`)                                     | [enclosure-thermal](../docs/enclosure-thermal.md)   |
+| W16  | Multi-start pattern search with constraint edge-following (`9b7187d`, `204c11d`)                                            | [design-loop](../docs/design-loop.md)               |
+| W17  | Cavity radiation lower bound behind a strict postcondition; off in the pilot (`29639fc`, `f738aed`)                         | [enclosure-thermal](../docs/enclosure-thermal.md)   |
+| W18  | This docs refresh: spec §10, ledger 2026-10-24, plan, handoff                                                               | —                                                   |
 
 W6 (CLI/MCP integration) was folded into the other workstreams. All of these are
 source/CPU only. They have no Nix build, no native qualification and no A0–F

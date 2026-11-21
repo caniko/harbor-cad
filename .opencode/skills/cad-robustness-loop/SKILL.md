@@ -49,12 +49,12 @@ decision/check, including independent work; brevity removes speculation, not ste
 
 ## 2. Separate four kinds of unknown
 
-| Kind | Resolution | What does not resolve it |
-|---|---|---|
-| Product decision | Operator approves a measurable requirement | An agent's recommendation |
-| Physical input | Measured/supplier/standard source, units, range and provenance | A convenient default or zero |
-| Computational capability | Exact-source/runtime execution and numerical checks | Tool discovery, build success or plan validation |
-| Physical qualification | Applicable assembled-hardware tests and review | CAD fit, solver success or analytical references |
+| Kind                     | Resolution                                                     | What does not resolve it                         |
+| ------------------------ | -------------------------------------------------------------- | ------------------------------------------------ |
+| Product decision         | Operator approves a measurable requirement                     | An agent's recommendation                        |
+| Physical input           | Measured/supplier/standard source, units, range and provenance | A convenient default or zero                     |
+| Computational capability | Exact-source/runtime execution and numerical checks            | Tool discovery, build success or plan validation |
+| Physical qualification   | Applicable assembled-hardware tests and review                 | CAD fit, solver success or analytical references |
 
 Use the existing local contract to record approved decisions, missing inputs,
 open decisions and qualification status. Preserve known choices across turns.
@@ -163,12 +163,12 @@ geometry/redesign proposal, start with this scoped checklist; retain the check I
 and say **proposed / not run** when execution is forbidden. Do not replace a
 required check with its name in a future evaluation budget.
 
-| Gate | Required checks — emit every ID |
-|---|---|
-| D0 — diagnosis | D0.1 reproduce the reported measurement; D0.2 confirm units, datum and definition; D0.3 check placement and sampling coverage. Initially unverified; an all-fail scalar symptom does not prove a groove or structural cause. |
-| G0 — native geometry | G0.1 recompute the baseline; G0.2 every distinct box corner; G0.3 minimum stock; G0.4 closed regions; G0.5 non-overlap; G0.6 component keepouts; G0.7 seal support; G0.8 coupled parameter restrictions. |
-| G1 — mating interface | G1.1 new matching gasket or explicit reuse revalidation; G1.2 both sides' seating; G1.3 continuous support; G1.4 compression stops. Compression, fill and tolerance acceptance stay unknown without supplier/material data. |
-| Q0 — qualification | Q0.1 packaged-worker chain; Q0.2 assembled physical tests. Record each as unrun separately; sampled stock and nominal bearing prove neither. |
+| Gate                  | Required checks — emit every ID                                                                                                                                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D0 — diagnosis        | D0.1 reproduce the reported measurement; D0.2 confirm units, datum and definition; D0.3 check placement and sampling coverage. Initially unverified; an all-fail scalar symptom does not prove a groove or structural cause. |
+| G0 — native geometry  | G0.1 recompute the baseline; G0.2 every distinct box corner; G0.3 minimum stock; G0.4 closed regions; G0.5 non-overlap; G0.6 component keepouts; G0.7 seal support; G0.8 coupled parameter restrictions.                     |
+| G1 — mating interface | G1.1 new matching gasket or explicit reuse revalidation; G1.2 both sides' seating; G1.3 continuous support; G1.4 compression stops. Compression, fill and tolerance acceptance stay unknown without supplier/material data.  |
+| Q0 — qualification    | Q0.1 packaged-worker chain; Q0.2 assembled physical tests. Record each as unrun separately; sampled stock and nominal bearing prove neither.                                                                                 |
 
 A gate is the whole set and nothing more. Listing four of the eight G0 checks is
 an incomplete gate, not a summary, and the omitted checks count as missing
@@ -204,7 +204,7 @@ establish a two-dimensional box.
   lower score is better; weights are finite/positive and each term selects
   exactly one constraint. That margin is already normalized. The engine is:
   `let limit = self.effective_limit(); let scale = if self.limit == 0. { 1. } else
-  { self.limit.abs() };` then `ConstraintOp::Le => (limit - value) / scale` and
+{ self.limit.abs() };` then `ConstraintOp::Le => (limit - value) / scale` and
   `ConstraintOp::Ge => (value - limit) / scale`. `effective_limit()` tightens the
   declared limit by `safety_factor` (default 1): `le` with a non-negative limit,
   or `ge` with a negative one, divides by the factor; the other two cases
@@ -270,16 +270,16 @@ establish a two-dimensional box.
   reset consumed budget or substitute an unqualified backend to obtain a pass.
   Report an unavailable gate and its exact next prerequisite instead.
   Synthetic inputs may support a labelled reference, not a product prediction.
-   Missing product physics blocks that analysis, not independent geometry work.
+  Missing product physics blocks that analysis, not independent geometry work.
 
 Scope each blocker to its claim, not to the entire project:
 
-| Claim/work | Actual prerequisite; unrelated missing inputs do not gate it |
-|---|---|
-| Contract/schema and source audit | Applicable contract/source and permission for the requested reads/writes; no thermal model needed |
-| Authorized geometry/keepout/stock check | Real revision-bound CAD, relevant dimensions and geometry limits; no battery, heater or weather model needed |
-| Product mission prediction | Sourced loads, battery/thermal properties and initial/boundary conditions plus a qualified computational path |
-| Physical qualification | Applicable assembled-hardware evidence; neither geometry nor mission estimates establish it |
+| Claim/work                              | Actual prerequisite; unrelated missing inputs do not gate it                                                  |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Contract/schema and source audit        | Applicable contract/source and permission for the requested reads/writes; no thermal model needed             |
+| Authorized geometry/keepout/stock check | Real revision-bound CAD, relevant dimensions and geometry limits; no battery, heater or weather model needed  |
+| Product mission prediction              | Sourced loads, battery/thermal properties and initial/boundary conditions plus a qualified computational path |
+| Physical qualification                  | Applicable assembled-hardware evidence; neither geometry nor mission estimates establish it                   |
 
 When prediction is blocked, explicitly keep already-authorized independent
 geometry checks available. Do not require the entire physical-input ledger to be

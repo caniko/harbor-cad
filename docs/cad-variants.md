@@ -66,10 +66,18 @@ A request with `schema_version: 2` goes through the same `cad variant` /
 `cad_sheet_variant` instead of `cad_variant` (exactly one of the two):
 
 ```json
-{"schema_version": 2, "source_job": "<uuid>", "sheet_name": "Params",
- "parameters": {"wall": {"value": 4.0, "unit": "mm"}, "fin_count": {"value": 10, "unit": "1"}},
- "regions": ["housing", "lid"], "geometry_tolerance": {"value": 1e-5, "unit": "m"},
- "provenance": "..."}
+{
+  "schema_version": 2,
+  "source_job": "<uuid>",
+  "sheet_name": "Params",
+  "parameters": {
+    "wall": { "value": 4.0, "unit": "mm" },
+    "fin_count": { "value": 10, "unit": "1" }
+  },
+  "regions": ["housing", "lid"],
+  "geometry_tolerance": { "value": 1e-5, "unit": "m" },
+  "provenance": "..."
+}
 ```
 
 Planning opens no document. The source job must have registered `sheets.json`

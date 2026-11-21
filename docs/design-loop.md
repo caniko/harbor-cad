@@ -145,10 +145,20 @@ never defaulted.
 A chained child is a planning request instead of a plan:
 
 ```json
-{"role": "mesh", "after": "variant", "max_artifact_bytes": 67108864,
- "plan_request": {"operation": "plan_cad_mesh",
-   "request": {"source_job": {"$job": "variant"}, "region_name": "housing",
-               "resolution": 8, "geometry_tolerance_m": 1e-5}}}
+{
+  "role": "mesh",
+  "after": "variant",
+  "max_artifact_bytes": 67108864,
+  "plan_request": {
+    "operation": "plan_cad_mesh",
+    "request": {
+      "source_job": { "$job": "variant" },
+      "region_name": "housing",
+      "resolution": 8,
+      "geometry_tolerance_m": 1e-5
+    }
+  }
+}
 ```
 
 `plan_request` is a worker request whose `operation` is on the allowlist
@@ -296,10 +306,10 @@ boundary), seeds 0–39, 32 evaluations, gap of the incumbent to the
 brute-force grid optimum
 (`constrained_example_seed_sweep_beats_the_single_start_baseline`):
 
-| proposer | worst gap | median gap | exact optimum |
-| --- | --- | --- | --- |
-| single-start compass (trunk `c8a66b5`) | 27.7 % | 5.3 % | 6/40 |
-| multi-start + edge-following | 11.7 % | 0 % | 34/40 |
+| proposer                               | worst gap | median gap | exact optimum |
+| -------------------------------------- | --------- | ---------- | ------------- |
+| single-start compass (trunk `c8a66b5`) | 27.7 %    | 5.3 %      | 6/40          |
+| multi-start + edge-following           | 11.7 %    | 0 %        | 34/40         |
 
 Most of the gain comes from the edge step and the finer first level. On this
 2-D example only one start fits a convergence check, so later starts run only

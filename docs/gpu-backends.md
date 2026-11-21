@@ -135,14 +135,14 @@ continue to name their original packages and policy.
 Status 2026-10-23, from source inspection of OpenLB `145cd548` only. Nothing
 below has been built or run on the card yet.
 
-| Recipe | Backend | Why |
-|---|---|---|
-| Airflow channel (`openlb`) | HIP qualified for the scoped fixture; CUDA best-effort | See above. |
-| Planar wetting (`openlb_wetting`) | CPU; **HIP implemented, unqualified** (native CPU parity gate passes; worker gate pending) | Upstream GPU CI (`.ci/build_cuda_only.sh`) builds `examples/multiComponent/contactAngle2d`, the example this driver wraps. CUDA is not offered: the driver has no CUDA device-identity code. |
-| Solidification (`openlb_freezing`) | CPU only; typed `Unqualified` refusal | Upstream GPU CI builds no `TotalEnthalpy` example (`stefanMelting2d` and `galliumMelting2d` are absent). The driver's energy ledger also reads populations on the host between `collide()` and `AndStream()` every step. Porting either would mean new numerical code to qualify. |
-| Retained cooling (`openlb_retained_cooling`) | CPU only; the plan cannot request a GPU | Same total-enthalpy stack, plus Bouzidi half-link post-processors applied to host cells after every stream. |
-| FEM (CalculiX) | CPU | No HIP sparse direct solver is integrated. SPOOLES is CPU-only, and the CUDA PaStiX/PaRSEC candidates are inspection-only. |
-| Spectral (Mitsuba/Dr.Jit) | CPU | Dr.Jit has no HIP backend. |
+| Recipe                                       | Backend                                                                                    | Why                                                                                                                                                                                                                                                                               |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Airflow channel (`openlb`)                   | HIP qualified for the scoped fixture; CUDA best-effort                                     | See above.                                                                                                                                                                                                                                                                        |
+| Planar wetting (`openlb_wetting`)            | CPU; **HIP implemented, unqualified** (native CPU parity gate passes; worker gate pending) | Upstream GPU CI (`.ci/build_cuda_only.sh`) builds `examples/multiComponent/contactAngle2d`, the example this driver wraps. CUDA is not offered: the driver has no CUDA device-identity code.                                                                                      |
+| Solidification (`openlb_freezing`)           | CPU only; typed `Unqualified` refusal                                                      | Upstream GPU CI builds no `TotalEnthalpy` example (`stefanMelting2d` and `galliumMelting2d` are absent). The driver's energy ledger also reads populations on the host between `collide()` and `AndStream()` every step. Porting either would mean new numerical code to qualify. |
+| Retained cooling (`openlb_retained_cooling`) | CPU only; the plan cannot request a GPU                                                    | Same total-enthalpy stack, plus Bouzidi half-link post-processors applied to host cells after every stream.                                                                                                                                                                       |
+| FEM (CalculiX)                               | CPU                                                                                        | No HIP sparse direct solver is integrated. SPOOLES is CPU-only, and the CUDA PaStiX/PaRSEC candidates are inspection-only.                                                                                                                                                        |
+| Spectral (Mitsuba/Dr.Jit)                    | CPU                                                                                        | Dr.Jit has no HIP backend.                                                                                                                                                                                                                                                        |
 
 The HIP wetting driver follows the airflow driver. It selects and verifies the
 PCI/UUID card before allocating anything and rejects a silent CPU block. Its
@@ -178,7 +178,7 @@ Phase-B qualification for wetting, after the security hold:
 1. Build `.#wetting-native-cpu`, `.#wetting-native-hip` and
    `.#runtime-wetting-worker-hip` through `canix cache binary build`.
 2. Run `scripts/verify_wetting_hip.py --cpu-native … --hip-native … --pci
-   0000:03:00.0 --uuid GPU-… --output …` inside the bounded service. It
+0000:03:00.0 --uuid GPU-… --output …` inside the bounded service. It
    requires phase relative L2 ≤ 1e-10 against CPU, exact coordinates and
    material IDs, the unchanged mass and angle gates, and six identity or
    fallback rejections that must happen before any output. Velocity is a
