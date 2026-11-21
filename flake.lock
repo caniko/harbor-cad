@@ -36,17 +36,17 @@
     "harbor-meta": {
       "flake": false,
       "locked": {
-        "lastModified": 1794482389,
-        "narHash": "sha256-Q1ZVqkgyUfXX5ykYqMfUBbXQuryRqH3z79wFTQgt3F0=",
+        "lastModified": 1795247143,
+        "narHash": "sha256-3kcRO1PEkbHhjutfjvnhldSRhsk0sI3eH2NcVqag94Q=",
         "owner": "caniko",
         "repo": "harbor-meta",
-        "rev": "b494b56e8174557b27956108d3ed7dd0e6425d0b",
+        "rev": "0d98f0972a2172663c33ef2cf4096c68cac1a8f0",
         "type": "github"
       },
       "original": {
         "owner": "caniko",
         "repo": "harbor-meta",
-        "rev": "b494b56e8174557b27956108d3ed7dd0e6425d0b",
+        "rev": "0d98f0972a2172663c33ef2cf4096c68cac1a8f0",
         "type": "github"
       }
     },
